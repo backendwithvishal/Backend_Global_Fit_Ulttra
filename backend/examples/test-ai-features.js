@@ -9,7 +9,7 @@
  */
 
 import { GroqClient } from '../src/infrastructure/ai/groqClient.js';
-import { AINewsService } from '../src/application/services/AINewsService.js';
+import { AINewsService } from '../src/services/AINewsService.js';
 import { RedisCache } from '../src/infrastructure/cache/RedisCache.js';
 import { logger } from '../src/config/logger.js';
 import { config } from '../src/config/environment.js';

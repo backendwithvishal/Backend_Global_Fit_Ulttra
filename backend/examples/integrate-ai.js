@@ -14,12 +14,12 @@ import { createServer } from 'http';
 
 // Import AI infrastructure
 import { GroqClient } from '../src/infrastructure/ai/groqClient.js';
-import { AINewsService } from '../src/application/services/AINewsService.js';
-import { AIMarketService } from '../src/application/services/AIMarketService.js';
+import { AINewsService } from '../src/services/AINewsService.js';
+import { AIMarketService } from '../src/services/AIMarketService.js';
 import { AIStreamHandler } from '../src/infrastructure/websocket/AIStreamHandler.js';
 import { AIJobQueue } from '../src/infrastructure/messaging/AIJobQueue.js';
-import { AIController } from '../src/presentation/controllers/AIController.js';
-import { createAIRoutes } from '../src/presentation/routes/aiRoutes.js';
+import { AIController } from '../src/controllers/AIController.js';
+import { createAIRoutes } from '../src/routes/aiRoutes.js';
 
 // Import existing infrastructure
 import { RedisCache } from '../src/infrastructure/cache/RedisCache.js';

@@ -94,7 +94,7 @@ export const createApp = () => {
             version: '1.0.0',
             status: 'running',
             docs: {
-                health:    '/api/v1/health/health',
+                health:    '/api/v1/health',
                 readiness: '/api/v1/health/readiness',
                 financial: '/api/v1/financial',
                 ai:        '/api/v1/ai',
@@ -112,7 +112,7 @@ export const createApp = () => {
  * ─────────────────────────────────────────────────────────────────
  * | Path                 | Controller            | Rate Limiter     |
  * |----------------------|-----------------------|------------------|
- * | /api/v1/health       | HealthController      | healthRateLimiter|
+ * | /health, /api/v1/health | HealthController   | healthRateLimiter|
  * | /api/v1/financial    | FinancialController   | globalRateLimiter|
  * | /api/v1/admin        | AdminController       | adminRateLimiter |
  * | /api/v1/status       | StatusController      | globalRateLimiter|
@@ -127,8 +127,10 @@ export const createApp = () => {
  * @param {import('./di/container.js').Container} container - DI container with all instances
  */
 export const setupRoutes = (app, container) => {
-    // Health/readiness probes (high rate limit for monitoring tools)
-    app.use('/api/v1/health', createHealthRoutes(container.get('healthController')));
+    // Health/readiness probes (high rate limit for monitoring tools, cloud balancers & Render)
+    const healthRoutes = createHealthRoutes(container.get('healthController'));
+    app.use('/health', healthRoutes);
+    app.use('/api/v1/health', healthRoutes);
 
     // Core financial data endpoints
     app.use('/api/v1/financial', createFinancialRoutes(container.get('financialController')));

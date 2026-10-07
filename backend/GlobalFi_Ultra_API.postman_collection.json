@@ -10,6 +10,11 @@
             "key": "baseUrl",
             "value": "https://backend-global-fit-ulttra.onrender.com/api/v1",
             "type": "string"
+        },
+        {
+            "key": "jwtToken",
+            "value": "",
+            "type": "string"
         }
     ],
     "item": [
@@ -51,6 +56,24 @@
                             ]
                         },
                         "description": "Readiness probe - checks database, Redis, and AI service connectivity"
+                    }
+                },
+                {
+                    "name": "Health Ping Keep-Alive",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/health/ping",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "health",
+                                "ping"
+                            ]
+                        },
+                        "description": "Lightweight keep-alive ping endpoint"
                     }
                 }
             ]
@@ -1147,6 +1170,793 @@
                                 "ai",
                                 "jobs",
                                 "stats"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "description": "Authentication, sessions, MFA, password reset",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify Email",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/verify-email?token=sample_token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "verify-email"
+                            ],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "sample_token"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Request Password Reset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/request-reset",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "request-reset"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"sample_token\",\n  \"newPassword\": \"NewSecurePassword123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/reset-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Setup",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/setup",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "setup"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Enable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/enable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "enable"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Disable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/disable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "disable"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Request Magic Link",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/magic-link",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "magic-link"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Magic Link Callback",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/magic-link/callback?token=sample_token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "magic-link",
+                                "callback"
+                            ],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "sample_token"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Active Sessions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Login History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions",
+                                "history"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Revoke Session",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions/sample_hash",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions",
+                                "sample_hash"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Organizations",
+            "description": "Multi-tenant organization management, invites, member roles",
+            "item": [
+                {
+                    "name": "Create Organization",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Apex Capital\",\n  \"slug\": \"apex-capital\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User Organizations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Organization by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Invite Member",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"analyst@apex.com\",\n  \"role\": \"Member\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/invite",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "invite"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Pending Invites",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/invites",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "invites"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Accept Invite",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"sample_invite_token\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/invite/accept",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "invite",
+                                "accept"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Member",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/members/507f1f77bcf86cd799439012",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "members",
+                                "507f1f77bcf86cd799439012"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Member Role",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": \"Admin\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/members/507f1f77bcf86cd799439012/role",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "members",
+                                "507f1f77bcf86cd799439012",
+                                "role"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Billing",
+            "description": "Subscription checkout, invoices, discount coupons",
+            "item": [
+                {
+                    "name": "Create Checkout Session",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"plan\": \"Pro\",\n  \"billingCycle\": \"monthly\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/checkout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "checkout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Confirm Checkout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"sessionId\": \"cs_test_sample\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "confirm"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel Subscription",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "cancel"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Invoices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/invoices",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "invoices"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Apply Coupon",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/coupons/GLOBALFI20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "coupons",
+                                "GLOBALFI20"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "API Keys",
+            "description": "Developer API key lifecycle management",
+            "item": [
+                {
+                    "name": "Create API Key",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Production Data Pipeline\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List API Keys",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Deactivate API Key",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys/507f1f77bcf86cd799439013",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys",
+                                "507f1f77bcf86cd799439013"
                             ]
                         }
                     }

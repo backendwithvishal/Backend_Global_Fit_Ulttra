@@ -64,7 +64,15 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "Health & Status Endpoints"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-test_endpoint "Health Check" "GET" "/api/v1/health/health"
+test_endpoint "Root Health Check (/health)" "GET" "/health"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "API v1 Health Check (/api/v1/health)" "GET" "/api/v1/health"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "Health Ping (/api/v1/health/ping)" "GET" "/api/v1/health/ping"
 ((total++))
 [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
@@ -73,6 +81,10 @@ test_endpoint "Readiness Check" "GET" "/api/v1/health/readiness"
 [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
 test_endpoint "Circuit Breakers" "GET" "/api/v1/status/circuit-breakers"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "Rate Limits Status" "GET" "/api/v1/status/rate-limits"
 ((total++))
 [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
@@ -116,10 +128,22 @@ test_endpoint "Cached Financial Data" "GET" "/api/v1/financial/cached"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "User Endpoints"
+echo "User & Resource Endpoints"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 test_endpoint "List Users" "GET" "/api/v1/users?page=1&limit=10"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "List Watchlists" "GET" "/api/v1/watchlists?page=1&limit=10"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "List Alerts" "GET" "/api/v1/alerts?page=1&limit=10"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "Search Assets" "GET" "/api/v1/assets?search=AAPL&limit=5"
 ((total++))
 [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
@@ -129,6 +153,10 @@ echo "Admin Endpoints"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 test_endpoint "Get Metrics" "GET" "/api/v1/admin/metrics"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "Get Logs" "GET" "/api/v1/admin/logs"
 ((total++))
 [ $? -eq 0 ] && ((passed++)) || ((failed++))
 

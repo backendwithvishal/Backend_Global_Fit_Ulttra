@@ -77,13 +77,22 @@ Write-Host "Health and Status Endpoints"
 Write-Host "-------------------------------------------------------------"
 
 $Total++
-if (Test-Endpoint "Health Check" "GET" "/api/v1/health/health") { $Passed++ } else { $Failed++ }
+if (Test-Endpoint "Root Health Check (/health)" "GET" "/health") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "API v1 Health Check (/api/v1/health)" "GET" "/api/v1/health") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "Health Ping (/api/v1/health/ping)" "GET" "/api/v1/health/ping") { $Passed++ } else { $Failed++ }
 
 $Total++
 if (Test-Endpoint "Readiness Check" "GET" "/api/v1/health/readiness") { $Passed++ } else { $Failed++ }
 
 $Total++
 if (Test-Endpoint "Circuit Breakers" "GET" "/api/v1/status/circuit-breakers") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "Rate Limits Status" "GET" "/api/v1/status/rate-limits") { $Passed++ } else { $Failed++ }
 
 Write-Host ""
 Write-Host "-------------------------------------------------------------"
@@ -119,11 +128,20 @@ if (Test-Endpoint "Cached Financial Data" "GET" "/api/v1/financial/cached") { $P
 
 Write-Host ""
 Write-Host "-------------------------------------------------------------"
-Write-Host "User Endpoints"
+Write-Host "User & Resource Endpoints"
 Write-Host "-------------------------------------------------------------"
 
 $Total++
 if (Test-Endpoint "List Users" "GET" "/api/v1/users?page=1&limit=10") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "List Watchlists" "GET" "/api/v1/watchlists?page=1&limit=10") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "List Alerts" "GET" "/api/v1/alerts?page=1&limit=10") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "Search Assets" "GET" "/api/v1/assets?search=AAPL&limit=5") { $Passed++ } else { $Failed++ }
 
 Write-Host ""
 Write-Host "-------------------------------------------------------------"
@@ -132,6 +150,9 @@ Write-Host "-------------------------------------------------------------"
 
 $Total++
 if (Test-Endpoint "Get Metrics" "GET" "/api/v1/admin/metrics") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "Get Logs" "GET" "/api/v1/admin/logs") { $Passed++ } else { $Failed++ }
 
 Write-Host ""
 Write-Host "-------------------------------------------------------------"

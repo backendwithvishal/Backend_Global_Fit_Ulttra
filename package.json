@@ -1,28 +1,25 @@
 {
   "name": "globalfi-ultra",
   "version": "1.0.0",
-  "description": "Global-Fi Ultra — monorepo root (backend + frontend)",
+  "description": "Global-Fi Ultra — High-performance financial orchestration engine",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
   "workspaces": [
-    "backend",
-    "frontend"
+    "backend"
   ],
   "scripts": {
     "start": "npm run start --prefix backend",
     "dev": "npm run dev --prefix backend",
+    "test": "npm run test --prefix backend",
+    "lint": "npm run lint --prefix backend",
     "backend:start": "npm run start --prefix backend",
     "backend:dev": "npm run dev --prefix backend",
     "backend:install": "npm install --prefix backend",
     "backend:test": "npm run test --prefix backend",
     "backend:lint": "npm run lint --prefix backend",
-    "frontend:dev": "npm run dev --prefix frontend",
-    "frontend:build": "npm run build --prefix frontend",
-    "frontend:install": "npm install --prefix frontend",
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
     "test:integration": "npm run test:integration --prefix backend",
     "test:endpoints": "npm run test:endpoints --prefix backend",
     "test:endpoints:win": "npm run test:endpoints:win --prefix backend",

@@ -36,6 +36,10 @@ export const createRedisClient = () => {
         options.password = config.redis.password;
     }
 
+    if (config.redis.url.startsWith('rediss://')) {
+        options.tls = { rejectUnauthorized: false };
+    }
+
     redisClient = new Redis(config.redis.url, options);
 
     redisClient.on('connect', () => {

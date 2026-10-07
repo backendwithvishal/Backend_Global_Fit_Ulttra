@@ -19,9 +19,11 @@ export const connectRabbitMQ = async (retries = 5, delay = 3000) => {
 
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            logger.info(`Connecting to RabbitMQ (attempt ${attempt}/${retries})...`);
+            const url = config.rabbitmq.url;
+            const isAmqps = url.startsWith('amqps://');
+            const socketOptions = isAmqps ? { rejectUnauthorized: false } : {};
 
-            connection = await amqp.connect(config.rabbitmq.url);
+            connection = await amqp.connect(url, socketOptions);
             channel = await connection.createChannel();
 
             connection.on('error', (err) => {

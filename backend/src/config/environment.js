@@ -17,8 +17,8 @@ const envSchema = z.object({
   MONGODB_POOL_SIZE: z.string().transform(Number).default('10'),
 
   // Redis
-  REDIS_URL: z.string().default('redis://localhost:6379'),
-  REDIS_PASSWORD: z.string().optional().default(''),
+  REDIS_URL: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('redis://localhost:6379'),
+  REDIS_PASSWORD: z.string().transform(v => v ? v.trim().replace(/^['"]|['"]$/g, '') : '').optional().default(''),
   REDIS_TTL_DEFAULT: z.string().transform(Number).default('300'),
 
   // External API keys
@@ -54,8 +54,8 @@ const envSchema = z.object({
   ENABLE_METRICS_COLLECTION: z.string().transform(v => v === 'true').default('true'),
 
   // RabbitMQ
-  RABBITMQ_URL: z.string().default('amqp://localhost:5672'),
-  RABBITMQ_QUEUE_PREFIX: z.string().default('globalfi'),
+  RABBITMQ_URL: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('amqp://localhost:5672'),
+  RABBITMQ_QUEUE_PREFIX: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('globalfi'),
 
   // Groq AI
   GROQ_API_KEY: z.string().default(''),

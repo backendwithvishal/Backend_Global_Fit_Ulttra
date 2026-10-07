@@ -66,22 +66,33 @@ class RedisMonitor {
     const spinner = ora('Connecting to Redis...').start();
 
     try {
-      this.redis = new Redis({
-        host: CONFIG.redis.host,
-        port: CONFIG.redis.port,
-        password: CONFIG.redis.password,
-        retryStrategy: (times) => {
-          if (times > 3) {
-            spinner.fail('Failed to connect to Redis after 3 attempts');
-            return null;
-          }
-          return Math.min(times * 1000, 3000);
+      const redisUrl = process.env.REDIS_URL;
+      const retryStrategy = (times) => {
+        if (times > 3) {
+          spinner.fail('Failed to connect to Redis after 3 attempts');
+          return null;
         }
-      });
+        return Math.min(times * 1000, 3000);
+      };
+
+      if (redisUrl && redisUrl.startsWith('redis')) {
+        const options = { retryStrategy };
+        if (redisUrl.startsWith('rediss://')) {
+          options.tls = { rejectUnauthorized: false };
+        }
+        this.redis = new Redis(redisUrl, options);
+      } else {
+        this.redis = new Redis({
+          host: CONFIG.redis.host,
+          port: CONFIG.redis.port,
+          password: CONFIG.redis.password,
+          retryStrategy
+        });
+      }
 
       await this.redis.ping();
       this.isConnected = true;
-      spinner.succeed(`Connected to Redis at ${CONFIG.redis.host}:${CONFIG.redis.port}`);
+      spinner.succeed(`Connected to Redis`);
     } catch (error) {
       spinner.fail(`Redis connection failed: ${error.message}`);
       throw error;

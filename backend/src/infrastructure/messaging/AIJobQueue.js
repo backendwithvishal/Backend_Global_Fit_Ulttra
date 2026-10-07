@@ -29,7 +29,11 @@ export class AIJobQueue {
         url: config.rabbitmq.url.replace(/:[^:@]+@/, ':****@')
       });
 
-      this.connection = await amqplib.connect(config.rabbitmq.url);
+      const url = config.rabbitmq.url;
+      const isAmqps = url.startsWith('amqps://');
+      const socketOptions = isAmqps ? { rejectUnauthorized: false } : {};
+
+      this.connection = await amqplib.connect(url, socketOptions);
       this.channel = await this.connection.createChannel();
 
       // Assert queues

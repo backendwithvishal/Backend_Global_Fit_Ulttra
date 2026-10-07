@@ -10,8 +10,8 @@
 export const AI_CONFIG = {
   // Model selection
   models: {
-    primary: 'llama-3.3-70b-versatile',    // Complex analysis, reasoning
-    fast: 'llama-3.1-8b-instant',          // Simple tasks, quick responses
+    primary: process.env.GROQ_PRIMARY_MODEL || 'llama-3.3-70b-versatile',    // Complex analysis, reasoning
+    fast: process.env.GROQ_FAST_MODEL || 'llama-3.1-8b-instant',          // Simple tasks, quick responses
     fallback: 'llama-guard-4-12b'          // Safety checks (if needed)
   },
 

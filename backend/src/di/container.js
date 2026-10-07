@@ -182,20 +182,28 @@ export class Container {
         let aiController = null;
 
         const rawApiKey = (config.ai.groqApiKey || '').trim().replace(/^['"]|['"]$/g, '');
-        const hasValidKeyFormat = rawApiKey.length >= 10 && !rawApiKey.toLowerCase().includes('your-groq-api-key');
+        const isPlaceholder = [
+            'your-groq-api-key',
+            'your_groq_api_key',
+            'your_key_here',
+            'your-key-here',
+            'gsk_your_groq_api_key_here',
+            'gsk_your_key_here',
+            'your_api_key_here',
+        ].some((placeholder) => rawApiKey.toLowerCase().includes(placeholder));
+
+        const hasValidKeyFormat = rawApiKey.length >= 10 && !isPlaceholder;
 
         if (hasValidKeyFormat) {
             try {
                 logger.info('Initializing AI services...');
 
-                // Create and validate the Groq LLM client
+                // Create the Groq LLM client
                 groqClient = new GroqClient({
                     apiKey: rawApiKey,
                     cacheService: cache,
                     logger
                 });
-                await groqClient.validateApiKey();
-                logger.info('✅ Groq API key validated');
 
                 // AI domain services (depend on GroqClient + Cache)
                 aiNewsService = new AINewsService({ groqClient, cacheService: cache });
@@ -224,6 +232,17 @@ export class Container {
                 // AI controller (presentation layer for AI endpoints)
                 aiController = new AIController({ aiNewsService, aiMarketService, aiJobQueue });
                 logger.info('✅ AI services initialized successfully');
+
+                // Validate API key at startup (non-fatal warning if network/rate-limited at boot)
+                try {
+                    await groqClient.validateApiKey();
+                    logger.info('✅ Groq API key validated');
+                } catch (valError) {
+                    logger.warn('⚠️  Groq API key startup verification failed (requests will attempt live authentication)', {
+                        error: valError.message,
+                        details: valError.originalError?.message || valError.cause?.message || undefined
+                    });
+                }
             } catch (error) {
                 // Graceful degradation: AI failure doesn't crash the app
                 logger.warn('⚠️  Failed to initialize AI services - AI features will be disabled', { 

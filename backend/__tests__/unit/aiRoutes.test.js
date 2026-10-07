@@ -69,6 +69,15 @@ describe('aiRoutes', () => {
             expect(res.body.data.sentiment).toBe('positive');
         });
 
+        it('should return AI service discovery info on GET /', async () => {
+            const res = await request(app)
+                .get('/api/v1/ai');
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.service).toBe('Global-Fi Ultra AI Service');
+        });
+
         it('should return 400 validation error if text is missing', async () => {
             const res = await request(app)
                 .post('/api/v1/ai/sentiment')

@@ -16,6 +16,34 @@ export class AIController {
     this.logger = logger;
   }
 
+  // Service overview and endpoint discovery
+  getInfo = async (req, res) => {
+    res.json({
+      success: true,
+      service: 'Global-Fi Ultra AI Service',
+      version: '1.0.0',
+      status: 'active',
+      models: {
+        primary: process.env.GROQ_PRIMARY_MODEL || 'llama-3.3-70b-versatile',
+        fast: process.env.GROQ_FAST_MODEL || 'llama-3.1-8b-instant',
+      },
+      endpoints: {
+        sentiment: 'POST /api/v1/ai/sentiment',
+        analyze: 'POST /api/v1/ai/analyze',
+        compare: 'POST /api/v1/ai/compare',
+        recommend: 'POST /api/v1/ai/recommend',
+        portfolio: 'POST /api/v1/ai/portfolio',
+        predict: 'POST /api/v1/ai/predict',
+        explain: 'POST /api/v1/ai/explain',
+        newsImpact: 'POST /api/v1/ai/news/impact',
+        newsSummary: 'POST /api/v1/ai/news/summary',
+        submitJob: 'POST /api/v1/ai/jobs',
+        jobStats: 'GET /api/v1/ai/jobs/stats',
+      },
+      requestId: req.requestId,
+    });
+  };
+
   // Analyze sentiment of text - works for news articles or general text
   analyzeSentiment = async (req, res) => {
     try {

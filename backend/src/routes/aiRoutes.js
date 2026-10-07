@@ -9,6 +9,7 @@
  * ──────────────────────────────────────────────────────────────────────────
  * | Method | Path           | Handler               | Description          |
  * |--------|----------------|-----------------------|----------------------|
+ * | GET    | /              | getInfo               | AI service info & map |
  * | POST   | /sentiment     | analyzeSentiment      | Text sentiment       |
  * | POST   | /analyze       | analyzeAsset          | Asset analysis       |
  * | POST   | /compare       | compareAssets         | Compare 2+ assets    |
@@ -74,6 +75,19 @@ export const createAIRoutes = (aiController) => {
 
   // Apply AI-specific rate limiter to all AI routes (10 req / 1 min)
   router.use(aiRateLimiter);
+
+  // ─── AI Service Overview & Discovery ──────────────────────────────────
+  router.get('/', (req, res) => {
+    if (typeof aiController.getInfo === 'function') {
+      return aiController.getInfo(req, res);
+    }
+    return res.json({
+      success: true,
+      service: 'Global-Fi Ultra AI Service',
+      status: 'active',
+      requestId: req.requestId,
+    });
+  });
 
   // ─── Sentiment Analysis ────────────────────────────────────────────────
   // Analyzes text for bullish/bearish/neutral sentiment with confidence score

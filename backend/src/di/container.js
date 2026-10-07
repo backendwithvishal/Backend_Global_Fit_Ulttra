@@ -226,7 +226,10 @@ export class Container {
                 logger.info('✅ AI services initialized successfully');
             } catch (error) {
                 // Graceful degradation: AI failure doesn't crash the app
-                logger.warn('⚠️  Failed to initialize AI services - AI features will be disabled', { error: error.message });
+                logger.warn('⚠️  Failed to initialize AI services - AI features will be disabled', { 
+                    error: error.message,
+                    details: error.originalError?.message || error.cause?.message || undefined
+                });
                 groqClient = null;
                 aiNewsService = null;
                 aiMarketService = null;

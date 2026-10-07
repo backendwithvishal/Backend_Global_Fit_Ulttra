@@ -123,7 +123,7 @@ export class GroqClient {
       if (error.status === 401 || error.status === 403) {
         throw new AIAuthError();
       }
-      throw new AIServiceError('API key validation failed', error);
+      throw new AIServiceError(`API key validation failed: ${error.message || error}`, error);
     }
   }
 

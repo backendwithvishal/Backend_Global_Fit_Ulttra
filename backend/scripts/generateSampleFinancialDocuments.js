@@ -20,6 +20,17 @@ if (!fs.existsSync(docsDir)) {
   fs.mkdirSync(docsDir, { recursive: true });
 }
 
+// Clean any non-WinAnsi characters to ensure safe PDF encoding
+function sanitizeText(str) {
+  if (!str) return '';
+  return str
+    .replace(/[—–]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/•/g, '*')
+    .replace(/[^\x00-\x7F]/g, ' ');
+}
+
 async function createFinancialPdf({ filename, title, subtitle, company, ticker, filingType, period, sections }) {
   const pdfDoc = await PDFDocument.create();
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -33,13 +44,13 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
   // Header Banner
   page.drawText('UNITED STATES SECURITIES AND EXCHANGE COMMISSION', {
     x: 50,
-    y,
+    y,          
     size: 10,
     font: fontBold,
     color: rgb(0.2, 0.2, 0.2),
   });
   y -= 15;
-  page.drawText(`FORM ${filingType} - ${company} (${ticker})`, {
+  page.drawText(sanitizeText(`FORM ${filingType} - ${company} (${ticker})`), {
     x: 50,
     y,
     size: 16,
@@ -47,7 +58,7 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
     color: rgb(0.05, 0.2, 0.45),
   });
   y -= 15;
-  page.drawText(`Reporting Period: ${period} | Document Source: Official SEC EDGAR / Investor Relations`, {
+  page.drawText(sanitizeText(`Reporting Period: ${period} | Document Source: Official SEC EDGAR / Investor Relations`), {
     x: 50,
     y,
     size: 9,
@@ -66,25 +77,24 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
   y -= 25;
 
   for (const section of sections) {
-    // Check if we need a new page
     if (y < 120) {
       page = pdfDoc.addPage([612, 792]);
       y = 742;
     }
 
     // Section title
-    page.drawText(section.heading, {
+    page.drawText(sanitizeText(section.heading), {
       x: 50,
       y,
-      size: 12,
+      size: 11,
       font: fontBold,
       color: rgb(0.1, 0.2, 0.35),
     });
     y -= 18;
 
     // Paragraphs / lines
-    for (const paragraph of section.paragraphs) {
-      // Wrap paragraph lines
+    for (const rawParagraph of section.paragraphs) {
+      const paragraph = sanitizeText(rawParagraph);
       const words = paragraph.split(' ');
       let currentLine = '';
 
@@ -130,13 +140,14 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
     // Tables if any
     if (section.table) {
       y -= 6;
-      for (const row of section.table) {
+      for (const rawRow of section.table) {
+        const row = sanitizeText(rawRow);
         if (y < 60) {
           page = pdfDoc.addPage([612, 792]);
           y = 742;
         }
         page.drawText(row, {
-          x: 60,
+          x: 55,
           y,
           size: 8.5,
           font: fontCourier,
@@ -151,7 +162,7 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
   }
 
   // Footer on final page
-  page.drawText(`Global-Fi Ultra Financial Knowledge Engine • Verified SEC Filing Repository • Symbol: ${ticker}`, {
+  page.drawText(sanitizeText(`Global-Fi Ultra Financial Knowledge Engine | Verified SEC Filing Repository | Symbol: ${ticker}`), {
     x: 50,
     y: 30,
     size: 8,
@@ -185,15 +196,15 @@ async function main() {
         ],
         table: [
           'Revenue by Product Category (in millions):',
-          '─────────────────────────────────────────────────────────────',
-          'Product Category               Q3 FY24       Q3 FY23   Change',
-          'iPhone                         $39,296       $39,669     -1%',
-          'Mac                             $7,009        $6,840     +2%',
-          'iPad                            $7,162        $5,791    +24%',
-          'Wearables, Home & Accessories   $8,095        $8,284     -2%',
-          'Services                       $24,213       $21,213    +14%',
-          '─────────────────────────────────────────────────────────────',
-          'Total Net Sales                $85,775       $81,797     +5%'
+          '========================================================================',
+          'Product Category               Q3 FY24       Q3 FY23       Change (%)',
+          'iPhone                         $39,296       $39,669          -1%',
+          'Mac                             $7,009        $6,840          +2%',
+          'iPad                            $7,162        $5,791         +24%',
+          'Wearables, Home & Accessories   $8,095        $8,284          -2%',
+          'Services                       $24,213       $21,213         +14%',
+          '========================================================================',
+          'Total Net Sales                $85,775       $81,797          +5%'
         ]
       },
       {
@@ -232,13 +243,13 @@ async function main() {
         ],
         table: [
           'Segment Revenue Breakdown (in billions):',
-          '─────────────────────────────────────────────────────────────',
-          'Segment                        FY2024        FY2023    Growth',
-          'Productivity & Business Proc    $77.7         $69.3      +12%',
-          'Intelligent Cloud (Azure)      $105.4         $87.9      +20%',
-          'More Personal Computing         $62.0         $54.7      +13%',
-          '─────────────────────────────────────────────────────────────',
-          'Total Consolidated Revenue     $245.1        $211.9      +16%'
+          '========================================================================',
+          'Segment                        FY2024        FY2023        Growth (%)',
+          'Productivity & Business Proc    $77.7         $69.3          +12%',
+          'Intelligent Cloud (Azure)      $105.4         $87.9          +20%',
+          'More Personal Computing         $62.0         $54.7          +13%',
+          '========================================================================',
+          'Total Consolidated Revenue     $245.1        $211.9          +16%'
         ]
       },
       {
@@ -276,15 +287,15 @@ async function main() {
         ],
         table: [
           'Market Platform Revenue (in millions):',
-          '─────────────────────────────────────────────────────────────',
-          'Platform                       FY2024        FY2023    Growth',
-          'Compute & Networking (Data Ctr) $47,405      $15,013     +217%',
-          'Gaming                         $10,447        $9,067      +15%',
-          'Professional Visualization      $1,553        $1,544       +1%',
-          'Automotive                      $1,091          $903      +21%',
-          'OEM and Other                     $426          $445       -4%',
-          '─────────────────────────────────────────────────────────────',
-          'Total Revenue                  $60,922       $26,974     +126%'
+          '========================================================================',
+          'Platform                       FY2024        FY2023        Growth (%)',
+          'Compute & Networking (Data Ctr) $47,405      $15,013         +217%',
+          'Gaming                         $10,447        $9,067          +15%',
+          'Professional Visualization      $1,553        $1,544           +1%',
+          'Automotive                      $1,091          $903          +21%',
+          'OEM and Other                     $426          $445           -4%',
+          '========================================================================',
+          'Total Revenue                  $60,922       $26,974         +126%'
         ]
       },
       {
@@ -321,13 +332,13 @@ async function main() {
         ],
         table: [
           'Operational & Delivery Metrics:',
-          '─────────────────────────────────────────────────────────────',
-          'Metric                         Full Year      Prior Year  Chg',
-          'Total Deliveries (Vehicles)    1,808,581      1,313,851   +38%',
-          'Energy Storage Deployed (GWh)      14.72           6.54  +125%',
-          'Supercharger Stations              5,952          4,678   +27%',
-          'Operating Cash Flow           $13,256M       $14,724M   -10%',
-          'Free Cash Flow                 $4,358M        $7,552M   -42%'
+          '========================================================================',
+          'Metric                         Full Year      Prior Year    Change (%)',
+          'Total Deliveries (Vehicles)    1,808,581      1,313,851        +38%',
+          'Energy Storage Deployed (GWh)      14.72           6.54       +125%',
+          'Supercharger Stations              5,952          4,678        +27%',
+          'Operating Cash Flow           $13,256M       $14,724M         -10%',
+          'Free Cash Flow                 $4,358M        $7,552M         -42%'
         ]
       },
       {

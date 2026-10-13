@@ -11,3 +11,5 @@ export { Organization } from './Organization.js';
 export { Invitation } from './Invitation.js';
 export { ApiKey } from './ApiKey.js';
 export { EventLog } from './EventLog.js';
+export { Document } from './Document.js';
+export { DocumentChunk } from './DocumentChunk.js';

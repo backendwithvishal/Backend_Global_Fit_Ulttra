@@ -5,9 +5,10 @@ import { logger } from '../../config/logger.js';
 import { config } from '../../config/environment.js';
 
 export class AIJobQueue {
-  constructor({ aiNewsService, aiMarketService }) {
+  constructor({ aiNewsService, aiMarketService, ingestionService = null }) {
     this.aiNewsService = aiNewsService;
     this.aiMarketService = aiMarketService;
+    this.ingestionService = ingestionService;
     this.logger = logger;
 
     this.connection = null;
@@ -19,7 +20,8 @@ export class AIJobQueue {
       sentiment: `${config.rabbitmq.queuePrefix}_ai_sentiment`,
       analysis: `${config.rabbitmq.queuePrefix}_ai_analysis`,
       recommendation: `${config.rabbitmq.queuePrefix}_ai_recommendation`,
-      batch: `${config.rabbitmq.queuePrefix}_ai_batch`
+      batch: `${config.rabbitmq.queuePrefix}_ai_batch`,
+      ragIngest: `${config.rabbitmq.queuePrefix}_rag_ingest`
     };
   }
 

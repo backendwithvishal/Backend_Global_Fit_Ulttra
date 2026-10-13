@@ -48,18 +48,20 @@ import {
   newsSummarySchema,
   jobSchema,
 } from '../validators/aiSchemas.js';
+import { createRAGRoutes } from './ragRoutes.js';
 
 /**
  * Create and configure the AI routes router.
  * 
  * @param {import('../controllers/AIController.js').AIController} aiController - Injected AI controller
+ * @param {import('../controllers/RAGController.js').RAGController} [ragController] - Injected RAG controller
  * @returns {import('express').Router} Configured Express router
  */
-export const createAIRoutes = (aiController) => {
+export const createAIRoutes = (aiController, ragController = null) => {
   const router = Router();
 
   // Return 503 Service Unavailable if AI services are disabled
-  if (!aiController) {
+  if (!aiController && !ragController) {
     router.use((req, res) => {
       res.status(503).json({
         success: false,
@@ -76,18 +78,39 @@ export const createAIRoutes = (aiController) => {
   // Apply AI-specific rate limiter to all AI routes (10 req / 1 min)
   router.use(aiRateLimiter);
 
+  // Mount RAG routes at /rag if ragController is available
+  if (ragController) {
+    router.use('/rag', createRAGRoutes(ragController));
+  }
+
   // ─── AI Service Overview & Discovery ──────────────────────────────────
   router.get('/', (req, res) => {
-    if (typeof aiController.getInfo === 'function') {
+    if (aiController && typeof aiController.getInfo === 'function') {
       return aiController.getInfo(req, res);
     }
     return res.json({
       success: true,
       service: 'Global-Fi Ultra AI Service',
+      ragAvailable: !!ragController,
       status: 'active',
       requestId: req.requestId,
     });
   });
+
+  // Guard: If aiController is not available, return 503 for non-RAG routes
+  if (!aiController) {
+    router.use((req, res) => {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'E5003',
+          message: 'Groq AI services are currently disabled. Please configure GROQ_API_KEY to enable them.'
+        },
+        requestId: req.requestId
+      });
+    });
+    return router;
+  }
 
   // ─── Sentiment Analysis ────────────────────────────────────────────────
   // Analyzes text for bullish/bearish/neutral sentiment with confidence score

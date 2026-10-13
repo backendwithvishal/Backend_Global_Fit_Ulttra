@@ -1,0 +1,60 @@
+/**
+ * Global-Fi Ultra - RAG Routes
+ * 
+ * Express routes for financial Retrieval-Augmented Generation:
+ * - /query: Grounded financial Q&A with exact filing citations
+ * - /ingest: Trigger document ingestion pipeline
+ * - /documents: List indexed filings and status
+ * - /documents/:id: View document chunks and vector metadata
+ * - /stats: Coverage and vector store statistics
+ * 
+ * @module routes/ragRoutes
+ */
+
+import { Router } from 'express';
+import { validateRequest } from '../middleware/validateRequest.js';
+import {
+  ragQuerySchema,
+  ragIngestSchema,
+  ragDocumentListSchema,
+} from '../validators/ragSchemas.js';
+
+export const createRAGRoutes = (ragController) => {
+  const router = Router();
+
+  if (!ragController) {
+    router.use((req, res) => {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'E5003',
+          message: 'RAG service is currently disabled or initializing.',
+        },
+        requestId: req.requestId,
+      });
+    });
+    return router;
+  }
+
+  // Grounded RAG Query
+  router.post('/query', validateRequest(ragQuerySchema), ragController.query);
+
+  // Trigger ingestion of documents
+  router.post('/ingest', validateRequest(ragIngestSchema), ragController.ingest);
+
+  // List indexed documents
+  router.get('/documents', validateRequest(ragDocumentListSchema), ragController.listDocuments);
+
+  // Get specific document by ID
+  router.get('/documents/:id', ragController.getDocument);
+
+  // Delete document
+  router.delete('/documents/:id', ragController.deleteDocument);
+
+  // Vector index statistics
+  router.get('/stats', ragController.getStats);
+
+  return router;
+};
+
+export default createRAGRoutes;

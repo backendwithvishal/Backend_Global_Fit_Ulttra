@@ -78,6 +78,31 @@ export const AI_CONFIG = {
       'comparative_analysis',
       'trend_prediction'
     ]
+  },
+
+  // RAG Pipeline Configuration
+  rag: {
+    chunking: {
+      chunkSize: 600,            // Target tokens per chunk
+      chunkOverlap: 80,          // Token overlap between chunks
+      maxTokensPerChunk: 1000,   // Hard upper bound
+    },
+    retrieval: {
+      initialCandidates: 25,     // Stage 1: Vector + keyword candidates
+      topK: 4,                   // Stage 2: Reranked chunks passed to LLM
+      minSimilarityScore: 0.55,  // Rejection threshold for weak matches
+      rrfConstant: 60,           // Reciprocal Rank Fusion constant
+      denseWeight: 0.65,         // Weight for vector cosine similarity
+      sparseWeight: 0.35,        // Weight for BM25/keyword similarity
+    },
+    semanticCache: {
+      similarityThreshold: 0.90, // Cosine similarity required for cache hit
+      ttl: 86400,                // 24 hours
+    },
+    embedding: {
+      dimensions: 384,           // Dense embedding dimension (384 for local, 1536 for OpenAI)
+      batchSize: 32,             // Max chunks per embedding batch
+    }
   }
 };
 

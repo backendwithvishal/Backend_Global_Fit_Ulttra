@@ -289,6 +289,17 @@ POST /api/v1/ai/jobs           # Submit async job
 GET  /api/v1/ai/jobs/stats     # Get queue stats
 ```
 
+### Financial RAG & Vector Engine (6 endpoints)
+
+```bash
+POST   /api/v1/ai/rag/query        # Grounded financial Q&A with exact filing citations
+POST   /api/v1/ai/rag/ingest       # Ingest & vectorize financial PDFs (SEC 10-K, 10-Q, FOMC)
+GET    /api/v1/ai/rag/documents    # List indexed documents, chunk counts, and status
+GET    /api/v1/ai/rag/documents/:id# Document details & vector chunk preview
+DELETE /api/v1/ai/rag/documents/:id# Delete document and its vector chunks
+GET    /api/v1/ai/rag/stats        # Vector database coverage, symbols, and token stats
+```
+
 ### Administration
 
 ```bash
@@ -343,6 +354,7 @@ socket.on('circuit-breaker-state-change', (state) => {
 - `ai:analyze` - Analyze asset
 - `ai:sentiment` - Analyze sentiment
 - `ai:recommend` - Get recommendations
+- `ai:rag:query` - Grounded financial research with exact citations
 
 **Events You'll Receive:**
 - `financial-data-update` - New market data
@@ -351,6 +363,7 @@ socket.on('circuit-breaker-state-change', (state) => {
 - `ai:stream:chunk` - AI response tokens
 - `ai:stream:complete` - AI response complete
 - `ai:analysis:complete` - Analysis result
+- `ai:rag:citations` - Grounded source citations for financial filings
 
 ---
 

@@ -62,6 +62,14 @@ const envSchema = z.object({
   GROQ_PRIMARY_MODEL: z.string().default('llama-3.3-70b-versatile'),
   GROQ_FAST_MODEL: z.string().default('llama-3.1-8b-instant'),
 
+  // RAG & Vector Search Configuration
+  EMBEDDING_PROVIDER: z.enum(['local', 'openai', 'voyage']).default('local'),
+  EMBEDDING_API_KEY: z.string().default(''),
+  EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+  COHERE_API_KEY: z.string().default(''),
+  RAG_SEMANTIC_CACHE_ENABLED: z.string().transform(v => v === 'true').default('true'),
+  RAG_SIMILARITY_THRESHOLD: z.string().transform(Number).default('0.65'),
+
   // Keep-Alive self pinging (prevents server sleep in production)
   KEEP_ALIVE_ENABLED: z.string().transform(v => v === 'true').default('true'),
   KEEP_ALIVE_URL: z.string().default('https://backend-global-fit-ulttra.onrender.com/api/v1/health/ping'),
@@ -158,6 +166,15 @@ export const config = {
     groqApiKey: env.GROQ_API_KEY,
     primaryModel: env.GROQ_PRIMARY_MODEL,
     fastModel: env.GROQ_FAST_MODEL,
+  },
+
+  rag: {
+    embeddingProvider: env.EMBEDDING_PROVIDER,
+    embeddingApiKey: env.EMBEDDING_API_KEY,
+    embeddingModel: env.EMBEDDING_MODEL,
+    cohereApiKey: env.COHERE_API_KEY,
+    semanticCacheEnabled: env.RAG_SEMANTIC_CACHE_ENABLED,
+    similarityThreshold: env.RAG_SIMILARITY_THRESHOLD,
   },
 
   keepAlive: {

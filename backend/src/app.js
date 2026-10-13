@@ -48,6 +48,7 @@ import {
     createOrganizationRoutes,
     createBillingRoutes,
     createApiKeyRoutes,
+    createRAGRoutes,
 } from './routes/index.js';
 import { createAIRoutes } from './routes/aiRoutes.js';
 
@@ -151,9 +152,14 @@ export const setupRoutes = (app, container) => {
     app.use('/api/v1/billing', createBillingRoutes(container.get('billingController')));
     app.use('/api/v1/apikeys', createApiKeyRoutes(container.get('apiKeyController')));
 
-    // AI routes — mounted unconditionally (returns 503 if disabled)
+    // AI & RAG routes — mounted unconditionally (returns 503 if disabled)
     const aiController = container.get('aiController');
-    app.use('/api/v1/ai', createAIRoutes(aiController));
+    const ragController = container.get('ragController');
+    app.use('/api/v1/ai', createAIRoutes(aiController, ragController));
+    if (ragController) {
+        app.use('/api/v1/rag', createRAGRoutes(ragController));
+        logger.info('✅ RAG routes mounted at /api/v1/rag and /api/v1/ai/rag');
+    }
     if (aiController) {
         logger.info('✅ AI routes mounted at /api/v1/ai');
     } else {

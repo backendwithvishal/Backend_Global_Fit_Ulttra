@@ -14,3 +14,4 @@ export { AuthController } from './AuthController.js';
 export { OrganizationController } from './OrganizationController.js';
 export { ApiKeyController } from './ApiKeyController.js';
 export { BillingController } from './BillingController.js';
+export { RAGController } from './RAGController.js';

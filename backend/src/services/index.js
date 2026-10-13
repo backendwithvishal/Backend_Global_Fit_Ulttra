@@ -13,3 +13,5 @@ export { OrganizationService } from './OrganizationService.js';
 export { ApiKeyService } from './ApiKeyService.js';
 export { BillingService } from './BillingService.js';
 export { KeepAliveService } from './KeepAliveService.js';
+export { IngestionService } from './IngestionService.js';
+export { RAGService } from './RAGService.js';

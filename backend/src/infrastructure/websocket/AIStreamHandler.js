@@ -3,7 +3,7 @@
 import { logger } from '../../config/logger.js';
 
 export class AIStreamHandler {
-  constructor({ io, groqClient, aiNewsService, aiMarketService }) {
+  constructor({ io, groqClient, aiNewsService, aiMarketService, ragService = null }) {
     if (!io) {
       throw new Error('Socket.io server is required');
     }
@@ -15,6 +15,7 @@ export class AIStreamHandler {
     this.groqClient = groqClient;
     this.aiNewsService = aiNewsService;
     this.aiMarketService = aiMarketService;
+    this.ragService = ragService;
     this.logger = logger;
 
     // Track active streams
@@ -32,6 +33,7 @@ export class AIStreamHandler {
       socket.on('ai:analyze', (data) => this.handleAnalyze(socket, data));
       socket.on('ai:sentiment', (data) => this.handleSentiment(socket, data));
       socket.on('ai:recommend', (data) => this.handleRecommend(socket, data));
+      socket.on('ai:rag:query', (data) => this.handleRAGQuery(socket, data));
       socket.on('ai:stream:stop', () => this.handleStopStream(socket));
 
       socket.on('disconnect', () => {
@@ -40,6 +42,46 @@ export class AIStreamHandler {
     });
 
     this.logger.info('AI stream handler initialized');
+  }
+
+  async handleRAGQuery(socket, data) {
+    const { question, symbol, sessionId = 'rag-session' } = data || {};
+    if (!question) {
+      socket.emit('ai:error', { error: 'Question is required' });
+      return;
+    }
+    if (!this.ragService) {
+      socket.emit('ai:error', { error: 'RAG service is unavailable' });
+      return;
+    }
+
+    this.activeStreams.set(socket.id, true);
+    socket.emit('ai:stream:start', { sessionId, type: 'rag' });
+
+    try {
+      await this.ragService.streamQuery({
+        question,
+        symbol,
+        onCitations: (citations) => {
+          socket.emit('ai:rag:citations', { sessionId, citations });
+        },
+        onToken: (token) => {
+          if (!this.activeStreams.get(socket.id)) return;
+          socket.emit('ai:stream:chunk', { sessionId, chunk: token });
+        },
+        onComplete: ({ citations }) => {
+          socket.emit('ai:stream:complete', { sessionId, citations });
+          this.activeStreams.delete(socket.id);
+        },
+        onError: (err) => {
+          socket.emit('ai:stream:error', { sessionId, error: err.message });
+          this.activeStreams.delete(socket.id);
+        }
+      });
+    } catch (err) {
+      socket.emit('ai:stream:error', { sessionId, error: err.message });
+      this.activeStreams.delete(socket.id);
+    }
   }
 
   async handleChat(socket, data) {

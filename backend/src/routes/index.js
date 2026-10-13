@@ -35,3 +35,4 @@ export { createAuthRoutes } from './authRoutes.js';
 export { createOrganizationRoutes } from './organizationRoutes.js';
 export { createBillingRoutes } from './billingRoutes.js';
 export { createApiKeyRoutes } from './apiKeyRoutes.js';
+export { createRAGRoutes } from './ragRoutes.js';

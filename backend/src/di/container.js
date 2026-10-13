@@ -86,6 +86,16 @@ import { AIStreamHandler } from '../infrastructure/websocket/AIStreamHandler.js'
 import { AIJobQueue } from '../infrastructure/messaging/AIJobQueue.js';
 import { AIController } from '../controllers/AIController.js';
 
+// RAG Infrastructure & Services
+import { EmbeddingClient } from '../infrastructure/ai/EmbeddingClient.js';
+import { VectorStore } from '../infrastructure/vector/VectorStore.js';
+import { SemanticCache } from '../infrastructure/cache/SemanticCache.js';
+import { RerankerClient } from '../infrastructure/ai/RerankerClient.js';
+import { IngestionService } from '../services/IngestionService.js';
+import { RAGService } from '../services/RAGService.js';
+import { RAGController } from '../controllers/RAGController.js';
+import { Document, DocumentChunk } from '../models/index.js';
+
 /**
  * DI Container — manages all service instances and their lifecycle.
  * 
@@ -260,6 +270,82 @@ export class Container {
             logger.info('ℹ️  AI features disabled: GROQ_API_KEY is not configured');
         }
 
+        // ─── Layer 1.6: RAG Infrastructure & Services ───────────────
+        let embeddingClient = null;
+        let vectorStore = null;
+        let semanticCache = null;
+        let rerankerClient = null;
+        let ingestionService = null;
+        let ragService = null;
+        let ragController = null;
+
+        try {
+            logger.info('Initializing RAG infrastructure...');
+
+            embeddingClient = new EmbeddingClient({
+                provider: config.rag?.embeddingProvider || 'local',
+                apiKey: config.rag?.embeddingApiKey || '',
+                model: config.rag?.embeddingModel || 'text-embedding-3-small',
+                cacheService: cache,
+            });
+
+            vectorStore = new VectorStore({
+                documentChunkModel: DocumentChunk,
+                config: config.rag,
+            });
+
+            semanticCache = config.rag?.semanticCacheEnabled
+                ? new SemanticCache({ cacheService: cache })
+                : null;
+
+            rerankerClient = new RerankerClient({
+                apiKey: config.rag?.cohereApiKey || '',
+            });
+
+            ingestionService = new IngestionService({
+                embeddingClient,
+                documentModel: Document,
+                chunkModel: DocumentChunk,
+            });
+
+            ragService = new RAGService({
+                groqClient,
+                embeddingClient,
+                vectorStore,
+                rerankerClient,
+                semanticCache,
+            });
+
+            ragController = new RAGController({
+                ragService,
+                ingestionService,
+            });
+
+            // Connect ragService to WebSocket streaming handler
+            if (this.aiStreamHandler) {
+                this.aiStreamHandler.ragService = ragService;
+            }
+
+            // Connect ingestionService to background job queue
+            if (aiJobQueue) {
+                aiJobQueue.ingestionService = ingestionService;
+            }
+
+            logger.info('✅ RAG infrastructure & services initialized successfully');
+        } catch (ragError) {
+            logger.warn('⚠️  Failed to initialize RAG services', {
+                error: ragError.message,
+                details: ragError.originalError?.message || ragError.cause?.message || undefined,
+            });
+            embeddingClient = null;
+            vectorStore = null;
+            semanticCache = null;
+            rerankerClient = null;
+            ingestionService = null;
+            ragService = null;
+            ragController = null;
+        }
+
         // ─── Layer 2: Services ───────────────────────────────────────
         const financialDataService = new FinancialDataService({
             alphaVantageClient,
@@ -351,6 +437,15 @@ export class Container {
         this.instances.set('aiMarketService', aiMarketService);
         this.instances.set('aiJobQueue', aiJobQueue);
         this.instances.set('aiController', aiController);
+
+        // RAG instances
+        this.instances.set('embeddingClient', embeddingClient);
+        this.instances.set('vectorStore', vectorStore);
+        this.instances.set('semanticCache', semanticCache);
+        this.instances.set('rerankerClient', rerankerClient);
+        this.instances.set('ingestionService', ingestionService);
+        this.instances.set('ragService', ragService);
+        this.instances.set('ragController', ragController);
 
         logger.info('DI Container initialized');
     }

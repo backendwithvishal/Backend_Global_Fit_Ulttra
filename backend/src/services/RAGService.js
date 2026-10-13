@@ -1,28 +1,35 @@
 /**
  * Global-Fi Ultra - RAG Orchestration Service
  * 
- * Production RAG engine for financial research, SEC filings, and market intelligence:
- * 1. Redis Semantic Cache (<30ms query responses).
- * 2. Financial Query Expansion & Ticker Entity Extraction.
- * 3. Two-Stage Retrieval (Dense Vector + BM25 Sparse Search + Reciprocal Rank Fusion).
- * 4. Cross-Encoder Reranking for pinpoint contextual precision.
- * 5. Grounded Prompt Synthesis with Strict Hallucination Guardrails.
- * 6. Automated Source & Citation Attribution ([Source 1: AAPL 10-K]).
- * 7. Real-Time Token & Citation Streaming over WebSockets/SSE.
+ * Production Agentic RAG engine for financial research, SEC filings, and market intelligence:
+ * 1. Redis Semantic Cache (<30ms query responses with strict tenant isolation).
+ * 2. Agentic Query Understanding, Classification & Live Market Routing.
+ * 3. Bounded Multi-Step Retrieval Planning.
+ * 4. Two-Stage Retrieval (Dense Qdrant/MongoDB Vector + BM25 Sparse Search + Reciprocal Rank Fusion).
+ * 5. Cross-Encoder Density Reranking for pinpoint contextual precision.
+ * 6. Evidence Sufficiency Verification (prevents hallucination on missing data).
+ * 7. Grounded Synthesis via Groq / Portkey Gateway with Anti-Injection Guardrails.
+ * 8. Strict Citation Attribution & Verification ([Source 1: AAPL 10-K]).
+ * 9. Real-Time Token & Citation Streaming over WebSockets (Socket.IO).
+ * 10. LangSmith Tracing & Observability.
  * 
  * @module services/RAGService
  */
 
 import { logger } from '../config/logger.js';
 import { AI_CONFIG } from '../infrastructure/ai/aiConfig.js';
+import { AgenticRAGOrchestrator } from '../infrastructure/ai/AgenticRAGOrchestrator.js';
 
 export class RAGService {
   constructor({
     groqClient,
     embeddingClient,
     vectorStore,
-    rerankerClient,
-    semanticCache,
+    rerankerClient = null,
+    semanticCache = null,
+    financialDataService = null,
+    portkeyGateway = null,
+    langSmithTracer = null,
   } = {}) {
     if (!vectorStore) {
       throw new Error('VectorStore is required for RAGService');
@@ -36,8 +43,25 @@ export class RAGService {
     this.vectorStore = vectorStore;
     this.rerankerClient = rerankerClient;
     this.semanticCache = semanticCache;
+    this.financialDataService = financialDataService;
+    this.portkeyGateway = portkeyGateway;
+    this.langSmithTracer = langSmithTracer;
     this.logger = logger || console;
     this.config = AI_CONFIG.rag || {};
+
+    // Instantiate Agentic Orchestrator
+    const activeLLMClient = this.portkeyGateway && this.portkeyGateway.enabled
+      ? this.portkeyGateway
+      : this.groqClient;
+
+    this.orchestrator = new AgenticRAGOrchestrator({
+      vectorStore: this.vectorStore,
+      embeddingClient: this.embeddingClient,
+      rerankerClient: this.rerankerClient,
+      groqClient: activeLLMClient,
+      financialDataService: this.financialDataService,
+      config: this.config,
+    });
   }
 
   /**
@@ -45,18 +69,12 @@ export class RAGService {
    */
   _extractSymbolFromQuery(query) {
     if (!query) return null;
-    const q = query.toUpperCase();
-    if (q.includes('APPLE') || /\bAAPL\b/.test(q)) return 'AAPL';
-    if (q.includes('MICROSOFT') || /\bMSFT\b/.test(q)) return 'MSFT';
-    if (q.includes('NVIDIA') || /\bNVDA\b/.test(q)) return 'NVDA';
-    if (q.includes('TESLA') || /\bTSLA\b/.test(q)) return 'TSLA';
-    if (q.includes('FED') || q.includes('FOMC') || q.includes('INTEREST RATE') || q.includes('INFLATION')) return 'FED';
-    if (q.includes('AMAZON') || /\bAMZN\b/.test(q)) return 'AMZN';
-    return null;
+    const classification = this.orchestrator.classifyQuery(query);
+    return classification.primarySymbol !== 'ALL' ? classification.primarySymbol : null;
   }
 
   /**
-   * Executes a grounded RAG query.
+   * Executes a grounded Agentic RAG query.
    * 
    * @param {object} params
    * @param {string} params.question - Financial question
@@ -65,7 +83,8 @@ export class RAGService {
    * @param {number} [params.topK=4] - Number of context chunks
    * @param {string} [params.organizationId] - Multi-tenant isolation
    * @param {boolean} [params.bypassCache=false]
-   * @returns {Promise<object>} Grounded answer + citations
+   * @param {string} [params.requestId]
+   * @returns {Promise<object>} Grounded answer + verified citations
    */
   async query({
     question,
@@ -74,6 +93,7 @@ export class RAGService {
     topK = 4,
     organizationId = null,
     bypassCache = false,
+    requestId = null,
   }) {
     const startTime = Date.now();
     const cleanQuestion = (question || '').trim();
@@ -82,151 +102,88 @@ export class RAGService {
       throw new Error('Question is required for RAG query');
     }
 
-    // Auto-detect symbol if omitted
     const targetSymbol = (symbol || this._extractSymbolFromQuery(cleanQuestion) || 'ALL').toUpperCase();
 
-    // 1. Generate Query Vector Embedding
-    const queryEmbedding = await this.embeddingClient.embedQuery(cleanQuestion);
-
-    // 2. Check Semantic Cache
+    // 1. Check Semantic Cache
+    let queryEmbedding = null;
     if (this.semanticCache && !bypassCache) {
-      const cached = await this.semanticCache.get(cleanQuestion, queryEmbedding, {
-        symbol: targetSymbol,
-        filingType,
-      });
-
-      if (cached) {
-        return {
-          ...cached,
-          latencyMs: Date.now() - startTime,
-          cached: true,
-        };
-      }
-    }
-
-    // 3. Stage 1: Hybrid Search (Dense Vector + Sparse Keyword with RRF)
-    const hybridCandidates = await this.vectorStore.hybridSearch({
-      queryEmbedding,
-      queryText: cleanQuestion,
-      filterOptions: {
-        symbol: targetSymbol !== 'ALL' ? targetSymbol : undefined,
-        filingType: filingType !== 'ALL' ? filingType : undefined,
-        organizationId,
-      },
-      limit: 20,
-    });
-
-    if (hybridCandidates.length === 0) {
-      return {
-        answer: 'No matching financial filings or documents were found in the knowledge repository for this asset or query.',
-        citations: [],
-        confidence: 0,
-        retrievalCount: 0,
-        latencyMs: Date.now() - startTime,
-        cached: false,
-      };
-    }
-
-    // 4. Stage 2: Cross-Encoder Reranking
-    let topChunks = hybridCandidates;
-    if (this.rerankerClient) {
-      topChunks = await this.rerankerClient.rerank(cleanQuestion, hybridCandidates, topK);
-    } else {
-      topChunks = hybridCandidates.slice(0, topK);
-    }
-
-    // Check minimum similarity threshold to prevent hallucinations
-    const bestScore = topChunks[0]?.relevanceScore || topChunks[0]?.rrfScore || 0;
-    const minThreshold = this.config.retrieval?.minSimilarityScore || 0.40;
-
-    if (bestScore < minThreshold) {
-      return {
-        answer: 'The financial documents in the repository do not contain sufficient evidence to answer this question with high confidence.',
-        citations: [],
-        confidence: Math.round(bestScore * 100),
-        retrievalCount: topChunks.length,
-        latencyMs: Date.now() - startTime,
-        cached: false,
-      };
-    }
-
-    // 5. Build Context Blocks and Citations Map
-    const citations = [];
-    const contextBlocks = topChunks.map((item, idx) => {
-      const chunk = item.chunk;
-      const sourceId = idx + 1;
-      const meta = chunk.metadata || {};
-
-      citations.push({
-        sourceId,
-        documentId: chunk.documentId,
-        title: meta.title || 'Financial Report',
-        symbol: meta.symbol || 'GENERAL',
-        filingType: meta.filingType || 'REPORT',
-        section: meta.section || 'General',
-        pageNumber: meta.pageNumber || 1,
-        relevanceScore: Math.round((item.relevanceScore || item.rrfScore || 0.8) * 100) / 100,
-        snippet: (chunk.content || '').slice(0, 200) + '...',
-      });
-
-      return `[Source ${sourceId}: ${meta.symbol} (${meta.filingType}) - ${meta.section}, Page ${meta.pageNumber || 1}]\n${chunk.content}`;
-    });
-
-    const contextText = contextBlocks.join('\n\n────────────────────────────────────────\n\n');
-
-    // 6. Assemble Grounded Prompt with Strict Financial Guardrails
-    const systemPrompt = `You are Global-Fi Ultra's Senior Financial Research Analyst.
-Your duty is to provide an accurate, fact-based response based STRICTLY and EXCLUSIVELY on the provided financial filings below.
-
-STRICT INSTRUCTIONS:
-1. Every major fact, revenue number, growth percentage, and risk claim MUST include a citation tag [Source X] corresponding to the source numbers in the context.
-2. If the context contains specific numbers (e.g. $85.78 billion, +14% Services growth), cite the exact figure.
-3. If the context does not contain the answer, reply: "The provided financial documents do not contain sufficient data to answer this question."
-4. Do NOT speculate or incorporate outside market speculation beyond what is documented in the text.`;
-
-    const userPrompt = `Financial Context:
-${contextText}
-
-Question: ${cleanQuestion}
-
-Please provide a detailed, well-structured financial analysis with exact citations [Source X]:`;
-
-    // 7. Generation via Groq LLM (Llama 3.3 70B)
-    let answerText = '';
-    if (this.groqClient) {
       try {
-        const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
-        answerText = await this.groqClient.generateContent(fullPrompt, {
-          complex: true,
-          cache: false,
-          maxTokens: 1024,
+        queryEmbedding = await this.embeddingClient.embedQuery(cleanQuestion);
+        const cached = await this.semanticCache.get(cleanQuestion, queryEmbedding, {
+          symbol: targetSymbol,
+          filingType,
+          organizationId,
         });
+
+        if (cached) {
+          if (this.langSmithTracer) {
+            this.langSmithTracer.traceRAGExecution({
+              requestId,
+              question: cleanQuestion,
+              classification: { symbol: targetSymbol },
+              plan: ['Cache retrieval'],
+              retrievalCount: cached.retrievalCount || 0,
+              confidence: cached.confidence || 95,
+              citationsCount: cached.citations?.length || 0,
+              latencyMs: Date.now() - startTime,
+              cached: true,
+            });
+          }
+
+          return {
+            ...cached,
+            latencyMs: Date.now() - startTime,
+            cached: true,
+          };
+        }
       } catch (err) {
-        this.logger.error('Groq LLM generation error in RAG', { error: err.message });
-        answerText = `Retrieved ${topChunks.length} verified context sources, but LLM synthesis was unavailable: ${err.message}`;
+        this.logger.debug('Semantic cache lookup skipped', { error: err.message });
       }
-    } else {
-      // Direct summary fallback if Groq key is not configured
-      answerText = `Verified Context retrieved from ${topChunks.length} financial sources:\n\n${topChunks.map((c, i) => `[Source ${i+1}]: ${c.chunk.content}`).join('\n\n')}`;
     }
 
-    const confidenceScore = Math.min(98, Math.round(bestScore * 100));
+    // 2. Execute Controlled Agentic Orchestration
+    const agentResult = await this.orchestrator.run({
+      question: cleanQuestion,
+      symbol: targetSymbol !== 'ALL' ? targetSymbol : null,
+      filingType,
+      topK,
+      organizationId,
+    });
 
     const responsePayload = {
-      answer: answerText.trim(),
-      citations,
+      ...agentResult,
       symbol: targetSymbol,
-      confidence: confidenceScore,
-      retrievalCount: topChunks.length,
-      latencyMs: Date.now() - startTime,
       cached: false,
     };
 
-    // 8. Cache response in Redis Semantic Cache
-    if (this.semanticCache) {
-      await this.semanticCache.set(cleanQuestion, queryEmbedding, responsePayload, {
-        symbol: targetSymbol,
-        filingType,
+    // 3. Store response in Semantic Cache if sufficiently confident
+    if (this.semanticCache && agentResult.confidence >= 50) {
+      try {
+        if (!queryEmbedding) {
+          queryEmbedding = await this.embeddingClient.embedQuery(cleanQuestion);
+        }
+        await this.semanticCache.set(cleanQuestion, queryEmbedding, responsePayload, {
+          symbol: targetSymbol,
+          filingType,
+          organizationId,
+        });
+      } catch (err) {
+        this.logger.debug('Failed to write to semantic cache', { error: err.message });
+      }
+    }
+
+    // 4. Asynchronously trace to LangSmith
+    if (this.langSmithTracer) {
+      this.langSmithTracer.traceRAGExecution({
+        requestId,
+        question: cleanQuestion,
+        classification: agentResult.agentTrace?.[0]?.result,
+        plan: agentResult.agentTrace?.[1]?.subQueries,
+        retrievalCount: agentResult.retrievalCount,
+        confidence: agentResult.confidence,
+        citationsCount: agentResult.citations?.length || 0,
+        latencyMs: Date.now() - startTime,
+        cached: false,
       });
     }
 
@@ -246,37 +203,33 @@ Please provide a detailed, well-structured financial analysis with exact citatio
   }) {
     try {
       const cleanQuestion = (question || '').trim();
-      const targetSymbol = (symbol || this._extractSymbolFromQuery(cleanQuestion) || 'ALL').toUpperCase();
+      const classification = this.orchestrator.classifyQuery(cleanQuestion, symbol);
+      const targetSymbol = classification.primarySymbol;
 
-      // Embedding & Retrieval
-      const queryEmbedding = await this.embeddingClient.embedQuery(cleanQuestion);
-
-      const candidates = await this.vectorStore.hybridSearch({
-        queryEmbedding,
-        queryText: cleanQuestion,
+      const subQueries = this.orchestrator.createRetrievalPlan(cleanQuestion, classification);
+      const topChunks = await this.orchestrator.retrieveEvidence({
+        subQueries,
+        classification,
         filterOptions: { symbol: targetSymbol !== 'ALL' ? targetSymbol : undefined },
-        limit: 15,
+        topK: 4,
       });
 
-      const topChunks = this.rerankerClient
-        ? await this.rerankerClient.rerank(cleanQuestion, candidates, 4)
-        : candidates.slice(0, 4);
+      const sufficiency = this.orchestrator.evaluateEvidenceSufficiency(topChunks);
+      if (!sufficiency.isSufficient) {
+        if (typeof onToken === 'function') onToken(sufficiency.reason);
+        if (typeof onComplete === 'function') onComplete({ citations: [] });
+        return;
+      }
 
-      const citations = topChunks.map((item, idx) => ({
-        sourceId: idx + 1,
-        title: item.chunk.metadata?.title || 'Filing',
-        symbol: item.chunk.metadata?.symbol || 'GENERAL',
-        section: item.chunk.metadata?.section || 'General',
-        pageNumber: item.chunk.metadata?.pageNumber || 1,
-        snippet: (item.chunk.content || '').slice(0, 150) + '...',
-      }));
+      // Format and emit verified citations immediately before streaming tokens
+      const citationValidation = this.orchestrator.validateCitations('', topChunks);
+      const citations = citationValidation.allAvailableCitations;
 
-      // Send citations immediately before tokens stream
       if (typeof onCitations === 'function') {
         onCitations(citations);
       }
 
-      const contextText = topChunks.map((c, i) => `[Source ${i+1}: ${c.chunk.metadata?.symbol} - ${c.chunk.metadata?.section}]\n${c.chunk.content}`).join('\n\n');
+      const contextText = topChunks.map((c, i) => `[Source ${i+1}: ${c.chunk.metadata?.symbol || 'GENERAL'} - ${c.chunk.metadata?.section || 'Section'}]\n${c.chunk.content}`).join('\n\n');
 
       const streamPrompt = `You are Global-Fi Ultra's Senior Financial Research Analyst.
 Context:
@@ -284,10 +237,11 @@ ${contextText}
 
 Question: ${cleanQuestion}
 
-Answer factually using citations [Source X]:`;
+Provide a grounded financial analysis citing [Source X]:`;
 
-      if (this.groqClient && typeof this.groqClient.streamContent === 'function') {
-        await this.groqClient.streamContent(streamPrompt, {
+      const activeLLMClient = this.groqClient;
+      if (activeLLMClient && typeof activeLLMClient.streamContent === 'function') {
+        await activeLLMClient.streamContent(streamPrompt, {
           onChunk: (chunk) => {
             if (typeof onToken === 'function') onToken(chunk);
           },

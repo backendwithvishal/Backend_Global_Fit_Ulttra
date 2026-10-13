@@ -89,8 +89,11 @@ import { AIController } from '../controllers/AIController.js';
 // RAG Infrastructure & Services
 import { EmbeddingClient } from '../infrastructure/ai/EmbeddingClient.js';
 import { VectorStore } from '../infrastructure/vector/VectorStore.js';
+import { QdrantVectorStore } from '../infrastructure/vector/QdrantVectorStore.js';
 import { SemanticCache } from '../infrastructure/cache/SemanticCache.js';
 import { RerankerClient } from '../infrastructure/ai/RerankerClient.js';
+import { PortkeyGateway } from '../infrastructure/ai/PortkeyGateway.js';
+import { LangSmithTracer } from '../infrastructure/ai/LangSmithTracer.js';
 import { IngestionService } from '../services/IngestionService.js';
 import { RAGService } from '../services/RAGService.js';
 import { RAGController } from '../controllers/RAGController.js';
@@ -272,9 +275,12 @@ export class Container {
 
         // ─── Layer 1.6: RAG Infrastructure & Services ───────────────
         let embeddingClient = null;
+        let qdrantVectorStore = null;
         let vectorStore = null;
         let semanticCache = null;
         let rerankerClient = null;
+        let portkeyGateway = null;
+        let langSmithTracer = null;
         let ingestionService = null;
         let ragService = null;
         let ragController = null;
@@ -285,12 +291,25 @@ export class Container {
             embeddingClient = new EmbeddingClient({
                 provider: config.rag?.embeddingProvider || 'local',
                 apiKey: config.rag?.embeddingApiKey || '',
-                model: config.rag?.embeddingModel || 'text-embedding-3-small',
+                model: config.rag?.embeddingModel || 'Xenova/all-MiniLM-L6-v2',
                 cacheService: cache,
             });
 
+            if (config.qdrant?.enabled) {
+                qdrantVectorStore = new QdrantVectorStore({
+                    url: config.qdrant.url,
+                    apiKey: config.qdrant.apiKey,
+                    collectionName: config.qdrant.collection,
+                    dimensions: 384,
+                });
+                qdrantVectorStore.initialize().catch(err => {
+                    logger.debug('Qdrant init note:', { error: err.message });
+                });
+            }
+
             vectorStore = new VectorStore({
                 documentChunkModel: DocumentChunk,
+                qdrantVectorStore,
                 config: config.rag,
             });
 
@@ -302,8 +321,23 @@ export class Container {
                 apiKey: config.rag?.cohereApiKey || '',
             });
 
+            portkeyGateway = new PortkeyGateway({
+                apiKey: config.portkey?.apiKey,
+                baseUrl: config.portkey?.baseUrl,
+                enabled: config.portkey?.enabled,
+                defaultClient: groqClient,
+            });
+
+            langSmithTracer = new LangSmithTracer({
+                apiKey: config.langsmith?.apiKey,
+                project: config.langsmith?.project,
+                endpoint: config.langsmith?.endpoint,
+                enabled: config.langsmith?.enabled,
+            });
+
             ingestionService = new IngestionService({
                 embeddingClient,
+                vectorStore,
                 documentModel: Document,
                 chunkModel: DocumentChunk,
             });
@@ -314,6 +348,8 @@ export class Container {
                 vectorStore,
                 rerankerClient,
                 semanticCache,
+                portkeyGateway,
+                langSmithTracer,
             });
 
             ragController = new RAGController({
@@ -338,9 +374,12 @@ export class Container {
                 details: ragError.originalError?.message || ragError.cause?.message || undefined,
             });
             embeddingClient = null;
+            qdrantVectorStore = null;
             vectorStore = null;
             semanticCache = null;
             rerankerClient = null;
+            portkeyGateway = null;
+            langSmithTracer = null;
             ingestionService = null;
             ragService = null;
             ragController = null;
@@ -438,11 +477,22 @@ export class Container {
         this.instances.set('aiJobQueue', aiJobQueue);
         this.instances.set('aiController', aiController);
 
+        // Connect financialDataService to ragService for live-market query routing
+        if (ragService) {
+            ragService.financialDataService = financialDataService;
+            if (ragService.orchestrator) {
+                ragService.orchestrator.financialDataService = financialDataService;
+            }
+        }
+
         // RAG instances
         this.instances.set('embeddingClient', embeddingClient);
+        this.instances.set('qdrantVectorStore', qdrantVectorStore);
         this.instances.set('vectorStore', vectorStore);
         this.instances.set('semanticCache', semanticCache);
         this.instances.set('rerankerClient', rerankerClient);
+        this.instances.set('portkeyGateway', portkeyGateway);
+        this.instances.set('langSmithTracer', langSmithTracer);
         this.instances.set('ingestionService', ingestionService);
         this.instances.set('ragService', ragService);
         this.instances.set('ragController', ragController);

@@ -62,13 +62,35 @@ const envSchema = z.object({
   GROQ_PRIMARY_MODEL: z.string().default('llama-3.3-70b-versatile'),
   GROQ_FAST_MODEL: z.string().default('llama-3.1-8b-instant'),
 
+  // Qdrant Vector Database
+  QDRANT_URL: z.string().default('http://localhost:6333'),
+  QDRANT_API_KEY: z.string().optional().default(''),
+  QDRANT_COLLECTION: z.string().default('globalfi_financial_documents'),
+  QDRANT_ENABLED: z.string().transform(v => v === 'true').default('true'),
+
+  // Portkey AI Gateway (Optional)
+  PORTKEY_API_KEY: z.string().optional().default(''),
+  PORTKEY_BASE_URL: z.string().default('https://api.portkey.ai/v1'),
+  PORTKEY_ENABLED: z.string().transform(v => v === 'true').default('false'),
+
+  // LangSmith Tracing & Observability (Optional)
+  LANGSMITH_API_KEY: z.string().optional().default(''),
+  LANGSMITH_PROJECT: z.string().default('globalfi-ultra-rag'),
+  LANGSMITH_ENDPOINT: z.string().default('https://api.smith.langchain.com'),
+  LANGSMITH_ENABLED: z.string().transform(v => v === 'true').default('false'),
+
   // RAG & Vector Search Configuration
-  EMBEDDING_PROVIDER: z.enum(['local', 'openai', 'voyage']).default('local'),
-  EMBEDDING_API_KEY: z.string().default(''),
-  EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
-  COHERE_API_KEY: z.string().default(''),
+  EMBEDDING_PROVIDER: z.enum(['local', 'openai', 'voyage', 'huggingface']).default('local'),
+  EMBEDDING_API_KEY: z.string().optional().default(''),
+  EMBEDDING_MODEL: z.string().default('Xenova/all-MiniLM-L6-v2'),
+  COHERE_API_KEY: z.string().optional().default(''),
   RAG_SEMANTIC_CACHE_ENABLED: z.string().transform(v => v === 'true').default('true'),
   RAG_SIMILARITY_THRESHOLD: z.string().transform(Number).default('0.65'),
+  RAG_RRF_DENSE_WEIGHT: z.string().transform(Number).default('0.65'),
+  RAG_RRF_SPARSE_WEIGHT: z.string().transform(Number).default('0.35'),
+  RAG_RRF_K: z.string().transform(Number).default('60'),
+  RAG_CONFIDENCE_THRESHOLD: z.string().transform(Number).default('0.40'),
+  RAG_MAX_AGENT_ITERATIONS: z.string().transform(Number).default('3'),
 
   // Keep-Alive self pinging (prevents server sleep in production)
   KEEP_ALIVE_ENABLED: z.string().transform(v => v === 'true').default('true'),
@@ -168,6 +190,26 @@ export const config = {
     fastModel: env.GROQ_FAST_MODEL,
   },
 
+  qdrant: {
+    url: env.QDRANT_URL,
+    apiKey: env.QDRANT_API_KEY,
+    collection: env.QDRANT_COLLECTION,
+    enabled: env.QDRANT_ENABLED,
+  },
+
+  portkey: {
+    apiKey: env.PORTKEY_API_KEY,
+    baseUrl: env.PORTKEY_BASE_URL,
+    enabled: env.PORTKEY_ENABLED,
+  },
+
+  langsmith: {
+    apiKey: env.LANGSMITH_API_KEY,
+    project: env.LANGSMITH_PROJECT,
+    endpoint: env.LANGSMITH_ENDPOINT,
+    enabled: env.LANGSMITH_ENABLED,
+  },
+
   rag: {
     embeddingProvider: env.EMBEDDING_PROVIDER,
     embeddingApiKey: env.EMBEDDING_API_KEY,
@@ -175,6 +217,11 @@ export const config = {
     cohereApiKey: env.COHERE_API_KEY,
     semanticCacheEnabled: env.RAG_SEMANTIC_CACHE_ENABLED,
     similarityThreshold: env.RAG_SIMILARITY_THRESHOLD,
+    rrfDenseWeight: env.RAG_RRF_DENSE_WEIGHT,
+    rrfSparseWeight: env.RAG_RRF_SPARSE_WEIGHT,
+    rrfK: env.RAG_RRF_K,
+    confidenceThreshold: env.RAG_CONFIDENCE_THRESHOLD,
+    maxAgentIterations: env.RAG_MAX_AGENT_ITERATIONS,
   },
 
   keepAlive: {

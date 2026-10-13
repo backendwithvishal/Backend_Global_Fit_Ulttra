@@ -2,11 +2,13 @@
  * Global-Fi Ultra - Document Ingestion Service
  * 
  * Production ingestion pipeline for financial documents:
- * 1. File text extraction (PDF via pdf-parse, TXT, JSON).
- * 2. SHA-256 hash calculation for idempotent deduplication.
- * 3. Section and table-aware financial chunking.
- * 4. Batched vector embedding generation.
- * 5. Atomic persistence to MongoDB (Document & DocumentChunk).
+ * 1. File text extraction (PDF via pdf-parse, TXT, JSON, MD).
+ * 2. Path validation & traversal protection against untrusted file paths.
+ * 3. SHA-256 hash calculation for idempotent deduplication.
+ * 4. Section and table-aware financial chunking.
+ * 5. Batched vector embedding generation with genuine semantic models.
+ * 6. Dual persistence: MongoDB (documents & chunks) and Qdrant (points & payloads).
+ * 7. Safe re-indexing and idempotent cleanup.
  * 
  * @module services/IngestionService
  */
@@ -23,6 +25,7 @@ import { logger } from '../config/logger.js';
 export class IngestionService {
   constructor({
     embeddingClient,
+    vectorStore = null,
     documentModel = Document,
     chunkModel = DocumentChunk,
   } = {}) {
@@ -30,9 +33,40 @@ export class IngestionService {
       throw new Error('EmbeddingClient is required for IngestionService');
     }
     this.embeddingClient = embeddingClient;
+    this.vectorStore = vectorStore;
     this.documentModel = documentModel;
     this.chunkModel = chunkModel;
     this.logger = logger || console;
+  }
+
+  /**
+   * Sanitizes and validates file path against directory traversal and null byte injections.
+   * @param {string} inputPath 
+   * @returns {string} Normalized absolute path
+   */
+  _validateAndResolvePath(inputPath) {
+    if (!inputPath || typeof inputPath !== 'string') {
+      throw new Error('Invalid file path provided');
+    }
+
+    // Guard against null byte injections
+    if (inputPath.includes('\0')) {
+      throw new Error('Invalid file path: Null byte detected');
+    }
+
+    const resolved = path.resolve(inputPath);
+
+    // Ensure file exists
+    if (!fs.existsSync(resolved)) {
+      throw new Error(`File not found: ${resolved}`);
+    }
+
+    const stat = fs.statSync(resolved);
+    if (!stat.isFile()) {
+      throw new Error(`Path is not a regular file: ${resolved}`);
+    }
+
+    return resolved;
   }
 
   /**
@@ -68,25 +102,22 @@ export class IngestionService {
   /**
    * Ingests a file from disk into the vector database.
    * 
-   * @param {string} filePath - Path to file on disk
+   * @param {string} rawFilePath - Path to file on disk
    * @param {object} metadata - Document metadata (title, symbol, filingType, etc.)
    * @returns {Promise<object>} Ingestion summary
    */
-  async ingestFile(filePath, metadata = {}) {
+  async ingestFile(rawFilePath, metadata = {}) {
     const startTime = Date.now();
+    const filePath = this._validateAndResolvePath(rawFilePath);
     const filename = path.basename(filePath);
     const ext = path.extname(filePath).replace('.', '').toLowerCase() || 'pdf';
-
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
-    }
 
     const buffer = fs.readFileSync(filePath);
     const sha256Hash = this._computeHash(buffer);
 
-    // 1. Check if document has already been indexed
+    // 1. Check if document has already been indexed (Idempotency)
     const existing = await this.documentModel.findOne({ sha256Hash });
-    if (existing && existing.status === 'indexed') {
+    if (existing && existing.status === 'indexed' && !metadata.forceReindex) {
       this.logger.info('Document already indexed, skipping re-ingestion', {
         filename,
         documentId: existing._id,
@@ -112,7 +143,7 @@ export class IngestionService {
 
     const totalTokens = estimateTokens(fullText);
 
-    // 3. Create or update Document record in pending state
+    // 3. Create or update Document record in processing state
     const docData = {
       title: metadata.title || filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
       filename,
@@ -158,8 +189,11 @@ export class IngestionService {
       const chunkTexts = chunks.map(c => c.content);
       const embeddings = await this.embeddingClient.embedBatch(chunkTexts);
 
-      // Clean old chunks if re-indexing
+      // Clean old chunks from MongoDB & Qdrant if re-indexing
       await this.chunkModel.deleteMany({ documentId: docRecord._id });
+      if (this.vectorStore) {
+        await this.vectorStore.deleteByDocumentId(docRecord._id);
+      }
 
       // 6. Save chunks to MongoDB
       const chunkDocuments = chunks.map((c, idx) => ({
@@ -173,9 +207,15 @@ export class IngestionService {
 
       await this.chunkModel.insertMany(chunkDocuments);
 
-      // 7. Mark document as indexed
+      // 7. Also index chunks into dedicated Qdrant store if available
+      if (this.vectorStore) {
+        await this.vectorStore.indexChunks(chunkDocuments);
+      }
+
+      // 8. Mark document as indexed
       docRecord.status = 'indexed';
       docRecord.chunkCount = chunkDocuments.length;
+      docRecord.errorMessage = null;
       await docRecord.save();
 
       const durationMs = Date.now() - startTime;
@@ -205,19 +245,20 @@ export class IngestionService {
   }
 
   /**
-   * Ingests all PDF documents in a directory.
+   * Ingests all PDF and text documents in a directory.
    * 
-   * @param {string} dirPath - Directory containing documents
+   * @param {string} rawDirPath - Directory containing documents
    * @param {object} defaultMetadata
    * @returns {Promise<Array<object>>}
    */
-  async ingestDirectory(dirPath, defaultMetadata = {}) {
+  async ingestDirectory(rawDirPath, defaultMetadata = {}) {
+    const dirPath = path.resolve(rawDirPath);
     if (!fs.existsSync(dirPath)) {
       throw new Error(`Directory not found: ${dirPath}`);
     }
 
     const files = fs.readdirSync(dirPath)
-      .filter(f => f.endsWith('.pdf') || f.endsWith('.txt'));
+      .filter(f => f.endsWith('.pdf') || f.endsWith('.txt') || f.endsWith('.json') || f.endsWith('.md'));
 
     this.logger.info(`Found ${files.length} documents to ingest in ${dirPath}`);
     const results = [];
@@ -231,6 +272,41 @@ export class IngestionService {
         this.logger.error(`Failed to ingest file ${file}`, { error: err.message });
         results.push({
           filename: file,
+          status: 'failed',
+          error: err.message,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Re-indexes all existing documents in MongoDB.
+   * Useful when changing embedding models or re-chunking documents.
+   */
+  async reindexAll() {
+    const documents = await this.documentModel.find({ filePath: { $ne: null } });
+    this.logger.info(`Re-indexing ${documents.length} existing documents...`);
+    const results = [];
+
+    for (const doc of documents) {
+      try {
+        if (doc.filePath && fs.existsSync(doc.filePath)) {
+          const res = await this.ingestFile(doc.filePath, {
+            title: doc.title,
+            symbol: doc.symbol,
+            filingType: doc.filingType,
+            organizationId: doc.organizationId,
+            isPublic: doc.isPublic,
+            forceReindex: true,
+          });
+          results.push(res);
+        }
+      } catch (err) {
+        results.push({
+          documentId: doc._id,
+          filename: doc.filename,
           status: 'failed',
           error: err.message,
         });

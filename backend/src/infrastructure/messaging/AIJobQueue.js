@@ -149,7 +149,40 @@ export class AIJobQueue {
       { noAck: false }
     );
 
+    await this.channel.consume(
+      this.queues.ragIngest,
+      (msg) => this._handleRagIngestJob(msg),
+      { noAck: false }
+    );
+
     this.logger.info('AI job consumers started');
+  }
+
+  async _handleRagIngestJob(msg) {
+    if (!msg) return;
+
+    const job = JSON.parse(msg.content.toString());
+    this.logger.info('Processing RAG ingestion job', { jobId: job.id });
+
+    try {
+      if (!this.ingestionService) {
+        throw new Error('IngestionService not configured on AIJobQueue');
+      }
+
+      const { filePath, metadata } = job.data || {};
+      const result = await this.ingestionService.ingestFile(filePath, metadata);
+
+      this.channel.ack(msg);
+      this.logger.info('RAG ingestion job complete', { jobId: job.id, status: result.status });
+      await this._publishResult(job.id, result);
+    } catch (error) {
+      this.logger.error('RAG ingestion job failed', {
+        jobId: job.id,
+        error: error.message,
+      });
+      const attempts = (job.attempts || 0) + 1;
+      this.channel.nack(msg, false, attempts < 3);
+    }
   }
 
   async _handleSentimentJob(msg) {

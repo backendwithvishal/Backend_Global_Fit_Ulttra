@@ -21,6 +21,7 @@
     "rag:ingest": "node scripts/ingestFinancialDocuments.js",
     "rag:download": "node scripts/downloadSampleFilings.js",
     "rag:test": "node scripts/testRAGQuery.js",
+    "rag:eval": "node scripts/evaluateRAG.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "redis:monitor": "node src/tools/redisMonitor.js --interactive",
@@ -31,6 +32,8 @@
     "redis:health": "node src/tools/redisMonitor.js --health"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.19.0",
+    "@xenova/transformers": "^2.17.2",
     "amqplib": "^0.10.9",
     "axios": "^1.6.7",
     "axios-retry": "^4.0.0",

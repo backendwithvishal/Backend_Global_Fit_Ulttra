@@ -16,6 +16,7 @@ Real-time financial data aggregator with AI-powered analysis. Pulls from 6+ APIs
 
 - [Why This Exists](#why-this-exists)
 - [Features](#features)
+- [Agentic Hybrid Financial RAG](#agentic-hybrid-financial-rag)
 - [Quick Start (5 Minutes)](#quick-start-5-minutes)
 - [AI Features](#ai-features)
 - [API Reference](#api-reference)
@@ -225,6 +226,35 @@ npm run redis:export     # Export to JSON
 
 ---
 
+## 🧠 Agentic Hybrid Financial RAG (NEW)
+
+Global-Fi Ultra features a production-grade **Agentic Hybrid Financial RAG Subsystem** for deep analysis of SEC 10-K, 10-Q filings, earnings transcripts, and Federal Reserve statements.
+
+### Key Capabilities
+- **Local Dense Semantic Vectors**: Zero-cost, 384-dimensional dense semantic vectors powered locally by `@xenova/transformers` (`all-MiniLM-L6-v2`) on CPU.
+- **Dedicated Vector Database**: Qdrant vector store with metadata payload indexing and automatic fallback to MongoDB Atlas vector search.
+- **Hybrid Lexical Search (BM25)**: Full Okapi BM25 sparse keyword ranking with specialized ticker and financial metric boosts.
+- **Reciprocal Rank Fusion (RRF)**: Combines dense vector candidates (65%) and sparse lexical candidates (35%) via rank fusion ($k=60$).
+- **Agentic Orchestration**: Intent classification (`FINANCIAL_FILING_QA`, `LIVE_MARKET_DATA`, `COMPARISON_SYNTHESIS`), query decomposition, evidence sufficiency gating, and strict citation validation.
+- **Multi-Tenant Semantic Cache**: Redis-backed sub-30ms repeated query retrieval strictly partitioned by `organizationId`.
+- **WebSocket Streaming**: Token streaming (`ai:stream:chunk`) with real-time verified citation cards (`ai:rag:citations`).
+
+### RAG CLI Commands
+```bash
+# Ingest all sample filings in data/financial_documents/
+npm run rag:ingest --prefix backend
+
+# Run the 8-scenario Financial RAG Evaluation Benchmark (100% pass)
+npm run rag:eval --prefix backend
+
+# Interactive query CLI with citation validation
+npm run rag:test --prefix backend
+```
+
+For complete architecture diagrams and technical details, see [`docs/RAG_DOCUMENTATION.md`](docs/RAG_DOCUMENTATION.md).
+
+---
+
 ## API Reference
 
 - **Live Production URL**: `https://backend-global-fit-ulttra.onrender.com/api/v1`
@@ -289,11 +319,14 @@ POST /api/v1/ai/jobs           # Submit async job
 GET  /api/v1/ai/jobs/stats     # Get queue stats
 ```
 
-### Financial RAG & Vector Engine (6 endpoints)
+### Agentic Financial RAG & Vector Engine (8 endpoints)
 
 ```bash
-POST   /api/v1/ai/rag/query        # Grounded financial Q&A with exact filing citations
+POST   /api/v1/ai/rag/query        # Grounded agentic Q&A with exact filing citations
+GET    /api/v1/ai/rag/health       # Subsystem health, vector store & embedding status
 POST   /api/v1/ai/rag/ingest       # Ingest & vectorize financial PDFs (SEC 10-K, 10-Q, FOMC)
+POST   /api/v1/ai/rag/reindex      # Re-embed and reindex all chunks into vector store
+GET    /api/v1/ai/rag/jobs/:jobId  # Background async ingestion job progress
 GET    /api/v1/ai/rag/documents    # List indexed documents, chunk counts, and status
 GET    /api/v1/ai/rag/documents/:id# Document details & vector chunk preview
 DELETE /api/v1/ai/rag/documents/:id# Delete document and its vector chunks

@@ -36,11 +36,26 @@ export const createRAGRoutes = (ragController) => {
     return router;
   }
 
+  // RAG Subsystem Health Check
+  if (typeof ragController.getHealth === 'function') {
+    router.get('/health', ragController.getHealth);
+  }
+
   // Grounded RAG Query
   router.post('/query', validateRequest(ragQuerySchema), ragController.query);
 
   // Trigger ingestion of documents
   router.post('/ingest', validateRequest(ragIngestSchema), ragController.ingest);
+
+  // Re-index all documents in the repository
+  if (typeof ragController.reindex === 'function') {
+    router.post('/reindex', ragController.reindex);
+  }
+
+  // Ingestion job status
+  if (typeof ragController.getJob === 'function') {
+    router.get('/jobs/:jobId', ragController.getJob);
+  }
 
   // List indexed documents
   router.get('/documents', validateRequest(ragDocumentListSchema), ragController.listDocuments);

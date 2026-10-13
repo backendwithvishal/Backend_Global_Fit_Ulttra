@@ -2,7 +2,8 @@
  * Global-Fi Ultra - RAG Unit Tests
  * 
  * Tests for financial chunker, embedding vectorizer, semantic cache,
- * reranker, and RAG service orchestration.
+ * BM25 lexical retriever, Qdrant store, Agentic Orchestrator, Portkey Gateway,
+ * LangSmith tracer, and RAG routes.
  * 
  * @jest-environment node
  */
@@ -12,6 +13,11 @@ import { chunkFinancialText, detectSection, isTableBlock } from '../../src/utils
 import { EmbeddingClient } from '../../src/infrastructure/ai/EmbeddingClient.js';
 import { SemanticCache } from '../../src/infrastructure/cache/SemanticCache.js';
 import { RerankerClient } from '../../src/infrastructure/ai/RerankerClient.js';
+import { BM25Retriever } from '../../src/infrastructure/vector/BM25Retriever.js';
+import { QdrantVectorStore } from '../../src/infrastructure/vector/QdrantVectorStore.js';
+import { AgenticRAGOrchestrator } from '../../src/infrastructure/ai/AgenticRAGOrchestrator.js';
+import { PortkeyGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
+import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import express from 'express';
 import request from 'supertest';
@@ -101,6 +107,125 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     });
   });
 
+  describe('BM25Retriever', () => {
+    let retriever;
+
+    beforeEach(() => {
+      retriever = new BM25Retriever();
+    });
+
+    it('should tokenize and filter standard English stopwords while retaining financial metrics', () => {
+      const tokens = retriever.tokenize('Apple reported $85.78B in Q3 2024 revenue with 46.3% margin');
+      expect(tokens).toContain('apple');
+      expect(tokens).toContain('$85.78b');
+      expect(tokens).toContain('46.3%');
+      expect(tokens).not.toContain('in');
+      expect(tokens).not.toContain('with');
+    });
+
+    it('should rank documents containing query keywords higher', () => {
+      const docs = [
+        {
+          _id: 'doc1',
+          content: 'Tesla delivered 1.8 million electric vehicles with energy storage growth.',
+          metadata: { symbol: 'TSLA' },
+        },
+        {
+          _id: 'doc2',
+          content: 'Apple reported record services revenue and iPhone sales of $39.3 billion.',
+          metadata: { symbol: 'AAPL' },
+        },
+      ];
+
+      const results = retriever.search('Apple iPhone services revenue', docs, { limit: 2 });
+      expect(results.length).toBeGreaterThanOrEqual(1);
+      expect(results[0].chunk._id).toBe('doc2');
+      expect(results[0].score).toBeGreaterThan(0);
+    });
+  });
+
+  describe('QdrantVectorStore', () => {
+    it('should generate deterministic UUID point IDs from documentId and chunkIndex', () => {
+      const store = new QdrantVectorStore();
+      const id1 = store._generatePointId('doc-100', 0);
+      const id2 = store._generatePointId('doc-100', 0);
+      const id3 = store._generatePointId('doc-100', 1);
+
+      expect(id1).toBe(id2);
+      expect(id1).not.toBe(id3);
+      expect(id1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    });
+
+    it('should report offline status gracefully when server is not running', async () => {
+      const store = new QdrantVectorStore({ url: 'http://127.0.0.1:65534' });
+      const ready = await store.initialize();
+      expect(ready).toBe(false);
+
+      const health = await store.checkHealth();
+      expect(health.status).toBe('unreachable');
+    });
+  });
+
+  describe('AgenticRAGOrchestrator', () => {
+    let orchestrator;
+
+    beforeEach(() => {
+      orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: { hybridSearch: jest.fn().mockResolvedValue([]) },
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+      });
+    });
+
+    it('should correctly classify filing questions and extract tickers', () => {
+      const c1 = orchestrator.classifyQuery('What was Apple iPhone revenue in Q3 2024?');
+      expect(c1.intent).toBe('DOCUMENT_QA');
+      expect(c1.symbols).toContain('AAPL');
+      expect(c1.periods).toContain('Q3 2024');
+
+      const c2 = orchestrator.classifyQuery('Compare Microsoft and Nvidia datacenter revenue in FY24');
+      expect(c2.intent).toBe('COMPARISON');
+      expect(c2.symbols).toContain('MSFT');
+      expect(c2.symbols).toContain('NVDA');
+
+      const c3 = orchestrator.classifyQuery('What is the current price of Tesla right now?');
+      expect(c3.intent).toBe('LIVE_MARKET');
+      expect(c3.requiresLiveMarket).toBe(true);
+    });
+
+    it('should generate a bounded retrieval plan for comparison questions', () => {
+      const classification = {
+        intent: 'COMPARISON',
+        symbols: ['AAPL', 'MSFT'],
+        periods: ['FY24'],
+        primarySymbol: 'AAPL',
+      };
+      const plan = orchestrator.createRetrievalPlan('Compare Apple and Microsoft revenue', classification);
+      expect(plan).toHaveLength(2);
+      expect(plan[0]).toContain('AAPL');
+      expect(plan[1]).toContain('MSFT');
+    });
+
+    it('should validate citations against retrieved chunks', () => {
+      const mockChunks = [
+        {
+          chunk: {
+            documentId: 'doc1',
+            content: 'Apple revenue was $85.78 billion.',
+            metadata: { symbol: 'AAPL', filingType: '10-Q', section: 'Operations', pageNumber: 1 },
+          },
+          relevanceScore: 0.95,
+        },
+      ];
+
+      const answer = 'Apple achieved $85.78 billion in revenue [Source 1]. Unverified fact [Source 99].';
+      const validation = orchestrator.validateCitations(answer, mockChunks);
+
+      expect(validation.citedInText).toHaveLength(1);
+      expect(validation.citedInText[0].sourceId).toBe(1);
+      expect(validation.citedInText[0].symbol).toBe('AAPL');
+    });
+  });
+
   describe('SemanticCache', () => {
     it('should cache and retrieve exact query responses', async () => {
       const cache = new SemanticCache();
@@ -112,6 +237,42 @@ Supply chain dependencies remain exposed to geopolitical tensions.
 
       expect(hit).not.toBeNull();
       expect(hit.answer).toBe('$47.4 billion');
+    });
+
+    it('should isolate cached queries across different organizations', async () => {
+      const cache = new SemanticCache();
+      const query = 'Confidential executive report';
+      const payload = { answer: 'Secret Data Org 1', confidence: 90 };
+
+      await cache.set(query, null, payload, { symbol: 'INTERNAL', organizationId: 'org-1' });
+
+      // Org 1 should get cache hit
+      const hitOrg1 = await cache.get(query, null, { symbol: 'INTERNAL', organizationId: 'org-1' });
+      expect(hitOrg1).not.toBeNull();
+      expect(hitOrg1.answer).toBe('Secret Data Org 1');
+
+      // Org 2 should get cache miss
+      const hitOrg2 = await cache.get(query, null, { symbol: 'INTERNAL', organizationId: 'org-2' });
+      expect(hitOrg2).toBeNull();
+    });
+  });
+
+  describe('PortkeyGateway & LangSmithTracer', () => {
+    it('should transparently pass through to default client when Portkey is disabled', async () => {
+      const mockGroq = { generateContent: jest.fn().mockResolvedValue('Groq Output') };
+      const gateway = new PortkeyGateway({ enabled: false, defaultClient: mockGroq });
+
+      const res = await gateway.generateContent('Hello');
+      expect(res).toBe('Groq Output');
+      expect(mockGroq.generateContent).toHaveBeenCalledWith('Hello', {});
+    });
+
+    it('should generate run IDs without throwing when LangSmith is disabled', () => {
+      const tracer = new LangSmithTracer({ enabled: false });
+      const runId = tracer.startRun({ name: 'Test' });
+      expect(runId).toBeDefined();
+      expect(typeof runId).toBe('string');
+      tracer.endRun(runId, { outputs: { status: 'ok' } });
     });
   });
 
@@ -207,6 +368,9 @@ Supply chain dependencies remain exposed to geopolitical tensions.
         getDocument: (req, res) => res.json({ success: true, data: {} }),
         deleteDocument: (req, res) => res.json({ success: true }),
         getStats: (req, res) => res.json({ success: true, data: { totalDocuments: 5 } }),
+        getHealth: (req, res) => res.json({ success: true, status: 'healthy' }),
+        reindex: (req, res) => res.json({ success: true, message: 'Re-indexed' }),
+        getJob: (req, res) => res.json({ success: true, data: { jobId: req.params.jobId, status: 'completed' } }),
       };
 
       app = express();
@@ -222,6 +386,24 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.answer).toBe('Mocked RAG Answer');
+    });
+
+    it('should route health check requests to ragController', async () => {
+      const res = await request(app).get('/api/v1/rag/health');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('healthy');
+    });
+
+    it('should route reindex requests to ragController', async () => {
+      const res = await request(app).post('/api/v1/rag/reindex');
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Re-indexed');
+    });
+
+    it('should route job status requests to ragController', async () => {
+      const res = await request(app).get('/api/v1/rag/jobs/job-123');
+      expect(res.status).toBe(200);
+      expect(res.body.data.jobId).toBe('job-123');
     });
 
     it('should validate request body and reject questions under 2 characters', async () => {

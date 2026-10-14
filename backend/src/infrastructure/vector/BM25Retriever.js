@@ -38,7 +38,7 @@ export class BM25Retriever {
    */
   tokenize(text) {
     if (!text || typeof text !== 'string') return [];
-    const rawTokens = text.toLowerCase().match(/[a-z0-9\$\.\%\-]+/g) || [];
+    const rawTokens = text.toLowerCase().match(/[a-z0-9$.%-]+/g) || [];
     return rawTokens.filter(t => t.length > 1 && !this.stopWords.has(t));
   }
 
@@ -134,7 +134,7 @@ export class BM25Retriever {
 
     // Financial signal boosts
     const isTicker = (t) => /^[a-z]{1,5}$/.test(t) && t.length <= 4;
-    const isFinancialMetric = (t) => /^\$?\d+[\d,\.]*%?$/.test(t);
+    const isFinancialMetric = (t) => /^\$?\d+[\d,.]*%?$/.test(t);
 
     for (let i = 0; i < totalDocs; i++) {
       const doc = candidatePool[i];

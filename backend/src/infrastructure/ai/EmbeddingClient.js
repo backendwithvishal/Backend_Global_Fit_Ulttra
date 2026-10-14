@@ -22,7 +22,6 @@
 import crypto from 'crypto';
 import axios from 'axios';
 import { logger } from '../../config/logger.js';
-import { AI_CONFIG } from './aiConfig.js';
 
 let xenovaPipelinePromise = null;
 
@@ -211,7 +210,7 @@ export class EmbeddingClient {
     return texts.map(text => {
       const vector = new Float32Array(this.dimensions);
       const clean = (text || '').toLowerCase();
-      const tokens = clean.match(/[a-z0-9\$\.\%\-]+/g) || ['document'];
+      const tokens = clean.match(/[a-z0-9$.%-]+/g) || ['document'];
 
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];

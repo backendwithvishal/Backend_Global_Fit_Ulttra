@@ -78,7 +78,7 @@ export class RerankerClient {
       if (score === 0) score = 0.35;
 
       // Extract query tokens
-      const queryTokens = queryLower.match(/[a-z0-9\$\.\%\-]+/g) || [];
+      const queryTokens = queryLower.match(/[a-z0-9$.%-]+/g) || [];
       let tokenHits = 0;
       for (const t of queryTokens) {
         if (content.includes(t)) tokenHits++;
@@ -87,7 +87,7 @@ export class RerankerClient {
       score += tokenCoverage * 0.4;
 
       // Boost for exact financial numbers found in both query and chunk
-      const queryNumbers = queryLower.match(/\$?\d+[\d,\.]*%?/g) || [];
+      const queryNumbers = queryLower.match(/\$?\d+[\d,.]*%?/g) || [];
       let numberHits = 0;
       for (const num of queryNumbers) {
         if (content.includes(num)) numberHits++;

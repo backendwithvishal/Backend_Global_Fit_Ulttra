@@ -13,7 +13,6 @@
 
 import { DocumentChunk } from '../../models/DocumentChunk.js';
 import { EmbeddingClient } from '../ai/EmbeddingClient.js';
-import { QdrantVectorStore } from './QdrantVectorStore.js';
 import { BM25Retriever } from './BM25Retriever.js';
 import { AI_CONFIG } from '../ai/aiConfig.js';
 import { logger } from '../../config/logger.js';

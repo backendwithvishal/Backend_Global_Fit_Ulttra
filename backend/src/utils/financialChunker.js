@@ -15,10 +15,10 @@
 
 // Common SEC and financial statement section headers
 const FINANCIAL_SECTION_PATTERNS = [
-  { name: 'Item 1A: Risk Factors', regex: /item\s+1a[\.\:\s]+risk\s+factors/i },
-  { name: 'Item 7: MD&A', regex: /item\s+7[\.\:\s]+management['\’s]*\s+discussion\s+and\s+analysis/i },
-  { name: 'Item 1: Business Overview', regex: /item\s+1[\.\:\s]+business/i },
-  { name: 'Item 8: Financial Statements', regex: /item\s+8[\.\:\s]+financial\s+statements/i },
+  { name: 'Item 1A: Risk Factors', regex: /item\s+1a[.:\s]+risk\s+factors/i },
+  { name: 'Item 7: MD&A', regex: /item\s+7[.:\s]+management['’s]*\s+discussion\s+and\s+analysis/i },
+  { name: 'Item 1: Business Overview', regex: /item\s+1[.:\s]+business/i },
+  { name: 'Item 8: Financial Statements', regex: /item\s+8[.:\s]+financial\s+statements/i },
   { name: 'Statements of Operations', regex: /statements?\s+of\s+(operations|income|earnings)/i },
   { name: 'Consolidated Balance Sheets', regex: /balance\s+sheets?/i },
   { name: 'Statements of Cash Flows', regex: /statements?\s+of\s+cash\s+flows?/i },
@@ -49,8 +49,8 @@ export function isTableBlock(block) {
     return true;
   }
   // Ascii divider lines + numbers
-  const hasDividers = /[=\-]{10,}/.test(block);
-  const numberCount = (block.match(/\$?\d+[\d,\.]*%?/g) || []).length;
+  const hasDividers = /[=-]{10,}/.test(block);
+  const numberCount = (block.match(/\$?\d+[\d,.]*%?/g) || []).length;
   return hasDividers && numberCount >= 4;
 }
 
@@ -111,7 +111,7 @@ export function chunkFinancialText(fullText, options = {}) {
   while (currentBlockIndex < blocks.length) {
     let currentChunkText = '';
     let hasTable = false;
-    let startIndex = currentBlockIndex;
+    const startIndex = currentBlockIndex;
 
     while (currentBlockIndex < blocks.length) {
       const block = blocks[currentBlockIndex];
@@ -144,7 +144,7 @@ export function chunkFinancialText(fullText, options = {}) {
 
     // Safety fallback: if block itself was larger than targetChars, slice it gracefully
     if (currentChunkText.length > targetChars * 1.5) {
-      const sentences = currentChunkText.split(/(?<=\.|\?|\!)\s+/);
+      const sentences = currentChunkText.split(/(?<=[.?!])\s+/);
       let subChunk = '';
       for (const sentence of sentences) {
         if ((subChunk.length + sentence.length) > targetChars && subChunk.length > 0) {

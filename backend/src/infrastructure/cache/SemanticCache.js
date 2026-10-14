@@ -194,7 +194,7 @@ export class SemanticCache {
     if (this.cacheService) {
       try {
         const pattern = `rag:cache:index:${symbol.toUpperCase()}*`;
-        this.logger.info(`Invalidating semantic cache for symbol ${symbol}`);
+        this.logger.info(`Invalidating semantic cache for pattern ${pattern}`);
       } catch (err) {
         this.logger.debug('Cache invalidation note:', { error: err.message });
       }

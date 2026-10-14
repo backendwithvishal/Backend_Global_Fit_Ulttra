@@ -92,7 +92,7 @@ class RedisMonitor {
 
       await this.redis.ping();
       this.isConnected = true;
-      spinner.succeed(`Connected to Redis`);
+      spinner.succeed('Connected to Redis');
     } catch (error) {
       spinner.fail(`Redis connection failed: ${error.message}`);
       throw error;

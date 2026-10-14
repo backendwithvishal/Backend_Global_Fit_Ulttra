@@ -66,7 +66,6 @@ export class AgenticRAGOrchestrator {
     const isLiveMarket = /\b(current price|right now|live price|today's price|quote|market cap now|stock price now)\b/i.test(qLower);
     const isComparison = /\b(compare|versus|vs|between|higher than|more than)\b/i.test(qLower);
     const isRiskFiling = /\b(risk factors?|item 1a|regulatory risk|litigation|adverse)\b/i.test(qLower);
-    const isFilingQA = /\b(10-k|10-q|8-k|fomc|annual report|filing|quarterly|balance sheet|income statement|cash flow|net sales|revenue|operating margin|earnings per share)\b/i.test(qLower) || !isLiveMarket;
 
     let intent = 'DOCUMENT_QA';
     if (isLiveMarket) intent = 'LIVE_MARKET';
@@ -260,7 +259,7 @@ export class AgenticRAGOrchestrator {
    * Stage 7: Grounded LLM Generation.
    * Invokes Groq LLM under strict guardrails to prevent hallucination and injection.
    */
-  async synthesizeAnswer({ query, topChunks, classification }) {
+  async synthesizeAnswer({ query, topChunks, classification: _classification = {} }) {
     const contextBlocks = topChunks.map((item, idx) => {
       const chunk = item.chunk;
       const meta = chunk.metadata || {};

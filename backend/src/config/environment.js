@@ -101,6 +101,29 @@ const envSchema = z.object({
 // Parse and validate environment variables
 // Exits with code 1 if validation fails
 const parseEnv = () => {
+  // Support deployment aliases for seamless backwards compatibility
+  if (!process.env.PORTKEY_BASE_URL && process.env.PORTKEY_GATEWAY_URL) {
+    process.env.PORTKEY_BASE_URL = process.env.PORTKEY_GATEWAY_URL;
+  }
+  if (!process.env.LANGSMITH_API_KEY && process.env.LANGCHAIN_API_KEY) {
+    process.env.LANGSMITH_API_KEY = process.env.LANGCHAIN_API_KEY;
+  }
+  if (!process.env.LANGSMITH_PROJECT && process.env.LANGCHAIN_PROJECT) {
+    process.env.LANGSMITH_PROJECT = process.env.LANGCHAIN_PROJECT;
+  }
+  if (!process.env.RAG_MAX_AGENT_ITERATIONS && process.env.RAG_MAX_ITERATIONS) {
+    process.env.RAG_MAX_AGENT_ITERATIONS = process.env.RAG_MAX_ITERATIONS;
+  }
+  if (!process.env.RAG_RRF_DENSE_WEIGHT && process.env.RAG_DENSE_WEIGHT) {
+    process.env.RAG_RRF_DENSE_WEIGHT = process.env.RAG_DENSE_WEIGHT;
+  }
+  if (!process.env.RAG_RRF_SPARSE_WEIGHT && process.env.RAG_SPARSE_WEIGHT) {
+    process.env.RAG_RRF_SPARSE_WEIGHT = process.env.RAG_SPARSE_WEIGHT;
+  }
+  if (!process.env.EMBEDDING_MODEL && process.env.LOCAL_EMBEDDING_MODEL) {
+    process.env.EMBEDDING_MODEL = process.env.LOCAL_EMBEDDING_MODEL;
+  }
+
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {

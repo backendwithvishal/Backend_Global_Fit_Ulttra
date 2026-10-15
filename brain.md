@@ -110,14 +110,14 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
   - Multi-tenant organization isolation verified in unit tests.
   - Circuit breakers, graceful fallbacks, and defensive error handlers verified.
 - [x] **Stage 9: Testing & Evaluation** (Completed & Verified)
-  - Unit tests: 71 passed, 71 total across 6 test suites (`npm test`).
+  - Unit tests: 75 passed, 75 total across 6 test suites (`npm test`).
   - Financial Evaluation Benchmark: 8 passed, 8 total (100% score) via `npm run rag:eval`.
-  - Measured latencies: Exact figure retrieval (28ms), Section search (13ms), Cache hit (<6ms), Zero hallucination on missing data (100% safe refusal).
+  - Measured latencies: Exact figure retrieval (28ms), Section search (13ms), Cache hit (<7ms), Zero hallucination on missing data (100% safe refusal).
 - [x] **Stage 10: Documentation & Delivery** (Completed & Verified)
   - Updated root `README.md` with new RAG capabilities, CLI commands, and endpoints.
-  - Completely rewritten `docs/RAG_DOCUMENTATION.md` with verified benchmarks, architecture diagrams, and REST/WebSocket guides.
-  - Updated `backend/.env.example` and root `.env.example` with safe local defaults and zero secrets.
-  - Updated `GlobalFi_Ultra_API.postman_collection.json` with all 9 Agentic Financial RAG requests.
+  - Completely synchronized `docs/RAG_DOCUMENTATION.md` with verified benchmarks, architecture diagrams, and REST/WebSocket guides.
+  - Updated `backend/.env.example` and root `.env.example` with safe local defaults, alias mapping, and zero secrets.
+  - Verified `GlobalFi_Ultra_API.postman_collection.json` with all 9 Agentic Financial RAG requests.
 
 ---
 
@@ -125,11 +125,12 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
 
 | Metric | Measured Value | Standard / Requirement |
 | :--- | :--- | :--- |
-| **Unit Test Pass Rate** | **100%** (71 / 71 tests passed) | 100% passing test suites |
+| **Unit Test Pass Rate** | **100%** (75 / 75 tests passed) | 100% passing test suites |
 | **Financial Evaluation Benchmark** | **100%** (8 / 8 scenarios passed) | Validated Recall@4 & anti-hallucination |
 | **Embedding Dimensions** | **384 dimensions** (L2 unit normalized) | Genuine semantic embeddings |
 | **Retrieval Architecture** | **Hybrid Qdrant + BM25 + RRF (65/35)** | Dense + Sparse + Reciprocal Rank Fusion |
 | **Default Cloud Billing** | **$0.00** | Zero surprise billing, free-first baseline |
 | **Tenant Isolation** | **Enforced** | Organization ID partitioned cache and queries |
 | **Citation Verification** | **Validated** | 100% mapping to retrieved document chunks |
+| **Path Traversal Protection**| **Enforced** | Directory traversal outside repository rejected |
 

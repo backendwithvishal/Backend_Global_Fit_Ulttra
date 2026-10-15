@@ -51,11 +51,24 @@ async function main() {
   const embeddingClient = new EmbeddingClient({
     provider: config.rag?.embeddingProvider || 'local',
     apiKey: config.rag?.embeddingApiKey || '',
-    model: config.rag?.embeddingModel || 'text-embedding-3-small',
+    model: config.rag?.embeddingModel || 'Xenova/all-MiniLM-L6-v2',
   });
+
+  let qdrantVectorStore = null;
+  if (config.qdrant?.enabled) {
+    const { QdrantVectorStore } = await import('../src/infrastructure/vector/QdrantVectorStore.js');
+    qdrantVectorStore = new QdrantVectorStore({
+      url: config.qdrant.url,
+      apiKey: config.qdrant.apiKey,
+      collectionName: config.qdrant.collection,
+      dimensions: 384,
+    });
+    await qdrantVectorStore.initialize().catch(() => {});
+  }
 
   const vectorStore = new VectorStore({
     documentChunkModel: DocumentChunk,
+    qdrantVectorStore,
     config: config.rag,
   });
 

@@ -119,6 +119,28 @@ test_endpoint "AI Job Stats" "GET" "/api/v1/ai/jobs/stats"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Agentic Financial RAG Endpoints"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+test_endpoint "RAG Health Check" "GET" "/api/v1/ai/rag/health"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "RAG Stats" "GET" "/api/v1/ai/rag/stats"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "RAG List Documents" "GET" "/api/v1/ai/rag/documents?limit=5"
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+test_endpoint "RAG Grounded Query" "POST" "/api/v1/ai/rag/query" \
+    '{"question":"What were Apple Services revenue numbers in Q3 2024?","symbol":"AAPL","topK":2}'
+((total++))
+[ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Financial Data Endpoints"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

@@ -19,6 +19,7 @@ import { AgenticRAGOrchestrator } from '../../src/infrastructure/ai/AgenticRAGOr
 import { PortkeyGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
+import { IngestionService } from '../../src/services/IngestionService.js';
 import express from 'express';
 import request from 'supertest';
 import { createRAGRoutes } from '../../src/routes/ragRoutes.js';
@@ -429,4 +430,96 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.body.error.code).toBe('E5003');
     });
   });
+
+  describe('Agentic Iterative Retrieval and Sufficiency Bounds', () => {
+    it('should iterate and relax constraints when initial retrieval is insufficient', async () => {
+      let callCount = 0;
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockImplementation(async ({ filterOptions }) => {
+          callCount++;
+          // First call with strict filingType returns weak/no evidence
+          if (filterOptions.filingType === '10-K') {
+            return [];
+          }
+          // Relaxed call returns verified evidence
+          return [
+            {
+              chunk: {
+                _id: 'chunk-relaxed',
+                documentId: 'doc-relaxed',
+                content: 'Apple Q3 2024 revenue was $85.78 billion.',
+                metadata: { symbol: 'AAPL', filingType: '10-Q', section: 'Operations', pageNumber: 1 },
+              },
+              rrfScore: 0.90,
+            },
+          ];
+        }),
+      };
+
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: mockVectorStore,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        config: { maxAgentIterations: 3, retrieval: { minSimilarityScore: 0.40 } },
+      });
+
+      const res = await orchestrator.run({
+        question: 'What was Apple revenue?',
+        symbol: 'AAPL',
+        filingType: '10-K',
+      });
+
+      expect(callCount).toBeGreaterThanOrEqual(2);
+      expect(res.confidence).toBeGreaterThanOrEqual(40);
+      expect(res.citations).toHaveLength(1);
+      expect(res.agentTrace.some(t => t.stage === 'RETRIEVAL_IMPROVEMENT')).toBe(true);
+    });
+
+    it('should safely refuse without hallucinating when evidence is insufficient across all iterations', async () => {
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockResolvedValue([]),
+      };
+
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: mockVectorStore,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        config: { maxAgentIterations: 3, retrieval: { minSimilarityScore: 0.40 } },
+      });
+
+      const res = await orchestrator.run({
+        question: 'What was Boeing commercial aircraft deliveries in 2024?',
+        symbol: 'BA',
+      });
+
+      expect(res.citations).toHaveLength(0);
+      expect(res.confidence).toBe(0);
+      expect(res.answer).toContain('No matching financial filings found');
+    });
+  });
+
+  describe('IngestionService Path Traversal Protection', () => {
+    it('should reject file paths that traverse outside the repository directory', () => {
+      const ingestion = new IngestionService({
+        embeddingClient: { embedBatch: jest.fn() },
+      });
+
+      expect(() => {
+        ingestion._validateAndResolvePath('../../../../../etc/passwd');
+      }).toThrow(/Access denied/);
+
+      expect(() => {
+        ingestion._validateAndResolvePath('C:\\Windows\\System32\\drivers\\etc\\hosts');
+      }).toThrow(/Access denied/);
+    });
+
+    it('should reject file paths containing null byte injections', () => {
+      const ingestion = new IngestionService({
+        embeddingClient: { embedBatch: jest.fn() },
+      });
+
+      expect(() => {
+        ingestion._validateAndResolvePath('data/financial_documents/AAPL\0.pdf');
+      }).toThrow(/Null byte detected/);
+    });
+  });
 });
+

@@ -48,6 +48,7 @@ export class AgenticRAGOrchestrator {
     // Hard bounds
     this.maxIterations = this.config.maxAgentIterations || 3;
     this.minConfidence = this.config.retrieval?.minSimilarityScore || 0.40;
+    this.timeoutMs = this.config.timeoutMs || 25000;
   }
 
   /**
@@ -359,26 +360,80 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
     }
 
     // Step 3: Query Planning
-    const subQueries = this.createRetrievalPlan(question, classification);
-    trace.push({ stage: 'PLANNING', subQueries });
+    let currentSubQueries = this.createRetrievalPlan(question, classification);
+    trace.push({ stage: 'PLANNING', subQueries: currentSubQueries });
 
-    // Step 4: Hybrid Retrieval & Reranking
-    const topChunks = await this.retrieveEvidence({
-      subQueries,
-      classification,
-      filterOptions: {
-        symbol: classification.primarySymbol !== 'ALL' ? classification.primarySymbol : undefined,
-        filingType: filingType || classification.filingType,
-        organizationId,
-      },
-      topK,
-    });
-    trace.push({ stage: 'RETRIEVAL', retrievedCount: topChunks.length });
+    // Step 4 & 5: Bounded Iterative Hybrid Retrieval & Refinement Loop
+    let topChunks = [];
+    let sufficiency = { isSufficient: false, confidenceScore: 0, reason: 'Uninitialized' };
+    let currentFilter = {
+      symbol: classification.primarySymbol !== 'ALL' ? classification.primarySymbol : undefined,
+      filingType: filingType || classification.filingType,
+      organizationId,
+    };
 
-    // Step 5: Evidence Sufficiency Evaluation
-    const sufficiency = this.evaluateEvidenceSufficiency(topChunks);
-    trace.push({ stage: 'SUFFICIENCY_EVALUATION', sufficiency });
+    let iteration = 0;
+    while (iteration < this.maxIterations) {
+      iteration++;
 
+      // Enforce timeout boundary
+      if (Date.now() - startTime > this.timeoutMs) {
+        trace.push({ stage: 'TIMEOUT', iteration, elapsedMs: Date.now() - startTime });
+        break;
+      }
+
+      topChunks = await this.retrieveEvidence({
+        subQueries: currentSubQueries,
+        classification,
+        filterOptions: currentFilter,
+        topK,
+      });
+
+      sufficiency = this.evaluateEvidenceSufficiency(topChunks);
+      trace.push({
+        stage: 'ITERATION_EVALUATION',
+        iteration,
+        retrievedCount: topChunks.length,
+        sufficiency,
+      });
+
+      if (sufficiency.isSufficient) {
+        break;
+      }
+
+      // If evidence is insufficient and bounded iterations remain, execute retrieval improvement
+      if (iteration < this.maxIterations) {
+        if (iteration === 1 && (currentFilter.filingType || currentFilter.symbol)) {
+          // Improvement Strategy 1: Relax strict filingType constraint and expand subqueries
+          trace.push({
+            stage: 'RETRIEVAL_IMPROVEMENT',
+            strategy: 'RELAX_FILTERS_AND_EXPAND_QUERIES',
+            iteration,
+          });
+          currentFilter = {
+            ...currentFilter,
+            filingType: undefined,
+          };
+          currentSubQueries = [
+            question,
+            `${classification.primarySymbol !== 'ALL' ? classification.primarySymbol : ''} financial results revenue performance`.trim(),
+          ];
+        } else if (iteration === 2) {
+          // Improvement Strategy 2: Core financial entity and metric fallback
+          trace.push({
+            stage: 'RETRIEVAL_IMPROVEMENT',
+            strategy: 'CORE_ENTITY_KEYWORD_FALLBACK',
+            iteration,
+          });
+          const cleanTerms = (question || '').replace(/[^a-zA-Z0-9$%. ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+          currentSubQueries = [cleanTerms.slice(0, 5).join(' ')];
+        }
+      }
+    }
+
+    trace.push({ stage: 'RETRIEVAL_COMPLETE', totalIterations: iteration, finalCount: topChunks.length });
+
+    // Step 5b: Refuse safely without hallucinating if evidence remains insufficient
     if (!sufficiency.isSufficient) {
       return {
         answer: sufficiency.reason,

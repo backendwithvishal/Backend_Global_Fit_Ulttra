@@ -69,9 +69,9 @@ export const createApp = () => {
     app.use(corsMiddleware);   // CORS: whitelist allowed origins
 
     // ─── Request Parsing ─────────────────────────────────────────────
-    // 10KB limit prevents large payload attacks (DoS via oversized JSON)
-    app.use(express.json({ limit: '10kb' }));
-    app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+    // 2MB limit allows financial document ingestion and bulk metadata while preventing unbounded payload attacks
+    app.use(express.json({ limit: '2mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
     // ─── Tracing & Logging ───────────────────────────────────────────
     app.use(requestIdMiddleware); // Attach unique X-Request-Id for distributed tracing

@@ -25,6 +25,10 @@
     "test:endpoints:win": "npm run test:endpoints:win --prefix backend",
     "ai:demo": "npm run ai:demo --prefix backend",
     "ai:integrate": "npm run ai:integrate --prefix backend",
+    "rag:eval": "npm run rag:eval --prefix backend",
+    "rag:ingest": "npm run rag:ingest --prefix backend",
+    "rag:test": "npm run rag:test --prefix backend",
+    "rag:download": "npm run rag:download --prefix backend",
     "docker:build": "docker build -t globalfi-ultra .",
     "docker:run": "docker-compose up",
     "docker:stop": "docker-compose down"

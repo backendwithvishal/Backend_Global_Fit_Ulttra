@@ -66,7 +66,9 @@ export class AIStreamHandler {
           socket.emit('ai:rag:citations', { sessionId, citations });
         },
         onToken: (token) => {
-          if (!this.activeStreams.get(socket.id)) return;
+          if (!this.activeStreams.get(socket.id)) {
+            throw new Error('Stream stopped by client');
+          }
           socket.emit('ai:stream:chunk', { sessionId, chunk: token });
         },
         onComplete: ({ citations }) => {

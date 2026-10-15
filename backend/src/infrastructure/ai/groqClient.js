@@ -211,11 +211,19 @@ export class GroqClient {
   }
 
   async streamContent(prompt, onChunk, options = {}) {
+    let chunkHandler = onChunk;
+    let streamOpts = options;
+
+    if (typeof onChunk === 'object' && onChunk !== null) {
+      streamOpts = onChunk;
+      chunkHandler = onChunk.onChunk || onChunk.onToken;
+    }
+
     const {
       complex = true,
       maxTokens = this.config.generation.maxTokens,
       temperature = this.config.generation.temperature
-    } = options;
+    } = streamOpts || {};
 
     const model = this._selectModel(complex);
 
@@ -240,7 +248,9 @@ export class GroqClient {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
           fullResponse += content;
-          await onChunk(content);
+          if (typeof chunkHandler === 'function') {
+            await chunkHandler(content);
+          }
         }
       }
 

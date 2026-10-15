@@ -20,6 +20,7 @@ import { PortkeyGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
+import { Document } from '../../src/models/Document.js';
 import express from 'express';
 import request from 'supertest';
 import { createRAGRoutes } from '../../src/routes/ragRoutes.js';
@@ -519,6 +520,127 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(() => {
         ingestion._validateAndResolvePath('data/financial_documents/AAPL\0.pdf');
       }).toThrow(/Null byte detected/);
+    });
+  });
+
+  describe('RAGService.streamQuery Real-Time Token & Citation Streaming', () => {
+    it('should stream citations first, then tokens, and trigger onComplete', async () => {
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockResolvedValue([
+          {
+            chunk: {
+              _id: 'stream-c1',
+              documentId: 'doc-stream-1',
+              content: 'Nvidia Data Center revenue reached $47.4B.',
+              metadata: { symbol: 'NVDA', filingType: '10-K', section: 'Data Center', pageNumber: 1 },
+            },
+            rrfScore: 0.95,
+          },
+        ]),
+      };
+
+      const streamedTokens = [];
+      let capturedCitations = null;
+      let completed = false;
+
+      const mockGroqClient = {
+        streamContent: jest.fn().mockImplementation(async (prompt, onChunk) => {
+          await onChunk('Nvidia ');
+          await onChunk('Data Center ');
+          await onChunk('reached $47.4B [Source 1].');
+        }),
+      };
+
+      const ragService = new RAGService({
+        groqClient: mockGroqClient,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        vectorStore: mockVectorStore,
+      });
+
+      await ragService.streamQuery({
+        question: 'What was Nvidia Data Center revenue?',
+        symbol: 'NVDA',
+        onCitations: (citations) => { capturedCitations = citations; },
+        onToken: (token) => { streamedTokens.push(token); },
+        onComplete: ({ citations: _c }) => { completed = true; },
+      });
+
+      expect(capturedCitations).toHaveLength(1);
+      expect(capturedCitations[0].symbol).toBe('NVDA');
+      expect(streamedTokens.join('')).toBe('Nvidia Data Center reached $47.4B [Source 1].');
+      expect(completed).toBe(true);
+    });
+
+    it('should refuse safely without invoking LLM streaming when evidence is insufficient', async () => {
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockResolvedValue([]),
+      };
+
+      const streamedTokens = [];
+      let completed = false;
+      const mockGroqClient = {
+        streamContent: jest.fn(),
+      };
+
+      const ragService = new RAGService({
+        groqClient: mockGroqClient,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        vectorStore: mockVectorStore,
+      });
+
+      await ragService.streamQuery({
+        question: 'What was Boeing revenue in 2024?',
+        symbol: 'BA',
+        onToken: (token) => { streamedTokens.push(token); },
+        onComplete: () => { completed = true; },
+      });
+
+      expect(mockGroqClient.streamContent).not.toHaveBeenCalled();
+      expect(streamedTokens.length).toBeGreaterThan(0);
+      expect(streamedTokens[0]).toContain('No matching financial filings found');
+      expect(completed).toBe(true);
+    });
+  });
+
+  describe('PortkeyGateway streamContent', () => {
+    it('should delegate streamContent to defaultClient when disabled', async () => {
+      const chunks = [];
+      const mockDefault = {
+        streamContent: jest.fn().mockImplementation(async (prompt, onChunk) => {
+          await onChunk('Token A ');
+          await onChunk('Token B');
+          return 'Token A Token B';
+        }),
+      };
+
+      const gateway = new PortkeyGateway({ enabled: false, defaultClient: mockDefault });
+      const res = await gateway.streamContent('Prompt', (c) => chunks.push(c));
+
+      expect(mockDefault.streamContent).toHaveBeenCalled();
+      expect(chunks.join('')).toBe('Token A Token B');
+      expect(res).toBe('Token A Token B');
+    });
+  });
+
+  describe('Document Schema FileType Validation', () => {
+    it('should accept md and markdown in Document fileType enum', () => {
+      const docMd = new Document({
+        title: 'Markdown Filing',
+        filename: 'filing.md',
+        fileType: 'md',
+        sha256Hash: 'hash123',
+      });
+      const error = docMd.validateSync();
+      expect(error?.errors?.fileType).toBeUndefined();
+
+      const docMarkdown = new Document({
+        title: 'Markdown Filing Full',
+        filename: 'filing.markdown',
+        fileType: 'markdown',
+        sha256Hash: 'hash456',
+      });
+      const error2 = docMarkdown.validateSync();
+      expect(error2?.errors?.fileType).toBeUndefined();
     });
   });
 });

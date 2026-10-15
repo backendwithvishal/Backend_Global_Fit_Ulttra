@@ -25,7 +25,7 @@ const documentSchema = new Schema({
   fileType: {
     type: String,
     required: true,
-    enum: ['pdf', 'txt', 'html', 'json'],
+    enum: ['pdf', 'txt', 'html', 'json', 'md', 'markdown'],
     default: 'pdf',
   },
   filePath: {

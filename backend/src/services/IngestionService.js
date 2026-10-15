@@ -59,7 +59,8 @@ export class IngestionService {
     // Guard against directory traversal attacks outside authorized project workspace
     const cwd = path.resolve(process.cwd());
     const projectRoot = path.resolve(cwd, '..');
-    const isInsideProject = resolved.startsWith(cwd) || resolved.startsWith(projectRoot);
+    const resolvedLower = resolved.toLowerCase();
+    const isInsideProject = resolvedLower.startsWith(cwd.toLowerCase()) || resolvedLower.startsWith(projectRoot.toLowerCase());
     if (!isInsideProject) {
       throw new Error(`Access denied: File path outside authorized repository directory: ${resolved}`);
     }

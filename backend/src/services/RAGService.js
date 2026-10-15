@@ -239,19 +239,19 @@ Question: ${cleanQuestion}
 
 Provide a grounded financial analysis citing [Source X]:`;
 
-      const activeLLMClient = this.groqClient;
+      const activeLLMClient = this.portkeyGateway && this.portkeyGateway.enabled
+        ? this.portkeyGateway
+        : this.groqClient;
+
       if (activeLLMClient && typeof activeLLMClient.streamContent === 'function') {
-        await activeLLMClient.streamContent(streamPrompt, {
-          onChunk: (chunk) => {
+        await activeLLMClient.streamContent(
+          streamPrompt,
+          (chunk) => {
             if (typeof onToken === 'function') onToken(chunk);
           },
-          onComplete: () => {
-            if (typeof onComplete === 'function') onComplete({ citations });
-          },
-          onError: (err) => {
-            if (typeof onError === 'function') onError(err);
-          }
-        });
+          { complex: true }
+        );
+        if (typeof onComplete === 'function') onComplete({ citations });
       } else {
         if (typeof onToken === 'function') onToken(contextText);
         if (typeof onComplete === 'function') onComplete({ citations });

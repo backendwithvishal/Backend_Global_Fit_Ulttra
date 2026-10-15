@@ -1,0 +1,2197 @@
+{
+    "info": {
+        "_postman_id": "globalfi-ultra-mvc",
+        "name": "Global-Fi Ultra API v1",
+        "description": "Complete API collection for Global-Fi Ultra financial data orchestration engine.\n\nRender Production URL: https://backend-global-fit-ulttra.onrender.com\nLocal Base URL: http://localhost:4000\nAPI Prefix: /api/v1",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "https://backend-global-fit-ulttra.onrender.com/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "jwtToken",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Health",
+            "description": "Health check and readiness probe endpoints",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/health/health",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "health",
+                                "health"
+                            ]
+                        },
+                        "description": "Basic liveness probe - returns server status and AI feature flag"
+                    }
+                },
+                {
+                    "name": "Readiness Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/health/readiness",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "health",
+                                "readiness"
+                            ]
+                        },
+                        "description": "Readiness probe - checks database, Redis, and AI service connectivity"
+                    }
+                },
+                {
+                    "name": "Health Ping Keep-Alive",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/health/ping",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "health",
+                                "ping"
+                            ]
+                        },
+                        "description": "Lightweight keep-alive ping endpoint"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "description": "User management CRUD endpoints",
+            "item": [
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "isActive",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "sort",
+                                    "value": "-createdAt",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"username\": \"johndoe\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"preferences\": {\n    \"currency\": \"USD\",\n    \"theme\": \"dark\",\n    \"notifications\": true\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update User (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"john.updated@example.com\",\n  \"username\": \"johndoe_updated\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe Updated\",\n  \"preferences\": {\n    \"currency\": \"EUR\",\n    \"theme\": \"light\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Patch User",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Jane\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Watchlists",
+            "description": "Watchlist management with asset tracking",
+            "item": [
+                {
+                    "name": "List Watchlists",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "userId",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "isPublic",
+                                    "value": "true",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Watchlist by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists/{{watchlistId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists",
+                                "{{watchlistId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Watchlist",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Tech Stocks\",\n  \"description\": \"Top technology stocks to watch\",\n  \"isPublic\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Watchlist",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Updated Watchlist Name\",\n  \"description\": \"Updated description\",\n  \"isPublic\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists/{{watchlistId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists",
+                                "{{watchlistId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Watchlist",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists/{{watchlistId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists",
+                                "{{watchlistId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Asset to Watchlist",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"symbol\": \"AAPL\",\n  \"notes\": \"Watching for earnings report\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists/{{watchlistId}}/assets",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists",
+                                "{{watchlistId}}",
+                                "assets"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Asset from Watchlist",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/watchlists/{{watchlistId}}/assets/AAPL",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "watchlists",
+                                "{{watchlistId}}",
+                                "assets",
+                                "AAPL"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Alerts",
+            "description": "Price alert management with activate/deactivate",
+            "item": [
+                {
+                    "name": "List Alerts",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "userId",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "symbol",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "isActive",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "isTriggered",
+                                    "value": "false",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Alert by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts/{{alertId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts",
+                                "{{alertId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Alert",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"symbol\": \"AAPL\",\n  \"type\": \"price_above\",\n  \"targetPrice\": 200.00,\n  \"message\": \"Apple stock hit $200!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Alert",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"targetPrice\": 250.00,\n  \"message\": \"Updated alert target\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts/{{alertId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts",
+                                "{{alertId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Alert",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts/{{alertId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts",
+                                "{{alertId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Activate Alert",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts/{{alertId}}/activate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts",
+                                "{{alertId}}",
+                                "activate"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Deactivate Alert",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/alerts/{{alertId}}/deactivate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "alerts",
+                                "{{alertId}}",
+                                "deactivate"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Assets",
+            "description": "Financial asset tracking and live data",
+            "item": [
+                {
+                    "name": "Search Assets",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/assets?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "stock",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "isActive",
+                                    "value": "true",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Asset by Symbol",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/assets/AAPL",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets",
+                                "AAPL"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Live Asset Data",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/assets/AAPL/live",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets",
+                                "AAPL",
+                                "live"
+                            ],
+                            "query": [
+                                {
+                                    "key": "forceRefresh",
+                                    "value": "true",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Fetch live financial data for a specific asset symbol"
+                    }
+                },
+                {
+                    "name": "Create Asset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"symbol\": \"AAPL\",\n  \"name\": \"Apple Inc.\",\n  \"type\": \"stock\",\n  \"exchange\": \"NASDAQ\",\n  \"description\": \"Technology company\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/assets",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Asset",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Apple Inc. Updated\",\n  \"description\": \"Updated description\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/assets/AAPL",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets",
+                                "AAPL"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Asset",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/assets/AAPL",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "assets",
+                                "AAPL"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Financial Data",
+            "description": "Live and cached financial data orchestration",
+            "item": [
+                {
+                    "name": "Get Live Financial Data",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/financial/live?symbol=IBM&crypto=bitcoin,ethereum&currency=USD&newsQuery=finance&fredSeries=GDP",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "financial",
+                                "live"
+                            ],
+                            "query": [
+                                {
+                                    "key": "symbol",
+                                    "value": "IBM"
+                                },
+                                {
+                                    "key": "crypto",
+                                    "value": "bitcoin,ethereum"
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "USD"
+                                },
+                                {
+                                    "key": "newsQuery",
+                                    "value": "finance"
+                                },
+                                {
+                                    "key": "fredSeries",
+                                    "value": "GDP"
+                                }
+                            ]
+                        },
+                        "description": "Triggers API calls to all 6 financial data providers and returns aggregated data"
+                    }
+                },
+                {
+                    "name": "Get Cached Financial Data",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/financial/cached",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "financial",
+                                "cached"
+                            ]
+                        },
+                        "description": "Returns cached data only, no API calls triggered"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "description": "Administrative endpoints for cache management and audit logs",
+            "item": [
+                {
+                    "name": "Get Cache Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/admin/cache/stats",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "cache",
+                                "stats"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Clear Cache",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/admin/cache",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "cache"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Audit Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/admin/audit?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "audit"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Status",
+            "description": "API provider status monitoring",
+            "item": [
+                {
+                    "name": "Get API Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "status"
+                            ]
+                        },
+                        "description": "Returns connectivity status for all external API providers"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AI (Requires GROQ_API_KEY)",
+            "description": "AI-powered financial analysis features. Requires GROQ_API_KEY to be configured.",
+            "item": [
+                {
+                    "name": "Analyze Sentiment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"text\": \"Apple reported record quarterly revenue of $124.3 billion, beating analyst expectations.\",\n  \"type\": \"news\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/sentiment",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "sentiment"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Analyze Asset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"symbol\": \"AAPL\",\n  \"priceData\": {\n    \"currentPrice\": 185.50,\n    \"previousClose\": 183.20,\n    \"volume\": 45000000,\n    \"high52Week\": 199.62,\n    \"low52Week\": 124.17\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/analyze",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "analyze"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Compare Assets",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"assets\": [\n    {\"symbol\": \"AAPL\", \"price\": 185.50, \"marketCap\": 2900000000000},\n    {\"symbol\": \"MSFT\", \"price\": 415.20, \"marketCap\": 3100000000000}\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/compare",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "compare"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate Recommendation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userProfile\": {\n    \"riskTolerance\": \"moderate\",\n    \"investmentGoal\": \"growth\",\n    \"timeHorizon\": \"5-10 years\"\n  },\n  \"marketData\": [\n    {\"symbol\": \"AAPL\", \"price\": 185.50},\n    {\"symbol\": \"MSFT\", \"price\": 415.20},\n    {\"symbol\": \"GOOGL\", \"price\": 141.80}\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/recommend",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "recommend"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Analyze Portfolio",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"holdings\": [\n    {\"symbol\": \"AAPL\", \"shares\": 50, \"avgCost\": 150.00},\n    {\"symbol\": \"MSFT\", \"shares\": 30, \"avgCost\": 380.00},\n    {\"symbol\": \"GOOGL\", \"shares\": 20, \"avgCost\": 130.00}\n  ],\n  \"marketConditions\": {\n    \"trend\": \"bullish\",\n    \"volatility\": \"moderate\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/portfolio",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "portfolio"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Predict Price",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"symbol\": \"AAPL\",\n  \"historicalData\": [\n    {\"date\": \"2026-02-01\", \"close\": 180.50},\n    {\"date\": \"2026-02-02\", \"close\": 182.30},\n    {\"date\": \"2026-02-03\", \"close\": 181.10},\n    {\"date\": \"2026-02-04\", \"close\": 184.90},\n    {\"date\": \"2026-02-05\", \"close\": 185.50}\n  ],\n  \"daysAhead\": 7\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/predict",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "predict"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Explain Movement",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"symbol\": \"AAPL\",\n  \"changePercent\": -3.5,\n  \"recentNews\": [\n    \"Apple faces antitrust lawsuit in EU\",\n    \"iPhone sales decline in China\"\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/explain",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "explain"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Analyze News Impact",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"newsArticles\": [\n    {\"title\": \"Fed raises interest rates by 0.25%\", \"source\": \"Reuters\", \"publishedAt\": \"2026-02-14\"},\n    {\"title\": \"Tech stocks rally on AI optimism\", \"source\": \"Bloomberg\", \"publishedAt\": \"2026-02-14\"}\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/news/impact",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "news",
+                                "impact"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate News Summary",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"newsArticles\": [\n    {\"title\": \"S&P 500 hits all-time high\", \"content\": \"The S&P 500 index reached a new record high today...\"},\n    {\"title\": \"Oil prices drop on OPEC+ decision\", \"content\": \"Crude oil prices fell sharply after OPEC+ announced...\"}\n  ],\n  \"maxLength\": 100\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/news/summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "news",
+                                "summary"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Submit AI Job",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"jobType\": \"sentiment_analysis\",\n  \"data\": {\n    \"text\": \"Market conditions look favorable for tech stocks\"\n  },\n  \"priority\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/jobs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "jobs"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Job Queue Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/jobs/stats",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "jobs",
+                                "stats"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "description": "Authentication, sessions, MFA, password reset",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify Email",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/verify-email?token=sample_token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "verify-email"
+                            ],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "sample_token"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Request Password Reset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/request-reset",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "request-reset"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"sample_token\",\n  \"newPassword\": \"NewSecurePassword123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/reset-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Setup",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/setup",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "setup"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Enable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/enable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "enable"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MFA Disable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/mfa/disable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "disable"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Request Magic Link",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/magic-link",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "magic-link"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Magic Link Callback",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/magic-link/callback?token=sample_token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "magic-link",
+                                "callback"
+                            ],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "sample_token"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Active Sessions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Login History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions",
+                                "history"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Revoke Session",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/sessions/sample_hash",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "sessions",
+                                "sample_hash"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Organizations",
+            "description": "Multi-tenant organization management, invites, member roles",
+            "item": [
+                {
+                    "name": "Create Organization",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Apex Capital\",\n  \"slug\": \"apex-capital\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User Organizations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Organization by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Invite Member",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"analyst@apex.com\",\n  \"role\": \"Member\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/invite",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "invite"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Pending Invites",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/invites",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "invites"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Accept Invite",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"sample_invite_token\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/invite/accept",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "invite",
+                                "accept"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Member",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/members/507f1f77bcf86cd799439012",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "members",
+                                "507f1f77bcf86cd799439012"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Member Role",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": \"Admin\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/507f1f77bcf86cd799439011/members/507f1f77bcf86cd799439012/role",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "507f1f77bcf86cd799439011",
+                                "members",
+                                "507f1f77bcf86cd799439012",
+                                "role"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Billing",
+            "description": "Subscription checkout, invoices, discount coupons",
+            "item": [
+                {
+                    "name": "Create Checkout Session",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"plan\": \"Pro\",\n  \"billingCycle\": \"monthly\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/checkout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "checkout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Confirm Checkout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"sessionId\": \"cs_test_sample\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "confirm"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel Subscription",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "cancel"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Invoices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/invoices",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "invoices"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Apply Coupon",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/coupons/GLOBALFI20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "coupons",
+                                "GLOBALFI20"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "API Keys",
+            "description": "Developer API key lifecycle management",
+            "item": [
+                {
+                    "name": "Create API Key",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Production Data Pipeline\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List API Keys",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Deactivate API Key",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/apikeys/507f1f77bcf86cd799439013",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "apikeys",
+                                "507f1f77bcf86cd799439013"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Agentic Financial RAG",
+            "description": "Production Agentic Hybrid Financial RAG endpoints with grounded citations, Qdrant vector search, BM25 ranking, and ingestion management.",
+            "item": [
+                {
+                    "name": "Grounded Financial Query",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"question\": \"What were Apple's Services revenue and iPhone revenue in Q3 2024?\",\n  \"symbol\": \"AAPL\",\n  \"topK\": 4,\n  \"bypassCache\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/query",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "query"
+                            ]
+                        },
+                        "description": "Execute grounded agentic query with verified filing citations."
+                    }
+                },
+                {
+                    "name": "RAG Subsystem Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/health",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "health"
+                            ]
+                        },
+                        "description": "Check readiness of Qdrant vector store, embedding pipeline, and semantic cache."
+                    }
+                },
+                {
+                    "name": "Ingest Financial Document",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"filePath\": \"./data/financial_documents/AAPL_FY24_Q3_Financial_Filing.pdf\",\n  \"symbol\": \"AAPL\",\n  \"filingType\": \"10-Q\",\n  \"isPublic\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/ingest",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "ingest"
+                            ]
+                        },
+                        "description": "Ingest, chunk, embed, and index a financial PDF filing."
+                    }
+                },
+                {
+                    "name": "List Indexed Documents",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/documents?symbol=AAPL&page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "documents"
+                            ],
+                            "query": [
+                                {
+                                    "key": "symbol",
+                                    "value": "AAPL"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "List documents in the RAG knowledge base with pagination and filtering."
+                    }
+                },
+                {
+                    "name": "Get Document Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/documents/6ace7827f056d614bedc96d8",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "documents",
+                                "6ace7827f056d614bedc96d8"
+                            ]
+                        },
+                        "description": "Fetch detailed document metadata and indexed vector chunk previews."
+                    }
+                },
+                {
+                    "name": "Delete Indexed Document",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/documents/6ace7827f056d614bedc96d8",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "documents",
+                                "6ace7827f056d614bedc96d8"
+                            ]
+                        },
+                        "description": "Remove an indexed document and cascade delete its vector chunks."
+                    }
+                },
+                {
+                    "name": "Knowledge Base Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/stats",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "stats"
+                            ]
+                        },
+                        "description": "Retrieve total indexed chunks, symbols covered, and vector configuration."
+                    }
+                },
+                {
+                    "name": "Reindex Knowledge Base",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwtToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/reindex",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "reindex"
+                            ]
+                        },
+                        "description": "Re-embed and re-index all MongoDB chunks into the active vector store."
+                    }
+                },
+                {
+                    "name": "Check Background Job Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/rag/jobs/job-sample-12345",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "rag",
+                                "jobs",
+                                "job-sample-12345"
+                            ]
+                        },
+                        "description": "Query status and progress of an asynchronous document ingestion job."
+                    }
+                }
+            ]
+        }
+    ]
+}

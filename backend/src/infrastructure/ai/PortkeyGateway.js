@@ -80,6 +80,28 @@ export class PortkeyGateway {
       throw err;
     }
   }
+
+  /**
+   * Streams completion through Portkey gateway or direct provider fallback.
+   * 
+   * @param {string} prompt 
+   * @param {Function} onChunk 
+   * @param {object} options 
+   * @returns {Promise<string>}
+   */
+  async streamContent(prompt, onChunk, options = {}) {
+    if (this.defaultClient && typeof this.defaultClient.streamContent === 'function') {
+      return this.defaultClient.streamContent(prompt, onChunk, options);
+    }
+    // Fallback to generateContent if streamContent is unavailable
+    const fullText = await this.generateContent(prompt, options);
+    if (typeof onChunk === 'function') {
+      await onChunk(fullText);
+    } else if (typeof onChunk === 'object' && onChunk !== null && typeof onChunk.onChunk === 'function') {
+      await onChunk.onChunk(fullText);
+    }
+    return fullText;
+  }
 }
 
 export default PortkeyGateway;

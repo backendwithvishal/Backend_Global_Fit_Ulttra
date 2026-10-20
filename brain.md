@@ -138,7 +138,14 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
     5. Live market query routing to `FinancialDataService.getQuote`
     6. Timeout boundary enforcement and loop termination
     7. In-memory caching fallback when Redis cache throws
-  - Synchronized `docs/RAG_DOCUMENTATION.md` with verified 86 passed tests.
+- [x] **Stage 13: LiteLLM Free AI Gateway Integration & Testing** (Completed & Verified)
+  - Created root `litellm-config.yaml` mapping financial models (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `globalfi-default`) to Groq with rate-limit protection and fallback policies.
+  - Added `litellm` container service (`ghcr.io/berriai/litellm:main-latest`) to `docker-compose.yml` on port `8000:4000`.
+  - Upgraded `PortkeyGateway.js` into a unified `AIGateway` adapter supporting both Portkey and LiteLLM (using standard OpenAI Authorization Bearer headers and endpoints).
+  - Updated `backend/src/config/environment.js` and `.env.example` with `LITELLM_ENABLED`, `LITELLM_URL`, and `LITELLM_API_KEY`.
+  - Updated DI container (`backend/src/di/container.js`) to seamlessly route requests through LiteLLM when enabled.
+  - Added unit tests for LiteLLM routing, OpenAI-compatible headers, and automatic fallback to direct Groq client.
+  - Total test suite expanded to **89 passed / 89 total (100%)** across 6 test suites.
 
 ---
 
@@ -146,12 +153,13 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
 
 | Metric | Measured Value | Standard / Requirement |
 | :--- | :--- | :--- |
-| **Unit Test Pass Rate** | **100%** (86 / 86 tests passed) | 100% passing test suites |
+| **Unit Test Pass Rate** | **100%** (89 / 89 tests passed) | 100% passing test suites |
 | **Financial Evaluation Benchmark** | **100%** (8 / 8 scenarios passed) | Validated Recall@4 & anti-hallucination |
 | **Lint Error Count** | **0 errors** (ESLint verified) | Clean, standard-compliant code |
 | **Embedding Dimensions** | **384 dimensions** (L2 unit normalized) | Genuine semantic embeddings |
 | **Retrieval Architecture** | **Hybrid Qdrant + BM25 + RRF (65/35)** | Dense + Sparse + Reciprocal Rank Fusion |
 | **Default Cloud Billing** | **$0.00** | Zero surprise billing, free-first baseline |
+| **AI Gateway Options** | **LiteLLM (Self-hosted $0) / Portkey** | Unified OpenAI-compatible interface |
 | **Tenant Isolation** | **Enforced** | Organization ID partitioned cache and queries |
 | **Citation Verification** | **Validated** | 100% mapping to retrieved document chunks |
 | **Path Traversal Protection**| **Enforced** | Directory traversal outside repository rejected |

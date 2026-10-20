@@ -68,6 +68,11 @@ const envSchema = z.object({
   QDRANT_COLLECTION: z.string().default('globalfi_financial_documents'),
   QDRANT_ENABLED: z.string().transform(v => v === 'true').default('true'),
 
+  // LiteLLM AI Gateway (Self-hosted, free, open-source proxy)
+  LITELLM_ENABLED: z.string().transform(v => v === 'true').default('false'),
+  LITELLM_URL: z.string().default('http://localhost:8000/v1'),
+  LITELLM_API_KEY: z.string().optional().default(''),
+
   // Portkey AI Gateway (Optional)
   PORTKEY_API_KEY: z.string().optional().default(''),
   PORTKEY_BASE_URL: z.string().default('https://api.portkey.ai/v1'),
@@ -102,6 +107,9 @@ const envSchema = z.object({
 // Exits with code 1 if validation fails
 const parseEnv = () => {
   // Support deployment aliases for seamless backwards compatibility
+  if (!process.env.LITELLM_URL && process.env.LITELLM_BASE_URL) {
+    process.env.LITELLM_URL = process.env.LITELLM_BASE_URL;
+  }
   if (!process.env.PORTKEY_BASE_URL && process.env.PORTKEY_GATEWAY_URL) {
     process.env.PORTKEY_BASE_URL = process.env.PORTKEY_GATEWAY_URL;
   }
@@ -218,6 +226,12 @@ export const config = {
     apiKey: env.QDRANT_API_KEY,
     collection: env.QDRANT_COLLECTION,
     enabled: env.QDRANT_ENABLED,
+  },
+
+  litellm: {
+    enabled: env.LITELLM_ENABLED,
+    url: env.LITELLM_URL,
+    apiKey: env.LITELLM_API_KEY,
   },
 
   portkey: {

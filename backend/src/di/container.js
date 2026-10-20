@@ -321,10 +321,15 @@ export class Container {
                 apiKey: config.rag?.cohereApiKey || '',
             });
 
+            // AI Gateway Selection (LiteLLM free self-hosted proxy takes priority if enabled, else Portkey)
+            const isLiteLLM = config.litellm?.enabled;
+            const isPortkey = config.portkey?.enabled;
+
             portkeyGateway = new PortkeyGateway({
-                apiKey: config.portkey?.apiKey,
-                baseUrl: config.portkey?.baseUrl,
-                enabled: config.portkey?.enabled,
+                apiKey: isLiteLLM ? (config.litellm?.apiKey || '') : (config.portkey?.apiKey || ''),
+                baseUrl: isLiteLLM ? config.litellm?.url : config.portkey?.baseUrl,
+                enabled: isLiteLLM || isPortkey,
+                provider: isLiteLLM ? 'litellm' : 'portkey',
                 defaultClient: groqClient,
             });
 

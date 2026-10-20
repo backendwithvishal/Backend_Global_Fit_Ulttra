@@ -1,0 +1,38 @@
+# litellm-config.yaml
+# Global-Fi Ultra - Self-Hosted LiteLLM AI Gateway Configuration
+# Runs locally for $0 via Docker Compose (ghcr.io/berriai/litellm:main-latest)
+# Provides unified OpenAI-compatible endpoint: http://localhost:8000/v1
+
+model_list:
+  # Primary Financial Analysis Model (Groq LLaMA 3.3 70B)
+  - model_name: llama-3.3-70b-versatile
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+      rpm: 30
+      tpm: 60000
+
+  # Fast Model for Chunker, Routing, and Query Classification (Groq LLaMA 3.1 8B)
+  - model_name: llama-3.1-8b-instant
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+      rpm: 30
+      tpm: 60000
+
+  # Generic Default Alias
+  - model_name: globalfi-default
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  request_timeout: 30
+  telemetry: false
+
+router_settings:
+  routing_strategy: "latency-based-routing"
+  num_retries: 2
+  retry_after: 1

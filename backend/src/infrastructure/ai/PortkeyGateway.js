@@ -1,11 +1,12 @@
 /**
- * Global-Fi Ultra - Portkey AI Gateway Client
+ * Global-Fi Ultra - Universal AI Gateway Client (Portkey & LiteLLM)
  * 
  * Production-ready AI Gateway adapter supporting:
- * 1. Unified routing, timeouts, and fallback policies
- * 2. Transparent passthrough to GroqClient when Portkey is disabled
- * 3. Request metadata and correlation ID propagation
- * 4. Zero secret logging and sanitized payloads
+ * 1. Multi-provider Gateway routing: LiteLLM (Self-hosted, free) & Portkey AI
+ * 2. Unified routing, timeouts, and fallback policies
+ * 3. Transparent passthrough to GroqClient when Gateway is disabled
+ * 4. Request metadata and correlation ID propagation
+ * 5. Zero secret logging and sanitized payloads
  * 
  * @module infrastructure/ai/PortkeyGateway
  */
@@ -16,27 +17,37 @@ import { logger } from '../../config/logger.js';
 export class PortkeyGateway {
   constructor({
     apiKey = '',
-    baseUrl = 'https://api.portkey.ai/v1',
+    baseUrl = '',
     enabled = false,
+    provider = 'portkey', // 'portkey' | 'litellm'
     defaultClient = null,
   } = {}) {
+    this.provider = provider || 'portkey';
     this.apiKey = apiKey || '';
-    this.baseUrl = baseUrl || 'https://api.portkey.ai/v1';
-    this.enabled = !!(enabled && this.apiKey);
     this.defaultClient = defaultClient;
     this.logger = logger || console;
 
+    if (this.provider === 'litellm') {
+      this.baseUrl = baseUrl || 'http://localhost:8000/v1';
+      // LiteLLM can run locally without auth or with master key
+      this.enabled = !!enabled;
+    } else {
+      this.baseUrl = baseUrl || 'https://api.portkey.ai/v1';
+      this.enabled = !!(enabled && this.apiKey);
+    }
+
     if (this.enabled) {
-      this.logger.info('Portkey AI Gateway integration active', {
+      this.logger.info(`${this.provider === 'litellm' ? 'LiteLLM' : 'Portkey'} AI Gateway integration active`, {
         baseUrl: this.baseUrl,
+        provider: this.provider,
       });
     } else {
-      this.logger.info('Portkey AI Gateway disabled: Direct provider routing active');
+      this.logger.info('AI Gateway disabled: Direct provider routing active');
     }
   }
 
   /**
-   * Generates completion through Portkey gateway or direct provider fallback.
+   * Generates completion through AI gateway or direct provider fallback.
    * 
    * @param {string} prompt 
    * @param {object} options 
@@ -51,6 +62,19 @@ export class PortkeyGateway {
     }
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this.provider === 'litellm') {
+        if (this.apiKey) {
+          headers['Authorization'] = `Bearer ${this.apiKey}`;
+        }
+      } else {
+        headers['x-portkey-api-key'] = this.apiKey;
+        headers['x-portkey-provider'] = options.provider || 'groq';
+      }
+
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
         {
@@ -60,18 +84,15 @@ export class PortkeyGateway {
           temperature: options.temperature || 0.7,
         },
         {
-          headers: {
-            'x-portkey-api-key': this.apiKey,
-            'x-portkey-provider': 'groq',
-            'Content-Type': 'application/json',
-          },
+          headers,
           timeout: options.timeout || 30000,
         }
       );
 
       return response.data?.choices?.[0]?.message?.content || '';
     } catch (err) {
-      this.logger.warn('Portkey Gateway request failed, falling back to direct Groq client', {
+      const gatewayName = this.provider === 'litellm' ? 'LiteLLM' : 'Portkey';
+      this.logger.warn(`${gatewayName} Gateway request failed, falling back to direct Groq client`, {
         error: err.message,
       });
       if (this.defaultClient && typeof this.defaultClient.generateContent === 'function') {
@@ -82,7 +103,7 @@ export class PortkeyGateway {
   }
 
   /**
-   * Streams completion through Portkey gateway or direct provider fallback.
+   * Streams completion through AI gateway or direct provider fallback.
    * 
    * @param {string} prompt 
    * @param {Function} onChunk 
@@ -104,4 +125,5 @@ export class PortkeyGateway {
   }
 }
 
+export { PortkeyGateway as AIGateway };
 export default PortkeyGateway;

@@ -16,7 +16,8 @@ import { RerankerClient } from '../../src/infrastructure/ai/RerankerClient.js';
 import { BM25Retriever } from '../../src/infrastructure/vector/BM25Retriever.js';
 import { QdrantVectorStore } from '../../src/infrastructure/vector/QdrantVectorStore.js';
 import { AgenticRAGOrchestrator } from '../../src/infrastructure/ai/AgenticRAGOrchestrator.js';
-import { PortkeyGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
+import axios from 'axios';
+import { PortkeyGateway, AIGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
@@ -268,6 +269,64 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       const res = await gateway.generateContent('Hello');
       expect(res).toBe('Groq Output');
       expect(mockGroq.generateContent).toHaveBeenCalledWith('Hello', {});
+    });
+
+    it('should support LiteLLM provider routing with OpenAI-compatible payload and headers', async () => {
+      const axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValueOnce({
+        data: {
+          choices: [{ message: { content: 'LiteLLM Routed Output' } }],
+        },
+      });
+
+      const gateway = new PortkeyGateway({
+        provider: 'litellm',
+        enabled: true,
+        baseUrl: 'http://localhost:8000/v1',
+        apiKey: 'sk-globalfit-master',
+      });
+
+      const res = await gateway.generateContent('Explain market volatility', {
+        model: 'groq/llama-3.3-70b-versatile',
+        maxTokens: 512,
+      });
+
+      expect(res).toBe('LiteLLM Routed Output');
+      expect(axiosPostSpy).toHaveBeenCalledWith(
+        'http://localhost:8000/v1/chat/completions',
+        expect.objectContaining({
+          messages: [{ role: 'user', content: 'Explain market volatility' }],
+          model: 'groq/llama-3.3-70b-versatile',
+          max_tokens: 512,
+        }),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer sk-globalfit-master',
+            'Content-Type': 'application/json',
+          }),
+        })
+      );
+      axiosPostSpy.mockRestore();
+    });
+
+    it('should fall back to defaultClient if LiteLLM gateway request fails', async () => {
+      const axiosPostSpy = jest.spyOn(axios, 'post').mockRejectedValueOnce(new Error('Connection refused'));
+      const mockGroq = { generateContent: jest.fn().mockResolvedValue('Fallback Direct Groq') };
+
+      const gateway = new PortkeyGateway({
+        provider: 'litellm',
+        enabled: true,
+        baseUrl: 'http://localhost:8000/v1',
+        defaultClient: mockGroq,
+      });
+
+      const res = await gateway.generateContent('Query');
+      expect(res).toBe('Fallback Direct Groq');
+      expect(mockGroq.generateContent).toHaveBeenCalledWith('Query', {});
+      axiosPostSpy.mockRestore();
+    });
+
+    it('should export AIGateway alias identical to PortkeyGateway', () => {
+      expect(AIGateway).toBe(PortkeyGateway);
     });
 
     it('should generate run IDs without throwing when LangSmith is disabled', () => {

@@ -338,8 +338,15 @@ socket.on('ai:stream:error', ({ sessionId, error }) => {
 npm test --prefix backend
 ```
 - **Test Suites**: 6 passed, 6 total (100%)
-- **Tests**: 86 passed, 86 total (100%)
-- **Coverage**: Verified unit coverage across `AgenticRAGOrchestrator`, `BM25Retriever`, `EmbeddingClient`, `QdrantVectorStore`, `VectorStore`, `SemanticCache`, and REST route mounts.
+- **Tests**: 89 passed, 89 total (100%)
+- **Coverage**: Verified unit coverage across `AgenticRAGOrchestrator`, `BM25Retriever`, `EmbeddingClient`, `QdrantVectorStore`, `VectorStore`, `SemanticCache`, `PortkeyGateway` / `AIGateway` (LiteLLM support), and REST route mounts.
+
+### LiteLLM Self-Hosted AI Gateway ($0 Free)
+Global-Fi Ultra natively supports **LiteLLM** (`ghcr.io/berriai/litellm:main-latest`) as an open-source, zero-cost AI Gateway proxy:
+- **Universal Standard**: Translates standard OpenAI `/v1/chat/completions` requests to Groq, Ollama, or Gemini.
+- **Self-Hosted via Docker Compose**: Starts on `http://localhost:8000/v1` via `docker-compose up -d litellm`.
+- **Configured Routing**: Configured via `litellm-config.yaml` with automatic model aliases and retry backoff.
+- **Zero Cost**: Runs entirely locally or on your VPS with zero subscription fees.
 
 ### B. Financial Evaluation Benchmark (`npm run rag:eval`)
 

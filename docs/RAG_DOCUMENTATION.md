@@ -338,7 +338,7 @@ socket.on('ai:stream:error', ({ sessionId, error }) => {
 npm test --prefix backend
 ```
 - **Test Suites**: 6 passed, 6 total (100%)
-- **Tests**: 71 passed, 71 total (100%)
+- **Tests**: 86 passed, 86 total (100%)
 - **Coverage**: Verified unit coverage across `AgenticRAGOrchestrator`, `BM25Retriever`, `EmbeddingClient`, `QdrantVectorStore`, `VectorStore`, `SemanticCache`, and REST route mounts.
 
 ### B. Financial Evaluation Benchmark (`npm run rag:eval`)

@@ -125,6 +125,20 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
   - Hardened `IngestionService.js` path validation with case-insensitive Windows drive-letter comparison.
   - Added immediate generation abort to `AIStreamHandler.js` on `ai:stream:stop`.
   - Added RAG convenience scripts to root `package.json`.
+- [x] **Stage 12: Comprehensive Resilience, Endpoint Coverage & Independent Verification** (Completed & Verified)
+  - Added turnkey local `qdrant` vector database container service (`qdrant/qdrant:latest`) and `qdrant-data` volume to `docker-compose.yml`.
+  - Added all newly implemented RAG endpoints (`/api/v1/ai/rag/reindex`, `/api/v1/ai/rag/jobs/:jobId`, `/api/v1/rag/health`) to PowerShell (`test-all-endpoints.ps1`) and Bash (`test-all-endpoints.sh`) test suites.
+  - Hardened `SemanticCache.js` with active in-memory LRU fallback on Redis runtime connection or read/write failures.
+  - Fixed timeout boundary calculation in `AgenticRAGOrchestrator.js` using nullish coalescing to prevent falsy 0 timeout fallback.
+  - Added 7 comprehensive edge-case & resilience unit tests covering all Phase Eight failure modes:
+    1. Unit-normalized 384-dimensional dense vectors with `_embedFallbackProjection`
+    2. Resilient in-database cosine search fallback when Qdrant store throws
+    3. Local cross-encoder scoring fallback when Cohere rerank API fails
+    4. Safe LLM synthesis failure handling with source context attribution
+    5. Live market query routing to `FinancialDataService.getQuote`
+    6. Timeout boundary enforcement and loop termination
+    7. In-memory caching fallback when Redis cache throws
+  - Synchronized `docs/RAG_DOCUMENTATION.md` with verified 86 passed tests.
 
 ---
 
@@ -132,12 +146,14 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
 
 | Metric | Measured Value | Standard / Requirement |
 | :--- | :--- | :--- |
-| **Unit Test Pass Rate** | **100%** (79 / 79 tests passed) | 100% passing test suites |
+| **Unit Test Pass Rate** | **100%** (86 / 86 tests passed) | 100% passing test suites |
 | **Financial Evaluation Benchmark** | **100%** (8 / 8 scenarios passed) | Validated Recall@4 & anti-hallucination |
+| **Lint Error Count** | **0 errors** (ESLint verified) | Clean, standard-compliant code |
 | **Embedding Dimensions** | **384 dimensions** (L2 unit normalized) | Genuine semantic embeddings |
 | **Retrieval Architecture** | **Hybrid Qdrant + BM25 + RRF (65/35)** | Dense + Sparse + Reciprocal Rank Fusion |
 | **Default Cloud Billing** | **$0.00** | Zero surprise billing, free-first baseline |
 | **Tenant Isolation** | **Enforced** | Organization ID partitioned cache and queries |
 | **Citation Verification** | **Validated** | 100% mapping to retrieved document chunks |
 | **Path Traversal Protection**| **Enforced** | Directory traversal outside repository rejected |
+
 

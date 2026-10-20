@@ -48,7 +48,7 @@ export class AgenticRAGOrchestrator {
     // Hard bounds
     this.maxIterations = this.config.maxAgentIterations || 3;
     this.minConfidence = this.config.retrieval?.minSimilarityScore || 0.40;
-    this.timeoutMs = this.config.timeoutMs || 25000;
+    this.timeoutMs = this.config.timeoutMs !== undefined ? this.config.timeoutMs : 25000;
   }
 
   /**

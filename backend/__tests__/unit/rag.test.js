@@ -777,7 +777,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       const orchestrator = new AgenticRAGOrchestrator({
         vectorStore: mockVectorStore,
         embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
-        config: { maxAgentIterations: 5, timeoutMs: 1 },
+        config: { maxAgentIterations: 5, timeoutMs: 0 },
       });
 
       const res = await orchestrator.run({

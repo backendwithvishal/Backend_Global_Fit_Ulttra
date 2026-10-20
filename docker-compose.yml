@@ -38,12 +38,25 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - globalfi-network
+      - globalfit-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: globalfit-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: unless-stopped
+    networks:
+      - globalfit-network
 
 volumes:
   redis-data:
   rabbitmq-data:
+  qdrant-data:
 
 networks:
-  globalfi-network:
+  globalfit-network:
     driver: bridge

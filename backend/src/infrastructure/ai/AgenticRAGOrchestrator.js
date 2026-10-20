@@ -377,7 +377,7 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
       iteration++;
 
       // Enforce timeout boundary
-      if (Date.now() - startTime > this.timeoutMs) {
+      if (Date.now() - startTime >= this.timeoutMs) {
         trace.push({ stage: 'TIMEOUT', iteration, elapsedMs: Date.now() - startTime });
         break;
       }

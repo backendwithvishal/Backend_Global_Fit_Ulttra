@@ -127,6 +127,9 @@ $Total++
 if (Test-Endpoint "RAG Health Check" "GET" "/api/v1/ai/rag/health") { $Passed++ } else { $Failed++ }
 
 $Total++
+if (Test-Endpoint "RAG Alias Health Check" "GET" "/api/v1/rag/health") { $Passed++ } else { $Failed++ }
+
+$Total++
 if (Test-Endpoint "RAG Stats" "GET" "/api/v1/ai/rag/stats") { $Passed++ } else { $Failed++ }
 
 $Total++
@@ -135,6 +138,12 @@ if (Test-Endpoint "RAG List Documents" "GET" "/api/v1/ai/rag/documents?limit=5")
 $Total++
 $ragData = '{"question":"What were Apple Services revenue numbers in Q3 2024?","symbol":"AAPL","topK":2}'
 if (Test-Endpoint "RAG Grounded Query" "POST" "/api/v1/ai/rag/query" $ragData) { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "RAG Reindex Knowledge Base" "POST" "/api/v1/ai/rag/reindex") { $Passed++ } else { $Failed++ }
+
+$Total++
+if (Test-Endpoint "RAG Ingestion Job Status" "GET" "/api/v1/ai/rag/jobs/job-test-12345") { $Passed++ } else { $Failed++ }
 
 Write-Host ""
 Write-Host "-------------------------------------------------------------"

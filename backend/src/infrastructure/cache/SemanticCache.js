@@ -74,9 +74,11 @@ export class SemanticCache {
           return { ...exactHit, cacheSource: 'redis_exact' };
         }
       } catch {
-        // Continue to semantic check
+        // Fall through to memoryCache on Redis error
       }
-    } else if (this.memoryCache.has(exactKey)) {
+    }
+
+    if (this.memoryCache.has(exactKey)) {
       const memHit = this.memoryCache.get(exactKey);
       if (options.organizationId && memHit.organizationId && memHit.organizationId !== String(options.organizationId)) {
         return null;
@@ -149,10 +151,11 @@ export class SemanticCache {
       cachedAt: new Date().toISOString(),
     };
 
-    // Store exact key
+    let writtenToRedis = false;
     if (this.cacheService) {
       try {
         await this.cacheService.set(exactKey, dataToStore, ttl);
+        writtenToRedis = true;
 
         // Update semantic index for the symbol
         if (queryEmbedding) {
@@ -174,9 +177,11 @@ export class SemanticCache {
           await this.cacheService.set(indexKey, indexList, ttl);
         }
       } catch (err) {
-        this.logger.debug('Failed to write to Redis semantic cache', { error: err.message });
+        this.logger.debug('Failed to write to Redis semantic cache, using memory fallback', { error: err.message });
       }
-    } else {
+    }
+
+    if (!writtenToRedis) {
       // Memory fallback with LRU eviction
       if (this.memoryCache.size >= this.maxMemoryItems) {
         const firstKey = this.memoryCache.keys().next().value;

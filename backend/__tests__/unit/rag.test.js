@@ -21,6 +21,7 @@ import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js'
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
 import { Document } from '../../src/models/Document.js';
+import { VectorStore } from '../../src/infrastructure/vector/VectorStore.js';
 import express from 'express';
 import request from 'supertest';
 import { createRAGRoutes } from '../../src/routes/ragRoutes.js';
@@ -641,6 +642,168 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       });
       const error2 = docMarkdown.validateSync();
       expect(error2?.errors?.fileType).toBeUndefined();
+    });
+  });
+
+  describe('Comprehensive RAG Edge Cases & Resilience', () => {
+    it('should generate unit-normalized 384-dimensional dense vectors with _embedFallbackProjection', () => {
+      const client = new EmbeddingClient({ provider: 'local' });
+      const [vector] = client._embedFallbackProjection(['Apple Q3 revenue $85.78B']);
+
+      expect(Array.isArray(vector)).toBe(true);
+      expect(vector).toHaveLength(384);
+      let sumSq = 0;
+      for (let i = 0; i < vector.length; i++) sumSq += vector[i] * vector[i];
+      expect(sumSq).toBeCloseTo(1.0, 3);
+    });
+
+    it('should fall back to in-database cosine search when Qdrant store searchDense throws', async () => {
+      const mockQdrant = {
+        isReady: true,
+        searchDense: jest.fn().mockRejectedValue(new Error('Qdrant daemon connection refused')),
+      };
+
+      const mockModel = {
+        find: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([
+                {
+                  _id: 'mongo-c1',
+                  documentId: 'doc1',
+                  content: 'Microsoft Azure cloud revenue',
+                  embedding: new Array(384).fill(0.1),
+                  metadata: { symbol: 'MSFT', filingType: '10-K' },
+                },
+              ]),
+            }),
+          }),
+        }),
+      };
+
+      const store = new VectorStore({
+        documentChunkModel: mockModel,
+        qdrantVectorStore: mockQdrant,
+      });
+
+      const results = await store.searchDense(new Array(384).fill(0.1), { limit: 1 });
+      expect(mockQdrant.searchDense).toHaveBeenCalled();
+      expect(results).toHaveLength(1);
+      expect(results[0].chunk._id).toBe('mongo-c1');
+    });
+
+    it('should fall back to local cross-encoder scoring when Cohere rerank API fails', async () => {
+      const reranker = new RerankerClient({ apiKey: 'mock-cohere-key' });
+      const candidates = [
+        { chunk: { content: 'Apple Services revenue $24.2B', metadata: { section: 'Operations' } }, denseScore: 0.5 },
+        { chunk: { content: 'Unrelated paragraph about office furniture', metadata: { section: 'General' } }, denseScore: 0.3 },
+      ];
+
+      const results = await reranker.rerank('Apple Services revenue', candidates, 2);
+      expect(results).toHaveLength(2);
+      expect(results[0].chunk.content).toContain('Apple Services');
+      expect(results[0].relevanceScore).toBeGreaterThan(results[1].relevanceScore);
+    });
+
+    it('should handle LLM synthesis failure gracefully and return retrieved context', async () => {
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockResolvedValue([
+          {
+            chunk: {
+              _id: 'c1',
+              documentId: 'd1',
+              content: 'Nvidia Data Center revenue was $47.4B.',
+              metadata: { symbol: 'NVDA', filingType: '10-K', section: 'Data Center', pageNumber: 1 },
+            },
+            rrfScore: 0.95,
+          },
+        ]),
+      };
+
+      const mockFailingGroq = {
+        generateContent: jest.fn().mockRejectedValue(new Error('Rate limit exceeded (TPM)')),
+      };
+
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: mockVectorStore,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        groqClient: mockFailingGroq,
+      });
+
+      const res = await orchestrator.run({
+        question: 'What was Nvidia revenue?',
+        symbol: 'NVDA',
+      });
+
+      expect(mockFailingGroq.generateContent).toHaveBeenCalled();
+      expect(res.answer).toContain('LLM synthesis was unavailable');
+      expect(res.retrievalCount).toBe(1);
+    });
+
+    it('should route live market inquiries to FinancialDataService', async () => {
+      const mockFinancialDataService = {
+        getQuote: jest.fn().mockResolvedValue({
+          symbol: 'AAPL',
+          price: 232.50,
+          change: 3.20,
+          changePercent: 1.39,
+        }),
+      };
+
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: { hybridSearch: jest.fn() },
+        embeddingClient: { embedQuery: jest.fn() },
+        financialDataService: mockFinancialDataService,
+      });
+
+      const res = await orchestrator.run({
+        question: "What is Apple's current stock price right now?",
+        symbol: 'AAPL',
+      });
+
+      expect(mockFinancialDataService.getQuote).toHaveBeenCalledWith('AAPL');
+      expect(res.answer).toContain('Live Market Data for AAPL');
+      expect(res.answer).toContain('$232.5');
+      expect(res.confidence).toBe(99);
+    });
+
+    it('should enforce timeout boundary and terminate iteration loop', async () => {
+      const mockVectorStore = {
+        hybridSearch: jest.fn().mockImplementation(async () => {
+          return [];
+        }),
+      };
+
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: mockVectorStore,
+        embeddingClient: { embedQuery: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) },
+        config: { maxAgentIterations: 5, timeoutMs: 1 },
+      });
+
+      const res = await orchestrator.run({
+        question: 'Any financial query?',
+        symbol: 'AAPL',
+      });
+
+      expect(res.agentTrace.some(t => t.stage === 'TIMEOUT')).toBe(true);
+      expect(res.confidence).toBe(0);
+    });
+
+    it('should fall back to in-memory caching when Redis cache throws', async () => {
+      const mockFailingRedis = {
+        get: jest.fn().mockRejectedValue(new Error('Redis connection lost')),
+        set: jest.fn().mockRejectedValue(new Error('Redis connection lost')),
+      };
+
+      const cache = new SemanticCache({ cacheService: mockFailingRedis });
+
+      // Should not throw on set
+      await cache.set('What is AAPL revenue?', new Array(384).fill(0.1), { answer: '$85.78B' });
+
+      // Should read from memory without throwing
+      const res = await cache.get('What is AAPL revenue?', new Array(384).fill(0.1));
+      expect(res).not.toBeNull();
+      expect(res.answer).toBe('$85.78B');
     });
   });
 });

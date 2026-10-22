@@ -119,6 +119,9 @@ const parseEnv = () => {
   if (!process.env.LANGSMITH_PROJECT && process.env.LANGCHAIN_PROJECT) {
     process.env.LANGSMITH_PROJECT = process.env.LANGCHAIN_PROJECT;
   }
+  if (!process.env.LANGSMITH_ENABLED && process.env.LANGCHAIN_TRACING_V2) {
+    process.env.LANGSMITH_ENABLED = process.env.LANGCHAIN_TRACING_V2;
+  }
   if (!process.env.RAG_MAX_AGENT_ITERATIONS && process.env.RAG_MAX_ITERATIONS) {
     process.env.RAG_MAX_AGENT_ITERATIONS = process.env.RAG_MAX_ITERATIONS;
   }

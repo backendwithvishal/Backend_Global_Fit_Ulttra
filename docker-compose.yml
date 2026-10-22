@@ -61,6 +61,8 @@ services:
       - ./litellm-config.yaml:/app/config.yaml
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     restart: unless-stopped
     networks:

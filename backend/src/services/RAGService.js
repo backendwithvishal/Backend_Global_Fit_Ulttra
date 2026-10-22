@@ -8,7 +8,7 @@
  * 4. Two-Stage Retrieval (Dense Qdrant/MongoDB Vector + BM25 Sparse Search + Reciprocal Rank Fusion).
  * 5. Cross-Encoder Density Reranking for pinpoint contextual precision.
  * 6. Evidence Sufficiency Verification (prevents hallucination on missing data).
- * 7. Grounded Synthesis via Groq / Portkey Gateway with Anti-Injection Guardrails.
+ * 7. Grounded Synthesis via Groq / LiteLLM Gateway with Anti-Injection Guardrails.
  * 8. Strict Citation Attribution & Verification ([Source 1: AAPL 10-K]).
  * 9. Real-Time Token & Citation Streaming over WebSockets (Socket.IO).
  * 10. LangSmith Tracing & Observability.
@@ -28,7 +28,7 @@ export class RAGService {
     rerankerClient = null,
     semanticCache = null,
     financialDataService = null,
-    portkeyGateway = null,
+    aiGateway = null,
     langSmithTracer = null,
   } = {}) {
     if (!vectorStore) {
@@ -44,14 +44,14 @@ export class RAGService {
     this.rerankerClient = rerankerClient;
     this.semanticCache = semanticCache;
     this.financialDataService = financialDataService;
-    this.portkeyGateway = portkeyGateway;
+    this.aiGateway = aiGateway;
     this.langSmithTracer = langSmithTracer;
     this.logger = logger || console;
     this.config = AI_CONFIG.rag || {};
 
     // Instantiate Agentic Orchestrator
-    const activeLLMClient = this.portkeyGateway && this.portkeyGateway.enabled
-      ? this.portkeyGateway
+    const activeLLMClient = this.aiGateway && this.aiGateway.enabled
+      ? this.aiGateway
       : this.groqClient;
 
     this.orchestrator = new AgenticRAGOrchestrator({
@@ -239,8 +239,8 @@ Question: ${cleanQuestion}
 
 Provide a grounded financial analysis citing [Source X]:`;
 
-      const activeLLMClient = this.portkeyGateway && this.portkeyGateway.enabled
-        ? this.portkeyGateway
+      const activeLLMClient = this.aiGateway && this.aiGateway.enabled
+        ? this.aiGateway
         : this.groqClient;
 
       if (activeLLMClient && typeof activeLLMClient.streamContent === 'function') {

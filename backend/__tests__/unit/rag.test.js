@@ -2,7 +2,7 @@
  * Global-Fi Ultra - RAG Unit Tests
  * 
  * Tests for financial chunker, embedding vectorizer, semantic cache,
- * BM25 lexical retriever, Qdrant store, Agentic Orchestrator, Portkey Gateway,
+ * BM25 lexical retriever, Qdrant store, Agentic Orchestrator, LiteLLM Gateway,
  * LangSmith tracer, and RAG routes.
  * 
  * @jest-environment node
@@ -17,7 +17,7 @@ import { BM25Retriever } from '../../src/infrastructure/vector/BM25Retriever.js'
 import { QdrantVectorStore } from '../../src/infrastructure/vector/QdrantVectorStore.js';
 import { AgenticRAGOrchestrator } from '../../src/infrastructure/ai/AgenticRAGOrchestrator.js';
 import axios from 'axios';
-import { PortkeyGateway, AIGateway } from '../../src/infrastructure/ai/PortkeyGateway.js';
+import { LiteLLMGateway } from '../../src/infrastructure/ai/LiteLLMGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
@@ -261,10 +261,10 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     });
   });
 
-  describe('PortkeyGateway & LangSmithTracer', () => {
-    it('should transparently pass through to default client when Portkey is disabled', async () => {
+  describe('LiteLLMGateway & LangSmithTracer', () => {
+    it('should transparently pass through to default client when LiteLLM is disabled', async () => {
       const mockGroq = { generateContent: jest.fn().mockResolvedValue('Groq Output') };
-      const gateway = new PortkeyGateway({ enabled: false, defaultClient: mockGroq });
+      const gateway = new LiteLLMGateway({ enabled: false, defaultClient: mockGroq });
 
       const res = await gateway.generateContent('Hello');
       expect(res).toBe('Groq Output');
@@ -278,8 +278,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
         },
       });
 
-      const gateway = new PortkeyGateway({
-        provider: 'litellm',
+      const gateway = new LiteLLMGateway({
         enabled: true,
         baseUrl: 'http://localhost:8000/v1',
         apiKey: 'sk-globalfit-master',
@@ -312,8 +311,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       const axiosPostSpy = jest.spyOn(axios, 'post').mockRejectedValueOnce(new Error('Connection refused'));
       const mockGroq = { generateContent: jest.fn().mockResolvedValue('Fallback Direct Groq') };
 
-      const gateway = new PortkeyGateway({
-        provider: 'litellm',
+      const gateway = new LiteLLMGateway({
         enabled: true,
         baseUrl: 'http://localhost:8000/v1',
         defaultClient: mockGroq,
@@ -325,8 +323,9 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       axiosPostSpy.mockRestore();
     });
 
-    it('should export AIGateway alias identical to PortkeyGateway', () => {
-      expect(AIGateway).toBe(PortkeyGateway);
+    it('should export LiteLLMGateway as default export', () => {
+      expect(LiteLLMGateway).toBeDefined();
+      expect(typeof LiteLLMGateway).toBe('function');
     });
 
     it('should generate run IDs without throwing when LangSmith is disabled', () => {
@@ -662,7 +661,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     });
   });
 
-  describe('PortkeyGateway streamContent', () => {
+  describe('LiteLLMGateway streamContent', () => {
     it('should delegate streamContent to defaultClient when disabled', async () => {
       const chunks = [];
       const mockDefault = {
@@ -673,7 +672,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
         }),
       };
 
-      const gateway = new PortkeyGateway({ enabled: false, defaultClient: mockDefault });
+      const gateway = new LiteLLMGateway({ enabled: false, defaultClient: mockDefault });
       const res = await gateway.streamContent('Prompt', (c) => chunks.push(c));
 
       expect(mockDefault.streamContent).toHaveBeenCalled();

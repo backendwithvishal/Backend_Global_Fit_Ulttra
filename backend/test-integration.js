@@ -55,7 +55,7 @@ console.log(`✓ Qdrant URL: ${config.qdrant?.url || 'http://localhost:6333'}`);
 console.log(`✓ Embedding Provider: ${config.rag?.embeddingProvider || 'local'} (${config.rag?.embeddingModel || 'Xenova/all-MiniLM-L6-v2'}, 384 dims)`);
 console.log(`✓ Hybrid Retrieval: Dense (${config.rag?.rrfDenseWeight || 0.65}) + BM25 Sparse (${config.rag?.rrfSparseWeight || 0.35}), RRF k=${config.rag?.rrfK || 60}`);
 console.log(`✓ Semantic Cache: ${config.rag?.semanticCacheEnabled !== false ? 'Enabled (<30ms, tenant-isolated)' : 'Disabled'}`);
-console.log(`✓ Portkey Gateway: ${config.portkey?.enabled ? 'Enabled' : 'Disabled (Direct LLM path active)'}`);
+console.log(`✓ LiteLLM Gateway: ${config.litellm?.enabled ? 'Enabled' : 'Disabled (Direct Groq path active)'}`);
 console.log(`✓ LangSmith Tracing: ${config.langsmith?.enabled ? 'Enabled' : 'Disabled (Zero-cost offline mode)'}`);
 
 console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

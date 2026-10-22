@@ -9,5 +9,5 @@ export { AI_CONFIG } from './aiConfig.js';
 export { EmbeddingClient } from './EmbeddingClient.js';
 export { RerankerClient } from './RerankerClient.js';
 export { AgenticRAGOrchestrator } from './AgenticRAGOrchestrator.js';
-export { PortkeyGateway, PortkeyGateway as AIGateway } from './PortkeyGateway.js';
+export { LiteLLMGateway } from './LiteLLMGateway.js';
 export { LangSmithTracer } from './LangSmithTracer.js';

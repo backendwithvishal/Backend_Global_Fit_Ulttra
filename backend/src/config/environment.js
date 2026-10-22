@@ -73,10 +73,6 @@ const envSchema = z.object({
   LITELLM_URL: z.string().default('http://localhost:8000/v1'),
   LITELLM_API_KEY: z.string().optional().default(''),
 
-  // Portkey AI Gateway (Optional)
-  PORTKEY_API_KEY: z.string().optional().default(''),
-  PORTKEY_BASE_URL: z.string().default('https://api.portkey.ai/v1'),
-  PORTKEY_ENABLED: z.string().transform(v => v === 'true').default('false'),
 
   // LangSmith Tracing & Observability (Optional)
   LANGSMITH_API_KEY: z.string().optional().default(''),
@@ -109,9 +105,6 @@ const parseEnv = () => {
   // Support deployment aliases for seamless backwards compatibility
   if (!process.env.LITELLM_URL && process.env.LITELLM_BASE_URL) {
     process.env.LITELLM_URL = process.env.LITELLM_BASE_URL;
-  }
-  if (!process.env.PORTKEY_BASE_URL && process.env.PORTKEY_GATEWAY_URL) {
-    process.env.PORTKEY_BASE_URL = process.env.PORTKEY_GATEWAY_URL;
   }
   if (!process.env.LANGSMITH_API_KEY && process.env.LANGCHAIN_API_KEY) {
     process.env.LANGSMITH_API_KEY = process.env.LANGCHAIN_API_KEY;
@@ -237,11 +230,6 @@ export const config = {
     apiKey: env.LITELLM_API_KEY,
   },
 
-  portkey: {
-    apiKey: env.PORTKEY_API_KEY,
-    baseUrl: env.PORTKEY_BASE_URL,
-    enabled: env.PORTKEY_ENABLED,
-  },
 
   langsmith: {
     apiKey: env.LANGSMITH_API_KEY,

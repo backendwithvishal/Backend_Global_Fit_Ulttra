@@ -92,7 +92,7 @@ import { VectorStore } from '../infrastructure/vector/VectorStore.js';
 import { QdrantVectorStore } from '../infrastructure/vector/QdrantVectorStore.js';
 import { SemanticCache } from '../infrastructure/cache/SemanticCache.js';
 import { RerankerClient } from '../infrastructure/ai/RerankerClient.js';
-import { PortkeyGateway } from '../infrastructure/ai/PortkeyGateway.js';
+import { LiteLLMGateway } from '../infrastructure/ai/LiteLLMGateway.js';
 import { LangSmithTracer } from '../infrastructure/ai/LangSmithTracer.js';
 import { IngestionService } from '../services/IngestionService.js';
 import { RAGService } from '../services/RAGService.js';
@@ -279,7 +279,7 @@ export class Container {
         let vectorStore = null;
         let semanticCache = null;
         let rerankerClient = null;
-        let portkeyGateway = null;
+        let aiGateway = null;
         let langSmithTracer = null;
         let ingestionService = null;
         let ragService = null;
@@ -321,15 +321,13 @@ export class Container {
                 apiKey: config.rag?.cohereApiKey || '',
             });
 
-            // AI Gateway Selection (LiteLLM free self-hosted proxy takes priority if enabled, else Portkey)
+            // AI Gateway: LiteLLM free self-hosted proxy
             const isLiteLLM = config.litellm?.enabled;
-            const isPortkey = config.portkey?.enabled;
 
-            portkeyGateway = new PortkeyGateway({
-                apiKey: isLiteLLM ? (config.litellm?.apiKey || '') : (config.portkey?.apiKey || ''),
-                baseUrl: isLiteLLM ? config.litellm?.url : config.portkey?.baseUrl,
-                enabled: isLiteLLM || isPortkey,
-                provider: isLiteLLM ? 'litellm' : 'portkey',
+            aiGateway = new LiteLLMGateway({
+                apiKey: config.litellm?.apiKey || '',
+                baseUrl: config.litellm?.url,
+                enabled: isLiteLLM,
                 defaultClient: groqClient,
             });
 
@@ -353,7 +351,7 @@ export class Container {
                 vectorStore,
                 rerankerClient,
                 semanticCache,
-                portkeyGateway,
+                aiGateway,
                 langSmithTracer,
             });
 
@@ -383,7 +381,7 @@ export class Container {
             vectorStore = null;
             semanticCache = null;
             rerankerClient = null;
-            portkeyGateway = null;
+            aiGateway = null;
             langSmithTracer = null;
             ingestionService = null;
             ragService = null;
@@ -496,7 +494,7 @@ export class Container {
         this.instances.set('vectorStore', vectorStore);
         this.instances.set('semanticCache', semanticCache);
         this.instances.set('rerankerClient', rerankerClient);
-        this.instances.set('portkeyGateway', portkeyGateway);
+        this.instances.set('aiGateway', aiGateway);
         this.instances.set('langSmithTracer', langSmithTracer);
         this.instances.set('ingestionService', ingestionService);
         this.instances.set('ragService', ragService);

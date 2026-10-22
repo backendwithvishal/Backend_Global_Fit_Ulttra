@@ -1,56 +1,45 @@
 /**
- * Global-Fi Ultra - Universal AI Gateway Client (Portkey & LiteLLM)
- * 
- * Production-ready AI Gateway adapter supporting:
- * 1. Multi-provider Gateway routing: LiteLLM (Self-hosted, free) & Portkey AI
- * 2. Unified routing, timeouts, and fallback policies
- * 3. Transparent passthrough to GroqClient when Gateway is disabled
- * 4. Request metadata and correlation ID propagation
- * 5. Zero secret logging and sanitized payloads
- * 
- * @module infrastructure/ai/PortkeyGateway
+ * Global-Fi Ultra - LiteLLM AI Gateway Client
+ *
+ * OpenAI-compatible self-hosted AI gateway adapter supporting:
+ * 1. LiteLLM proxy routing (self-hosted, free, zero vendor lock-in)
+ * 2. Transparent passthrough to GroqClient when LiteLLM is disabled
+ * 3. Unified generateContent / streamContent interface
+ * 4. Request correlation ID propagation and sanitized logging
+ *
+ * @module infrastructure/ai/LiteLLMGateway
  */
 
 import axios from 'axios';
 import { logger } from '../../config/logger.js';
 
-export class PortkeyGateway {
+export class LiteLLMGateway {
   constructor({
     apiKey = '',
     baseUrl = '',
     enabled = false,
-    provider = 'portkey', // 'portkey' | 'litellm'
     defaultClient = null,
   } = {}) {
-    this.provider = provider || 'portkey';
     this.apiKey = apiKey || '';
+    this.baseUrl = baseUrl || 'http://localhost:8000/v1';
+    this.enabled = !!enabled;
     this.defaultClient = defaultClient;
     this.logger = logger || console;
 
-    if (this.provider === 'litellm') {
-      this.baseUrl = baseUrl || 'http://localhost:8000/v1';
-      // LiteLLM can run locally without auth or with master key
-      this.enabled = !!enabled;
-    } else {
-      this.baseUrl = baseUrl || 'https://api.portkey.ai/v1';
-      this.enabled = !!(enabled && this.apiKey);
-    }
-
     if (this.enabled) {
-      this.logger.info(`${this.provider === 'litellm' ? 'LiteLLM' : 'Portkey'} AI Gateway integration active`, {
+      this.logger.info('LiteLLM AI Gateway integration active', {
         baseUrl: this.baseUrl,
-        provider: this.provider,
       });
     } else {
-      this.logger.info('AI Gateway disabled: Direct provider routing active');
+      this.logger.info('LiteLLM Gateway disabled: Direct Groq routing active');
     }
   }
 
   /**
-   * Generates completion through AI gateway or direct provider fallback.
-   * 
-   * @param {string} prompt 
-   * @param {object} options 
+   * Generates completion through LiteLLM gateway or direct provider fallback.
+   *
+   * @param {string} prompt
+   * @param {object} options
    * @returns {Promise<string>}
    */
   async generateContent(prompt, options = {}) {
@@ -66,13 +55,8 @@ export class PortkeyGateway {
         'Content-Type': 'application/json',
       };
 
-      if (this.provider === 'litellm') {
-        if (this.apiKey) {
-          headers['Authorization'] = `Bearer ${this.apiKey}`;
-        }
-      } else {
-        headers['x-portkey-api-key'] = this.apiKey;
-        headers['x-portkey-provider'] = options.provider || 'groq';
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
 
       const response = await axios.post(
@@ -91,8 +75,7 @@ export class PortkeyGateway {
 
       return response.data?.choices?.[0]?.message?.content || '';
     } catch (err) {
-      const gatewayName = this.provider === 'litellm' ? 'LiteLLM' : 'Portkey';
-      this.logger.warn(`${gatewayName} Gateway request failed, falling back to direct Groq client`, {
+      this.logger.warn('LiteLLM Gateway request failed, falling back to direct Groq client', {
         error: err.message,
       });
       if (this.defaultClient && typeof this.defaultClient.generateContent === 'function') {
@@ -103,18 +86,19 @@ export class PortkeyGateway {
   }
 
   /**
-   * Streams completion through AI gateway or direct provider fallback.
-   * 
-   * @param {string} prompt 
-   * @param {Function} onChunk 
-   * @param {object} options 
+   * Streams completion through direct provider (LiteLLM streaming not yet wired).
+   * Falls back to full generate + single onChunk call.
+   *
+   * @param {string} prompt
+   * @param {Function} onChunk
+   * @param {object} options
    * @returns {Promise<string>}
    */
   async streamContent(prompt, onChunk, options = {}) {
     if (this.defaultClient && typeof this.defaultClient.streamContent === 'function') {
       return this.defaultClient.streamContent(prompt, onChunk, options);
     }
-    // Fallback to generateContent if streamContent is unavailable
+    // Fallback: full generation then single chunk delivery
     const fullText = await this.generateContent(prompt, options);
     if (typeof onChunk === 'function') {
       await onChunk(fullText);
@@ -125,5 +109,4 @@ export class PortkeyGateway {
   }
 }
 
-export { PortkeyGateway as AIGateway };
-export default PortkeyGateway;
+export default LiteLLMGateway;

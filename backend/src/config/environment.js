@@ -1,4 +1,4 @@
-// Environment configuration with Zod validation
+2// Environment configuration with Zod validation
 // Single source of truth for all config values
 
 import 'dotenv/config';
@@ -126,6 +126,9 @@ const parseEnv = () => {
   }
   if (!process.env.EMBEDDING_MODEL && process.env.LOCAL_EMBEDDING_MODEL) {
     process.env.EMBEDDING_MODEL = process.env.LOCAL_EMBEDDING_MODEL;
+  }
+  if (!process.env.EMBEDDING_API_KEY && process.env.HUGGINGFACE_API_KEY) {
+    process.env.EMBEDDING_API_KEY = process.env.HUGGINGFACE_API_KEY;
   }
 
   const result = envSchema.safeParse(process.env);

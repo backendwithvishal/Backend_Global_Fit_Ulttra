@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Health Routes
+ * Global_Fit_Ulttra - Health Routes
  * 
  * Express router for health check and readiness probe endpoints.
  * Used by load balancers (Render, Kubernetes), monitoring services

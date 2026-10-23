@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Ingest Financial Documents CLI
+ * Global_Fit_Ulttra - Ingest Financial Documents CLI
  * 
  * Command-line script to ingest and vectorize all financial PDF filings
  * and macroeconomic reports stored in `data/financial_documents/`.
@@ -24,7 +24,7 @@ const docsDir = path.resolve(__dirname, '..', 'data', 'financial_documents');
 
 async function main() {
   console.log('=====================================================');
-  console.log('Global-Fi Ultra - Financial RAG Document Ingestion');
+  console.log('Global_Fit_Ulttra - Financial RAG Document Ingestion');
   console.log('=====================================================');
 
   try {

@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Agentic RAG Orchestrator
+ * Global_Fit_Ulttra - Agentic RAG Orchestrator
  * 
  * Production State Machine for Controlled Financial Agentic Retrieval & Grounded Generation:
  * 1. Query Understanding & Classification (Filing QA, Comparisons, Live Market Routing)
@@ -270,7 +270,7 @@ export class AgenticRAGOrchestrator {
 
     const contextText = contextBlocks.join('\n\n────────────────────────────────────────\n\n');
 
-    const systemPrompt = `You are Global-Fi Ultra's Senior Financial Research Analyst.
+    const systemPrompt = `You are Global_Fit_Ulttra's Senior Financial Research Analyst.
 Your duty is to produce an accurate, grounded financial analysis based STRICTLY and EXCLUSIVELY on the verified financial context provided below.
 
 MANDATORY RULES:

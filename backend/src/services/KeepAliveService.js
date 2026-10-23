@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - KeepAlive Service
+ * Global_Fit_Ulttra - KeepAlive Service
  *
  * Automated background service to keep backend instances awake on cloud platforms
  * (e.g., Render, Railway, Heroku) that spin down free services after periods of inactivity.
@@ -76,7 +76,7 @@ export class KeepAliveService {
             const response = await fetch(targetUrl, {
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'GlobalFi-KeepAlive-Service/1.0',
+                    'User-Agent': 'GlobalFitUlttra-KeepAlive-Service/1.0',
                     'Accept': 'application/json',
                 },
             });

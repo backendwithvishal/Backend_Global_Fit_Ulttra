@@ -1,4 +1,4 @@
-# Global-Fi Ultra 🚀
+# Global_Fit_Ulttra 🚀
 
 Real-time financial data aggregator with AI-powered analysis. Pulls from 6+ APIs and streams market data via WebSockets. Built for traders, developers, and anyone who needs reliable market data without managing multiple API integrations.
 
@@ -33,7 +33,7 @@ Real-time financial data aggregator with AI-powered analysis. Pulls from 6+ APIs
 
 ## Why This Exists
 
-Managing multiple financial data APIs is tedious. Global-Fi Ultra solves this by:
+Managing multiple financial data APIs is tedious. Global_Fit_Ulttra solves this by:
 
 - **Aggregating everything** - stocks, crypto, forex, and news into one clean API
 - **Handling the hard parts** - circuit breakers and retry logic built-in
@@ -106,7 +106,7 @@ Managing multiple financial data APIs is tedious. Global-Fi Ultra solves this by
 ```bash
 # 1. Clone repository
 git clone <repository-url>
-cd global-fi-ultra
+cd Global_Fit_Ulttra
 
 # 2. Install dependencies
 npm install
@@ -228,7 +228,7 @@ npm run redis:export     # Export to JSON
 
 ## 🧠 Agentic Hybrid Financial RAG (NEW)
 
-Global-Fi Ultra features a production-grade **Agentic Hybrid Financial RAG Subsystem** for deep analysis of SEC 10-K, 10-Q filings, earnings transcripts, and Federal Reserve statements.
+Global_Fit_Ulttra features a production-grade **Agentic Hybrid Financial RAG Subsystem** for deep analysis of SEC 10-K, 10-Q filings, earnings transcripts, and Federal Reserve statements.
 
 ### Key Capabilities
 - **Local Dense Semantic Vectors**: Zero-cost, 384-dimensional dense semantic vectors powered locally by `@xenova/transformers` (`all-MiniLM-L6-v2`) on CPU.
@@ -452,7 +452,7 @@ GROQ_PRIMARY_MODEL=llama-3.3-70b-versatile
 GROQ_FAST_MODEL=llama-3.1-8b-instant
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/globalfi-ultra
+MONGODB_URI=mongodb://localhost:27017/global_fit_ulttra
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
@@ -466,13 +466,13 @@ RABBITMQ_URL=amqp://localhost:5672
 
 ### Import Postman Collection
 
-**File**: `postman-collection.json` - 50+ pre-configured endpoints with realistic dummy data
+**File**: `Global_Fit_Ulttra_API.postman_collection.json` - 50+ pre-configured endpoints with realistic dummy data
 
 **Steps:**
 1. Open Postman
 2. Click "Import" button (top left)
-3. Drag & drop `postman-collection.json` OR click "Upload Files"
-4. Collection "Global-Fi Ultra API - Complete Collection" will appear
+3. Drag & drop `Global_Fit_Ulttra_API.postman_collection.json` OR click "Upload Files"
+4. Collection "Global_Fit_Ulttra API v1" will appear
 
 **What's Included:**
 - ✅ 50+ API Endpoints with dummy data
@@ -653,7 +653,7 @@ The repository includes `render.yaml` for automated blueprint deployment.
 ### Heroku
 
 ```bash
-heroku create globalfi-ultra
+heroku create global-fit-ulttra
 heroku addons:create mongolab:sandbox
 heroku addons:create heroku-redis:mini
 heroku config:set GROQ_API_KEY=your_key
@@ -669,8 +669,8 @@ git push heroku main
 docker-compose up -d
 
 # Or push to Docker Hub
-docker build -t yourusername/globalfi-ultra .
-docker push yourusername/globalfi-ultra
+docker build -t yourusername/global-fit-ulttra .
+docker push yourusername/global-fit-ulttra
 ```
 
 ### Production Configuration
@@ -771,7 +771,7 @@ Error: Circuit breaker is OPEN for service: alphavantage
 ### System Overview
 
 ```
-Client → Global-Fi Ultra → 6 External APIs
+Client → Global_Fit_Ulttra → 6 External APIs
               ↓
          MongoDB + Redis
 ```

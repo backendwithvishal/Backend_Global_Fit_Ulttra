@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Resilience Index
+ * Global_Fit_Ulttra - Resilience Index
  */
 
 export { CircuitBreaker, CircuitState } from './CircuitBreaker.js';

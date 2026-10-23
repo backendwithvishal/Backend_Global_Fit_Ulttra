@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - RAG Unit Tests
+ * Global_Fit_Ulttra - RAG Unit Tests
  * 
  * Tests for financial chunker, embedding vectorizer, semantic cache,
  * BM25 lexical retriever, Qdrant store, Agentic Orchestrator, LiteLLM Gateway,
@@ -281,7 +281,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       const gateway = new LiteLLMGateway({
         enabled: true,
         baseUrl: 'http://localhost:8000/v1',
-        apiKey: 'sk-globalfit-master',
+        apiKey: 'sk-globalfit-ulttra-master',
       });
 
       const res = await gateway.generateContent('Explain market volatility', {
@@ -299,7 +299,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
         }),
         expect.objectContaining({
           headers: expect.objectContaining({
-            Authorization: 'Bearer sk-globalfit-master',
+            Authorization: 'Bearer sk-globalfit-ulttra-master',
             'Content-Type': 'application/json',
           }),
         })

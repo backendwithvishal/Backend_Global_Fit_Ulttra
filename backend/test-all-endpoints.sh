@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Test All Endpoints Script
-# Tests all Global-Fi Ultra API endpoints
+# Tests all Global_Fit_Ulttra API endpoints
 
 BASE_URL="${BASE_URL:-https://backend-global-fit-ulttra.onrender.com}"
 GREEN='\033[0;32m'
@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║         Global-Fi Ultra - API Test Suite                 ║"
+echo "║         Global_Fit_Ulttra - API Test Suite                ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo ""
 

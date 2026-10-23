@@ -138,7 +138,7 @@ export class UserService {
             await user.save();
 
             // OTPAuth URI standard: otpauth://totp/Issuer:Email?secret=Secret&issuer=Issuer
-            const otpauthUrl = `otpauth://totp/GlobalFiUltra:${user.email}?secret=${secret}&issuer=GlobalFiUltra`;
+            const otpauthUrl = `otpauth://totp/GlobalFitUlttra:${user.email}?secret=${secret}&issuer=GlobalFitUlttra`;
             
             return { secret, otpauthUrl };
         } catch (error) {

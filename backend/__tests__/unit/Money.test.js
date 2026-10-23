@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Money Value Object Tests
+ * Global_Fit_Ulttra - Money Value Object Tests
  */
 
 import { Money } from '../../src/utils/valueObjects.js';

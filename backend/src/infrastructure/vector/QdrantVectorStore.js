@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Qdrant Vector Store
+ * Global_Fit_Ulttra - Qdrant Vector Store
  * 
  * Production-ready dedicated vector storage and retrieval manager using Qdrant.
  * Supports:
@@ -22,12 +22,12 @@ export class QdrantVectorStore {
   constructor({
     url = 'http://localhost:6333',
     apiKey = '',
-    collectionName = 'globalfi_financial_documents',
+    collectionName = 'global_fit_ulttra_financial_documents',
     dimensions = 384,
   } = {}) {
     this.url = url || 'http://localhost:6333';
     this.apiKey = apiKey || '';
-    this.collectionName = collectionName || 'globalfi_financial_documents';
+    this.collectionName = collectionName || 'global_fit_ulttra_financial_documents';
     this.dimensions = dimensions || 384;
     this.logger = logger || console;
     this.isReady = false;

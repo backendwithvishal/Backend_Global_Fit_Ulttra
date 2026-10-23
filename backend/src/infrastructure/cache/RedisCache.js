@@ -6,7 +6,7 @@ import { logger } from '../../config/logger.js';
 
 export class RedisCache {
     constructor() {
-        this.keyPrefix = 'globalfi';
+        this.keyPrefix = 'global_fit_ulttra';
     }
 
     _getClient() {

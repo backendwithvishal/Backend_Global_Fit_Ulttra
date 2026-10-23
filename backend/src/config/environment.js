@@ -1,4 +1,4 @@
-2// Environment configuration with Zod validation
+// Environment configuration with Zod validation
 // Single source of truth for all config values
 
 import 'dotenv/config';
@@ -13,7 +13,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
 
   // MongoDB
-  MONGODB_URI: z.string().transform(v => v.trim() || 'mongodb://localhost:27017/globalfi').default('mongodb://localhost:27017/globalfi'),
+  MONGODB_URI: z.string().transform(v => v.trim() || 'mongodb://localhost:27017/global_fit_ulttra').default('mongodb://localhost:27017/global_fit_ulttra'),
   MONGODB_POOL_SIZE: z.string().transform(Number).default('10'),
 
   // Redis
@@ -34,7 +34,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
 
   // JWT Authentication
-  JWT_SECRET: z.string().default('globalfi-ultra-dev-secret-change-in-production'),
+  JWT_SECRET: z.string().default('global-fit-ulttra-dev-secret-change-in-production'),
   JWT_EXPIRES_IN: z.string().default('7d'),
 
   // Circuit breaker
@@ -55,7 +55,7 @@ const envSchema = z.object({
 
   // RabbitMQ
   RABBITMQ_URL: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('amqp://localhost:5672'),
-  RABBITMQ_QUEUE_PREFIX: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('globalfi'),
+  RABBITMQ_QUEUE_PREFIX: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('global_fit_ulttra'),
 
   // Groq AI
   GROQ_API_KEY: z.string().default(''),
@@ -65,7 +65,7 @@ const envSchema = z.object({
   // Qdrant Vector Database
   QDRANT_URL: z.string().default('http://localhost:6333'),
   QDRANT_API_KEY: z.string().optional().default(''),
-  QDRANT_COLLECTION: z.string().default('globalfi_financial_documents'),
+  QDRANT_COLLECTION: z.string().default('global_fit_ulttra_financial_documents'),
   QDRANT_ENABLED: z.string().transform(v => v === 'true').default('true'),
 
   // LiteLLM AI Gateway (Self-hosted, free, open-source proxy)
@@ -76,7 +76,7 @@ const envSchema = z.object({
 
   // LangSmith Tracing & Observability (Optional)
   LANGSMITH_API_KEY: z.string().optional().default(''),
-  LANGSMITH_PROJECT: z.string().default('globalfi-ultra-rag'),
+  LANGSMITH_PROJECT: z.string().default('global-fit-ulttra-rag'),
   LANGSMITH_ENDPOINT: z.string().default('https://api.smith.langchain.com'),
   LANGSMITH_ENABLED: z.string().transform(v => v === 'true').default('false'),
 

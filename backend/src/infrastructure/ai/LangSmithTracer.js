@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - LangSmith Observability & Evaluation Tracer
+ * Global_Fit_Ulttra - LangSmith Observability & Evaluation Tracer
  * 
  * Production tracing integration for Agentic RAG workflows:
  * 1. Traces query understanding, planning, dense & sparse search, RRF fusion, and synthesis
@@ -17,12 +17,12 @@ import { logger } from '../../config/logger.js';
 export class LangSmithTracer {
   constructor({
     apiKey = '',
-    project = 'globalfi-ultra-rag',
+    project = 'global-fit-ulttra-rag',
     endpoint = 'https://api.smith.langchain.com',
     enabled = false,
   } = {}) {
     this.apiKey = apiKey || '';
-    this.project = project || 'globalfi-ultra-rag';
+    this.project = project || 'global-fit-ulttra-rag';
     this.endpoint = endpoint || 'https://api.smith.langchain.com';
     this.enabled = !!(enabled && this.apiKey);
     this.logger = logger || console;
@@ -54,7 +54,7 @@ export class LangSmithTracer {
       start_time: new Date().toISOString(),
       extra: {
         metadata: {
-          service: 'Global-Fi Ultra',
+          service: 'Global_Fit_Ulttra',
           ...metadata,
         },
       },

@@ -3,7 +3,7 @@
 /**
  * AI Features Demo Script
  * 
- * Demonstrates the AI capabilities of Global-Fi Ultra
+ * Demonstrates the AI capabilities of Global_Fit_Ulttra
  * 
  * Usage: node examples/test-ai-features.js
  */
@@ -17,7 +17,7 @@ import { connectRedis } from '../src/config/redis.js';
 
 const runDemo = async () => {
   console.log('\n╔═══════════════════════════════════════════════════════════╗');
-  console.log('║         Global-Fi Ultra - AI Features Demo               ║');
+  console.log('║         Global_Fit_Ulttra - AI Features Demo               ║');
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   // Check API key

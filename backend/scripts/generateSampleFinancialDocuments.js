@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Financial Document Generator
+ * Global_Fit_Ulttra - Financial Document Generator
  * 
  * Generates authentic, highly detailed financial PDF reports for Apple,
  * Microsoft, Nvidia, and Tesla using `pdf-lib`.
@@ -162,7 +162,7 @@ async function createFinancialPdf({ filename, title, subtitle, company, ticker, 
   }
 
   // Footer on final page
-  page.drawText(sanitizeText(`Global-Fi Ultra Financial Knowledge Engine | Verified SEC Filing Repository | Symbol: ${ticker}`), {
+  page.drawText(sanitizeText(`Global_Fit_Ulttra Financial Knowledge Engine | Verified SEC Filing Repository | Symbol: ${ticker}`), {
     x: 50,
     y: 30,
     size: 8,

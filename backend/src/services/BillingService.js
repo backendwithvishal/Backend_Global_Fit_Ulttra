@@ -14,6 +14,8 @@ export class BillingService {
 
         this.coupons = {
             'GLOBALFIT30': { discountPercent: 30, valid: true },
+            'GLOBALFIT20': { discountPercent: 20, valid: true },
+            'GLOBALFITULTTRA': { discountPercent: 50, valid: true },
             'SAASNEW': { discountPercent: 15, valid: true },
             'INVESTORFREE': { discountPercent: 100, valid: true }
         };

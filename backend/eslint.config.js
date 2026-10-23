@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - ESLint Configuration (Flat Config - ESLint 9+)
+ * Global_Fit_Ulttra - ESLint Configuration (Flat Config - ESLint 9+)
  * 
  * Uses the new flat config format with proper languageOptions and globals.
  */

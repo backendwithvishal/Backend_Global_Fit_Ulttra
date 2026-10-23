@@ -15,7 +15,7 @@ if (!existsSync(logDir)) {
 // Custom format for adding metadata
 const addMetadata = winston.format((info) => {
     info.timestamp = new Date().toISOString();
-    info.service = 'globalfi-ultra';
+    info.service = 'global-fit-ulttra';
     return info;
 });
 

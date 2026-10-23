@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Circuit Breaker Tests
+ * Global_Fit_Ulttra - Circuit Breaker Tests
  */
 
 import { jest } from '@jest/globals';

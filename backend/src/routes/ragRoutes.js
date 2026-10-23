@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - RAG Routes
+ * Global_Fit_Ulttra - RAG Routes
  * 
  * Express routes for financial Retrieval-Augmented Generation:
  * - /query: Grounded financial Q&A with exact filing citations

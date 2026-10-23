@@ -164,7 +164,7 @@ const setupApp = (aiServices) => {
  */
 const main = async () => {
   console.log('\n╔═══════════════════════════════════════════════════════════╗');
-  console.log('║         Global-Fi Ultra - AI Integration Example         ║');
+  console.log('║         Global_Fit_Ulttra - AI Integration Example         ║');
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   try {

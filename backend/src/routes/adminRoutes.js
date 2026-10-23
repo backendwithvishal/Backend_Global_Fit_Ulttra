@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Admin Routes
+ * Global_Fit_Ulttra - Admin Routes
  * 
  * Express router for administrative operations.
  * These endpoints provide system management capabilities and should

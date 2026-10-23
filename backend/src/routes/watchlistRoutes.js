@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Watchlist Routes
+ * Global_Fit_Ulttra - Watchlist Routes
  * 
  * Express router for watchlist management and asset assignment endpoints.
  * 

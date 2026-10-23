@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Alert Routes
+ * Global_Fit_Ulttra - Alert Routes
  * 
  * Express router for price alert management endpoints.
  * 

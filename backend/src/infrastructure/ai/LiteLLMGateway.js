@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - LiteLLM AI Gateway Client
+ * Global_Fit_Ulttra - LiteLLM AI Gateway Client
  *
  * OpenAI-compatible self-hosted AI gateway adapter supporting:
  * 1. LiteLLM proxy routing (self-hosted, free, zero vendor lock-in)

@@ -1,5 +1,5 @@
 # Test All Endpoints Script (PowerShell)
-# Tests all Global-Fi Ultra API endpoints
+# Tests all Global_Fit_Ulttra API endpoints
 
 $BaseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "https://backend-global-fit-ulttra.onrender.com" }
 $Total = 0
@@ -9,7 +9,7 @@ $global:LastStatusCode = 0
 
 Write-Host ""
 Write-Host "+-----------------------------------------------------------+"
-Write-Host "|         Global-Fi Ultra - API Test Suite                 |"
+Write-Host "|         Global_Fit_Ulttra - API Test Suite                |"
 Write-Host "+-----------------------------------------------------------+"
 Write-Host ""
 

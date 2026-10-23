@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Live Filing & Report Downloader
+ * Global_Fit_Ulttra - Live Filing & Report Downloader
  * 
  * Fetches official financial PDF filings and macroeconomic statements directly
  * from Federal Reserve and SEC EDGAR servers with compliant headers.
@@ -57,7 +57,7 @@ const LIVE_SOURCES = [
     name: 'SEC Form 10-K Guidelines',
     filename: 'SEC_Form_10K_Guidelines.pdf',
     url: 'https://www.sec.gov/files/form10-k.pdf',
-    headers: { 'User-Agent': 'GlobalFiUltraPlatform/1.0 (compliance@globalfi-ultra.internal)' }
+    headers: { 'User-Agent': 'GlobalFitUlttraPlatform/1.0 (compliance@global-fit-ulttra.internal)' }
   }
 ];
 

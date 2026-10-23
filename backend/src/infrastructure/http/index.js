@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - HTTP Clients Index
+ * Global_Fit_Ulttra - HTTP Clients Index
  */
 
 export { BaseApiClient } from './BaseApiClient.js';

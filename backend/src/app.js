@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Express Application Factory
+ * Global_Fit_Ulttra - Express Application Factory
  *
  * This module is responsible for:
  * 1. Creating and configuring the Express app with the full middleware pipeline
@@ -91,7 +91,7 @@ export const createApp = () => {
     // ─── Root Route ──────────────────────────────────────────────────
     app.get('/', (req, res) => {
         res.json({
-            name: 'Global-Fi Ultra API',
+            name: 'Global_Fit_Ulttra API',
             version: '1.0.0',
             status: 'running',
             docs: {

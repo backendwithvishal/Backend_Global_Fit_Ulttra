@@ -20,7 +20,7 @@ export class AIController {
   getInfo = async (req, res) => {
     res.json({
       success: true,
-      service: 'Global-Fi Ultra AI Service',
+      service: 'Global_Fit_Ulttra AI Service',
       version: '1.0.0',
       status: 'active',
       models: {

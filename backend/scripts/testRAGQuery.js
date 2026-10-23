@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Test RAG Query CLI
+ * Global_Fit_Ulttra - Test RAG Query CLI
  * 
  * Tests the complete Retrieval-Augmented Generation pipeline:
  * Hybrid search -> Reranker -> Groq LLM synthesis -> Exact citations.
@@ -20,7 +20,7 @@ import { DocumentChunk } from '../src/models/index.js';
 
 async function main() {
   console.log('=====================================================');
-  console.log('Global-Fi Ultra - Production RAG Query Test');
+  console.log('Global_Fit_Ulttra - Production RAG Query Test');
   console.log('=====================================================\n');
 
   await connectDatabase();

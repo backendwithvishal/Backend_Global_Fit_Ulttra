@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - High-Precision BM25 Lexical Retriever
+ * Global_Fit_Ulttra - High-Precision BM25 Lexical Retriever
  * 
  * Production Okapi BM25 implementation designed specifically for financial filings:
  * 1. Term Frequency (TF) saturation with configurable k1 (default: 1.2)

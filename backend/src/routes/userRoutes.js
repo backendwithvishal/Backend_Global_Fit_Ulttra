@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - User Routes
+ * Global_Fit_Ulttra - User Routes
  * 
  * Express router for user management endpoints (CRUD operations).
  * 

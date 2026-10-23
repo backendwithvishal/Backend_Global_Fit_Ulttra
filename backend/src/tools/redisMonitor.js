@@ -4,7 +4,7 @@
  * Redis Cache Monitoring Tool
  * 
  * Professional CLI tool for developers to monitor, debug, and manage
- * Redis cache in the Global-Fi Ultra application.
+ * Redis cache in the Global_Fit_Ulttra application.
  * 
  * Features:
  * - Real-time cache monitoring with auto-refresh
@@ -437,7 +437,7 @@ class RedisMonitor {
     // Header
     console.log(chalk.cyan('╔═══════════════════════════════════════════════════════════╗'));
     console.log(chalk.cyan('║') + chalk.cyan.bold('           REDIS CACHE MONITOR v1.0                        ') + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + chalk.gray('           Global-Fi Ultra - Development Tool              ') + chalk.cyan('║'));
+    console.log(chalk.cyan('║') + chalk.gray('          Global_Fit_Ulttra - Development Tool             ') + chalk.cyan('║'));
     console.log(chalk.cyan('╚═══════════════════════════════════════════════════════════╝\n'));
 
     // Statistics
@@ -760,7 +760,7 @@ const program = new Command();
 
 program
   .name('redis-monitor')
-  .description('Redis cache monitoring tool for Global-Fi Ultra')
+  .description('Redis cache monitoring tool for Global_Fit_Ulttra')
   .version('1.0.0');
 
 program

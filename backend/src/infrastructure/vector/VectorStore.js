@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Unified Vector Store & Hybrid Search Engine
+ * Global_Fit_Ulttra - Unified Vector Store & Hybrid Search Engine
  * 
  * Production hybrid retrieval orchestrator supporting:
  * 1. Primary Dedicated Vector Store: Qdrant (via QdrantVectorStore)

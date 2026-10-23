@@ -1,5 +1,5 @@
 # litellm-config.yaml
-# Global-Fi Ultra - Self-Hosted LiteLLM AI Gateway Configuration
+# Global_Fit_Ulttra - Self-Hosted LiteLLM AI Gateway Configuration
 # Runs locally for $0 via Docker Compose (ghcr.io/berriai/litellm:main-latest)
 # Provides unified OpenAI-compatible endpoint: http://localhost:8000/v1
 
@@ -21,7 +21,7 @@ model_list:
       tpm: 60000
 
   # Generic Default Alias
-  - model_name: globalfi-default
+  - model_name: global-fit-ulttra-default
     litellm_params:
       model: groq/llama-3.3-70b-versatile
       api_key: os.environ/GROQ_API_KEY

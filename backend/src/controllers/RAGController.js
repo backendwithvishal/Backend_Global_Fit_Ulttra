@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - RAG Controller
+ * Global_Fit_Ulttra - RAG Controller
  * 
  * Express controller handling RAG queries, document ingestion,
  * and vector knowledge base management.

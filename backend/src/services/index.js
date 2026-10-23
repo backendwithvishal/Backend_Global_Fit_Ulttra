@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Services Index
+ * Global_Fit_Ulttra - Services Index
  */
 
 export { UserService } from './UserService.js';

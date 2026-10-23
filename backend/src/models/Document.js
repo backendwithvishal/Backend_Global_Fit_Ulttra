@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Financial Document Model
+ * Global_Fit_Ulttra - Financial Document Model
  * 
  * Stores metadata, status, and checksum of uploaded/ingested financial documents
  * (SEC 10-K, 10-Q, 8-K filings, earnings releases, FOMC statements, and research PDFs).

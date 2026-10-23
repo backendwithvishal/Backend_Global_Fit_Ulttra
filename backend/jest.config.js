@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Jest Configuration
+ * Global_Fit_Ulttra - Jest Configuration
  */
 
 export default {

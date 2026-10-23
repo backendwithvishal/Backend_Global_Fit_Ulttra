@@ -1,4 +1,4 @@
-// Global-Fi output schema for normalized Socket.io broadcasts
+// Global_Fit_Ulttra output schema for normalized Socket.io broadcasts
 
 import { z } from 'zod';
 
@@ -108,4 +108,5 @@ export const globalFiSchema = z.object({
     metadata: metadataSchema,
 });
 
-export default globalFiSchema;
+export const globalFitUlttraSchema = globalFiSchema;
+export default globalFitUlttraSchema;

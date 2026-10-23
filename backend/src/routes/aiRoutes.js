@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - AI Routes
+ * Global_Fit_Ulttra - AI Routes
  * 
  * Express router for AI-powered financial analysis endpoints.
  * All endpoints use Groq AI (LLaMA models) for inference and are
@@ -90,7 +90,7 @@ export const createAIRoutes = (aiController, ragController = null) => {
     }
     return res.json({
       success: true,
-      service: 'Global-Fi Ultra AI Service',
+      service: 'Global_Fit_Ulttra AI Service',
       ragAvailable: !!ragController,
       status: 'active',
       requestId: req.requestId,

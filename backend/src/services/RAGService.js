@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - RAG Orchestration Service
+ * Global_Fit_Ulttra - RAG Orchestration Service
  * 
  * Production Agentic RAG engine for financial research, SEC filings, and market intelligence:
  * 1. Redis Semantic Cache (<30ms query responses with strict tenant isolation).
@@ -231,7 +231,7 @@ export class RAGService {
 
       const contextText = topChunks.map((c, i) => `[Source ${i+1}: ${c.chunk.metadata?.symbol || 'GENERAL'} - ${c.chunk.metadata?.section || 'Section'}]\n${c.chunk.content}`).join('\n\n');
 
-      const streamPrompt = `You are Global-Fi Ultra's Senior Financial Research Analyst.
+      const streamPrompt = `You are Global_Fit_Ulttra's Senior Financial Research Analyst.
 Context:
 ${contextText}
 

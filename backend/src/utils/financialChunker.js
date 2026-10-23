@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Financial Document Chunker
+ * Global_Fit_Ulttra - Financial Document Chunker
  * 
  * Specialized chunking utility designed for financial reports, SEC 10-K/10-Q filings,
  * earnings call transcripts, and central bank releases.

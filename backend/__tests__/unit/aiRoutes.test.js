@@ -75,7 +75,7 @@ describe('aiRoutes', () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.service).toBe('Global-Fi Ultra AI Service');
+            expect(res.body.service).toBe('Global_Fit_Ulttra AI Service');
         });
 
         it('should return 400 validation error if text is missing', async () => {

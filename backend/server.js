@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Server Bootstrap
+ * Global_Fit_Ulttra - Server Bootstrap
  *
  * This is the application entry point. It is responsible ONLY for:
  * 1. Connecting to MongoDB, Redis, and RabbitMQ
@@ -176,7 +176,7 @@ const setupGracefulShutdown = (server, container) => {
  */
 const startServer = async () => {
     try {
-        logger.info('Starting Global-Fi Ultra...');
+        logger.info('Starting Global_Fit_Ulttra...');
 
         // Log environment details in development mode
         if (config.server.isDev) {
@@ -252,7 +252,7 @@ const startServer = async () => {
         const port = Number(process.env.PORT) || config.server.port || 4000;
 
         httpServer.listen(port, host, () => {
-            logger.info(`🚀 Global-Fi Ultra running on http://${host}:${port}`);
+            logger.info(`🚀 Global_Fit_Ulttra running on http://${host}:${port}`);
             logger.info(`   Environment: ${config.server.nodeEnv}`);
             logger.info(`   Health check: http://${host}:${port}/api/v1/health`);
 

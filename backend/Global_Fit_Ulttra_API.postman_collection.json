@@ -1,8 +1,8 @@
 {
     "info": {
-        "_postman_id": "globalfi-ultra-mvc",
-        "name": "Global-Fi Ultra API v1",
-        "description": "Complete API collection for Global-Fi Ultra financial data orchestration engine.\n\nRender Production URL: https://backend-global-fit-ulttra.onrender.com\nLocal Base URL: http://localhost:4000\nAPI Prefix: /api/v1",
+        "_postman_id": "global-fit-ulttra-api",
+        "name": "Global_Fit_Ulttra API v1",
+        "description": "Complete API collection for Global_Fit_Ulttra financial data orchestration engine.\n\nRender Production URL: https://backend-global-fit-ulttra.onrender.com\nLocal Base URL: http://localhost:4000\nAPI Prefix: /api/v1",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
@@ -1192,7 +1192,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
+                            "raw": "{\n  \"email\": \"trader@globalfitulttra.com\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/auth/register",
@@ -1218,7 +1218,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"trader@globalfi.io\",\n  \"password\": \"SecurePassword123!\"\n}"
+                            "raw": "{\n  \"email\": \"trader@globalfitulttra.com\",\n  \"password\": \"SecurePassword123!\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/auth/login",
@@ -1288,7 +1288,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                            "raw": "{\n  \"email\": \"trader@globalfitulttra.com\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/auth/request-reset",
@@ -1425,7 +1425,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"trader@globalfi.io\"\n}"
+                            "raw": "{\n  \"email\": \"trader@globalfitulttra.com\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/auth/magic-link",
@@ -1871,14 +1871,14 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/billing/coupons/GLOBALFI20",
+                            "raw": "{{baseUrl}}/billing/coupons/GLOBALFIT20",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "billing",
                                 "coupons",
-                                "GLOBALFI20"
+                                "GLOBALFIT20"
                             ]
                         }
                     }

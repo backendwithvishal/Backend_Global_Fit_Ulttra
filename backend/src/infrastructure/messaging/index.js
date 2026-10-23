@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Messaging Index
+ * Global_Fit_Ulttra - Messaging Index
  * 
  * Re-exports messaging module components.
  */

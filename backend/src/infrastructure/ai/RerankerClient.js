@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Cross-Encoder Reranker Client
+ * Global_Fit_Ulttra - Cross-Encoder Reranker Client
  * 
  * Two-stage retrieval reranker that refines hybrid search candidates.
  * Supports:

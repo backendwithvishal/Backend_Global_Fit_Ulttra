@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Repositories Index
+ * Global_Fit_Ulttra - Repositories Index
  */
 
 export { AuditLogRepository } from './AuditLogRepository.js';

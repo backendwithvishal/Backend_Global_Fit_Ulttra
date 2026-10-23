@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - WebSocket Index
+ * Global_Fit_Ulttra - WebSocket Index
  */
 
 export { SocketManager } from './SocketManager.js';

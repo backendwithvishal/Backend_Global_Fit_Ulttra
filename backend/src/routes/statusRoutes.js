@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Status Routes
+ * Global_Fit_Ulttra - Status Routes
  * 
  * Express router for system status and monitoring endpoints.
  * Provides visibility into the health of external API integrations

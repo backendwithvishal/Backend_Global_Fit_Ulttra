@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Models Index
+ * Global_Fit_Ulttra - Models Index
  */
 
 export { AuditLog } from './AuditLog.js';

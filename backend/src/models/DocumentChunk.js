@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Document Chunk Model
+ * Global_Fit_Ulttra - Document Chunk Model
  * 
  * Stores semantically chunked text sections from financial documents along with
  * their vector embeddings, financial section identifiers, and metadata.

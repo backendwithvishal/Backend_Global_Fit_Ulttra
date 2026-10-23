@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Document Ingestion Service
+ * Global_Fit_Ulttra - Document Ingestion Service
  * 
  * Production ingestion pipeline for financial documents:
  * 1. File text extraction (PDF via pdf-parse, TXT, JSON, MD).

@@ -6,7 +6,7 @@
 
 services:
   - type: web
-    name: globalfi-ultra
+    name: backend-global-fit-ulttra
     env: docker
     region: oregon
     plan: starter

@@ -50,7 +50,7 @@ console.log(`✓ URI: ${config.database.uri}`);
 
 // Check Agentic Financial RAG Subsystem
 console.log('\n🧠 Agentic Hybrid Financial RAG Configuration:\n');
-console.log(`✓ Vector Store: ${config.qdrant?.enabled ? 'Qdrant' : 'MongoDB'} (collection: ${config.qdrant?.collection || 'globalfi_financial_documents'})`);
+console.log(`✓ Vector Store: ${config.qdrant?.enabled ? 'Qdrant' : 'MongoDB'} (collection: ${config.qdrant?.collection || 'global_fit_ulttra_financial_documents'})`);
 console.log(`✓ Qdrant URL: ${config.qdrant?.url || 'http://localhost:6333'}`);
 console.log(`✓ Embedding Provider: ${config.rag?.embeddingProvider || 'local'} (${config.rag?.embeddingModel || 'Xenova/all-MiniLM-L6-v2'}, 384 dims)`);
 console.log(`✓ Hybrid Retrieval: Dense (${config.rag?.rrfDenseWeight || 0.65}) + BM25 Sparse (${config.rag?.rrfSparseWeight || 0.35}), RRF k=${config.rag?.rrfK || 60}`);

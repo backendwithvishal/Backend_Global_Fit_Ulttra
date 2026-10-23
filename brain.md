@@ -1,17 +1,17 @@
-# Global-Fi Ultra — Advanced Agentic Hybrid Financial RAG Upgrade
+# Global_Fit_Ulttra — Advanced Agentic Hybrid Financial RAG Upgrade
 ## Audit, Architecture Decisions, and Production Engineering Roadmap
 
 **Document Status:** Living Technical Specification & Implementation Audit  
 **Author:** AI/RAG Architect & Senior Backend Engineer  
 **Date:** October 2026  
-**Repository:** `Global-Fi Ultra` (Node.js ESM / Express / MongoDB / Redis / Socket.IO / RabbitMQ)
+**Repository:** `Global_Fit_Ulttra` (Node.js ESM / Express / MongoDB / Redis / Socket.IO / RabbitMQ)
 
 ---
 
 ## 1. Stage 1: Repository Audit
 
 ### 1.1 Overview & Architecture Inventory
-Global-Fi Ultra is an existing, high-performance financial data orchestration engine. It operates with an asynchronous micro-service inspired monolithic Node.js runtime using ECMAScript Modules (`"type": "module"`), Dependency Injection via a centralized container (`src/di/container.js`), and strict layered architecture:
+Global_Fit_Ulttra is an existing, high-performance financial data orchestration engine. It operates with an asynchronous micro-service inspired monolithic Node.js runtime using ECMAScript Modules (`"type": "module"`), Dependency Injection via a centralized container (`src/di/container.js`), and strict layered architecture:
 - **Presentation Layer**: Express controllers (`src/controllers/`) and Socket.IO handlers (`src/infrastructure/websocket/`).
 - **Domain & Service Layer**: Specialized domain services (`src/services/`) for market data, news sentiment, billing, asset management, and RAG.
 - **Infrastructure Layer**: Mongoose models (`src/models/`), cache adapters (`src/infrastructure/cache/`), vector store abstractions (`src/infrastructure/vector/`), AI clients (`src/infrastructure/ai/`), and RabbitMQ queues (`src/infrastructure/messaging/`).
@@ -29,11 +29,11 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
 | **Generation & Safety** | Grounded Groq Generation | **Implemented & Tested** | Groq client uses Llama 3.3 70B Versatile with prompt constraints, but citation validation is purely string-based with no verification against real chunk IDs or hallucination prevention guards. | Add strict citation verification validating that all cited sources map to verified retrieved document chunk IDs and factual excerpts. |
 | **Observability** | LangSmith Tracing | **Missing** | No LangSmith tracing or callback integration exists in the repository. | Implement optional LangSmith tracing wrapper with correlation IDs, tracing query classification, retrieval stages, fusion, and synthesis, with zero overhead when disabled. |
 | **AI Gateway** | Portkey Gateway Integration | **Missing** | Groq is invoked directly without gateway routing or fallbacks. | Implement optional Portkey AI Gateway client supporting fallbacks, budget tracking, and latency monitoring, failing safely to direct Groq when disabled. |
-| **Async Ingestion** | RabbitMQ Ingestion Queue | **Partially Implemented** | Queue `globalfi_rag_ingest` is declared in `AIJobQueue.js`, but no consumer is wired in `startConsumers()`, leaving async message queue ingestion incomplete. Direct CLI script works. | Wire `_handleRagIngestJob` consumer in `AIJobQueue.js` and connect it to `IngestionService`. |
+| **Async Ingestion** | RabbitMQ Ingestion Queue | **Partially Implemented** | Queue `global_fit_ulttra_rag_ingest` is declared in `AIJobQueue.js`, but no consumer is wired in `startConsumers()`, leaving async message queue ingestion incomplete. Direct CLI script works. | Wire `_handleRagIngestJob` consumer in `AIJobQueue.js` and connect it to `IngestionService`. |
 | **Semantic Cache** | Redis Semantic Cache | **Implemented, Tenant Risk** | `SemanticCache.js` caches queries and embeddings, but cache keys lack tenant `organizationId` isolation, risking cross-tenant response leakage. | Add `organizationId` and permission scoping to exact and similarity cache keys and index partitions. |
 | **REST Endpoints** | RAG API Routes | **Implemented & Verified** | `/api/v1/ai/rag/query`, `/api/v1/ai/rag/ingest`, `/api/v1/ai/rag/documents`, `/api/v1/ai/rag/stats` exist and are tested. Alias `/api/v1/rag` is also mounted. | Preserve existing routes; add `/health`, `/reindex`, and `/jobs/:jobId` endpoints. |
 | **Socket.IO** | Real-Time Streaming | **Implemented & Verified** | `AIStreamHandler.js` handles `ai:rag:query`, emitting `ai:rag:citations`, `ai:stream:chunk`, `ai:stream:complete`, and `ai:stream:error`. | Preserve event signatures and extend with agent planning progress events. |
-| **Documentation & Postman** | RAG Documentation & Collections | **Partially Implemented** | `docs/RAG_DOCUMENTATION.md` exists with benchmark claims that were unmeasured or pre-filled. Root `README.md` and `GlobalFi_Ultra_API.postman_collection.json` lack RAG documentation and endpoints. | Synchronize root `README.md`, correct `docs/RAG_DOCUMENTATION.md`, update Postman collection, and document verified metrics. |
+| **Documentation & Postman** | RAG Documentation & Collections | **Partially Implemented** | `docs/RAG_DOCUMENTATION.md` exists with benchmark claims that were unmeasured or pre-filled. Root `README.md` and `Global_Fit_Ulttra_API.postman_collection.json` lack RAG documentation and endpoints. | Synchronize root `README.md`, correct `docs/RAG_DOCUMENTATION.md`, update Postman collection, and document verified metrics. |
 
 ### 1.3 Latency & Benchmark Verification
 - **Documented Claims in `docs/RAG_DOCUMENTATION.md`**: Stated 12ms query response times and 98% confidence across all queries.
@@ -117,7 +117,7 @@ Global-Fi Ultra is an existing, high-performance financial data orchestration en
   - Updated root `README.md` with new RAG capabilities, CLI commands, and endpoints.
   - Completely synchronized `docs/RAG_DOCUMENTATION.md` with verified benchmarks, architecture diagrams, and REST/WebSocket guides.
   - Updated `backend/.env.example` and root `.env.example` with safe local defaults, alias mapping, and zero secrets.
-  - Verified and synchronized `GlobalFi_Ultra_API.postman_collection.json` across root and backend with all 9 Agentic Financial RAG requests.
+  - Verified and synchronized `Global_Fit_Ulttra_API.postman_collection.json` across root and backend with all 9 Agentic Financial RAG requests.
 - [x] **Stage 11: Double-Check & Defect Resolution** (Completed & Verified)
   - Resolved `GroqClient.streamContent` / `RAGService.streamQuery` callback and options signature mismatch to prevent streaming runtime errors.
   - Added `streamContent` streaming pass-through to `PortkeyGateway.js`.

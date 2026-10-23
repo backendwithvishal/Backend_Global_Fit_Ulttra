@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - RAG Request Validators
+ * Global_Fit_Ulttra - RAG Request Validators
  * 
  * Zod validation schemas for RAG query and ingestion endpoints.
  * Structured to match validateRequest middleware (body / query / params).

@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Production Embedding Client
+ * Global_Fit_Ulttra - Production Embedding Client
  * 
  * Generates genuine dense semantic embeddings supporting:
  * 1. Local Dense Semantic Transformer (Xenova/all-MiniLM-L6-v2, 384 dimensions)

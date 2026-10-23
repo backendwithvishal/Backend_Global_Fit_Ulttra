@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Semantic Query Cache
+ * Global_Fit_Ulttra - Semantic Query Cache
  * 
  * High-performance semantic cache powered by Redis with bounded in-memory LRU fallback.
  * Checks for semantic equivalence before invoking expensive LLM inference,

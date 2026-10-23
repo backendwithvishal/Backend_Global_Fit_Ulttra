@@ -1,5 +1,5 @@
 /**
- * Global-Fi Ultra - Production Financial RAG Evaluation Benchmark
+ * Global_Fit_Ulttra - Production Financial RAG Evaluation Benchmark
  * 
  * Comprehensive automated benchmark evaluating:
  * 1. Exact financial figures retrieval
@@ -71,7 +71,7 @@ const BENCHMARK_CHUNKS = [
 
 async function runEvaluation() {
   console.log('=================================================================================');
-  console.log('Global-Fi Ultra — Automated Financial Agentic RAG Evaluation Benchmark');
+  console.log('Global_Fit_Ulttra — Automated Financial Agentic RAG Evaluation Benchmark');
   console.log('=================================================================================\n');
 
   // 1. Initialize embedding client

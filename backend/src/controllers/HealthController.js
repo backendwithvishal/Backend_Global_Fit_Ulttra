@@ -52,7 +52,7 @@ export class HealthController {
     async ping(req, res) {
         res.status(200).json({
             status: 'ok',
-            message: 'Global-Fi Ultra backend is active',
+            message: 'Global_Fit_Ulttra backend is active',
             timestamp: new Date().toISOString(),
             uptimeSeconds: Math.floor(process.uptime()),
             requestId: req.requestId,

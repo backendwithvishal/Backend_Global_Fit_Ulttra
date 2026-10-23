@@ -1,6 +1,7 @@
 // Validators index
 
 export {
+    globalFitUlttraSchema,
     globalFiSchema,
     stockDataSchema,
     cryptoDataSchema,

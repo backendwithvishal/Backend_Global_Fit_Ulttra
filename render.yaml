@@ -23,13 +23,19 @@ services:
       - key: HOST
         value: 0.0.0.0
 
-      # ── Database & Cache (secrets) ──────────────────
+      # ── Database & Cache (secrets — set in Render dashboard) ────
       - key: MONGODB_URI
         sync: false
+      - key: MONGODB_POOL_SIZE
+        value: "10"
       - key: REDIS_URL
         sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_TTL_DEFAULT
+        value: "300"
 
-      # ── Financial API Keys (secrets) ────────────────
+      # ── Financial API Keys (secrets) ─────────────────
       - key: ALPHA_VANTAGE_API_KEY
         sync: false
       - key: NEWS_API_KEY
@@ -41,7 +47,7 @@ services:
       - key: COINGECKO_API_KEY
         sync: false
 
-      # ── AI Configuration (secrets) ──────────────────
+      # ── AI Configuration (secrets) ───────────────────
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_PRIMARY_MODEL
@@ -49,9 +55,11 @@ services:
       - key: GROQ_FAST_MODEL
         value: llama-3.1-8b-instant
 
-      # ── Security ────────────────────────────────────
+      # ── Security ─────────────────────────────────────
       - key: JWT_SECRET
         sync: false
+      - key: JWT_EXPIRES_IN
+        value: "7d"
       - key: CORS_ORIGIN
         sync: false
       - key: SOCKET_IO_CORS_ORIGIN
@@ -61,17 +69,71 @@ services:
       - key: RATE_LIMIT_MAX_REQUESTS
         value: "100"
 
-      # ── Message Queue (optional) ────────────────────
+      # ── Message Queue (optional) ──────────────────────
       - key: RABBITMQ_URL
         sync: false
+      - key: RABBITMQ_QUEUE_PREFIX
+        value: global_fit_ulttra
 
-      # ── Keep-Alive (Self-Ping) ──────────────────────
+      # ── RAG / Vector Search ───────────────────────────
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_COLLECTION
+        value: global_fit_ulttra_financial_documents
+      - key: QDRANT_ENABLED
+        value: "true"
+      - key: EMBEDDING_PROVIDER
+        value: local
+      - key: EMBEDDING_MODEL
+        value: Xenova/all-MiniLM-L6-v2
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: COHERE_API_KEY
+        sync: false
+      - key: RAG_SEMANTIC_CACHE_ENABLED
+        value: "true"
+      - key: RAG_SIMILARITY_THRESHOLD
+        value: "0.65"
+      - key: RAG_RRF_DENSE_WEIGHT
+        value: "0.65"
+      - key: RAG_RRF_SPARSE_WEIGHT
+        value: "0.35"
+      - key: RAG_RRF_K
+        value: "60"
+      - key: RAG_CONFIDENCE_THRESHOLD
+        value: "0.40"
+      - key: RAG_MAX_AGENT_ITERATIONS
+        value: "3"
+
+      # ── LiteLLM AI Gateway (disabled in production by default) ──
+      - key: LITELLM_ENABLED
+        value: "false"
+      - key: LITELLM_URL
+        value: ""
+      - key: LITELLM_API_KEY
+        sync: false
+
+      # ── LangSmith Tracing (disabled by default) ───────
+      - key: LANGSMITH_ENABLED
+        value: "false"
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_PROJECT
+        value: global-fit-ulttra-rag
+      - key: LANGSMITH_ENDPOINT
+        value: https://api.smith.langchain.com
+
+      # ── Keep-Alive (Self-Ping) ────────────────────────
       - key: KEEP_ALIVE_ENABLED
         value: "true"
       - key: KEEP_ALIVE_URL
         value: https://backend-global-fit-ulttra.onrender.com/api/v1/health/ping
+      - key: KEEP_ALIVE_INTERVAL_MS
+        value: "600000"
 
-      # ── Logging ─────────────────────────────────────
+      # ── Logging ──────────────────────────────────────
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: true

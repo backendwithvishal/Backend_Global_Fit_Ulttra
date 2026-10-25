@@ -2,6 +2,7 @@
 // All responses include disclaimers since this is NOT financial advice
 
 import { logger } from '../config/logger.js';
+import { config } from '../config/environment.js';
 import { sanitizeAIInput } from '../utils/sanitizer.js';
 
 export class AIController {
@@ -24,8 +25,8 @@ export class AIController {
       version: '1.0.0',
       status: 'active',
       models: {
-        primary: process.env.GROQ_PRIMARY_MODEL || 'llama-3.3-70b-versatile',
-        fast: process.env.GROQ_FAST_MODEL || 'llama-3.1-8b-instant',
+        primary: config.ai.primaryModel,
+        fast: config.ai.fastModel,
       },
       endpoints: {
         sentiment: 'POST /api/v1/ai/sentiment',

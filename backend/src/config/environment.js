@@ -145,6 +145,15 @@ const parseEnv = () => {
     data.HOST = '0.0.0.0';
   }
 
+  // Warn loudly if JWT_SECRET is the development default in production
+  const DEV_JWT_SECRET = 'global-fit-ulttra-dev-secret-change-in-production';
+  if (data.NODE_ENV === 'production' && data.JWT_SECRET === DEV_JWT_SECRET) {
+    console.error('❌ SECURITY ERROR: JWT_SECRET is still set to the development default in production.');
+    console.error('   Set a strong random JWT_SECRET in your production environment variables.');
+    console.error('   Generate one: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+    process.exit(1);
+  }
+
   return data;
 };
 

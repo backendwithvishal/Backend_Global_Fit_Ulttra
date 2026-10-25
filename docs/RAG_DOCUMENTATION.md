@@ -331,60 +331,143 @@ socket.on('ai:stream:error', ({ sessionId, error }) => {
 
 ---
 
-## 6. Verification & Benchmark Results
+## 6. Comprehensive Financial RAG Evaluation Subsystem
 
-### A. Automated Unit Test Suite
-```bash
-npm test --prefix backend
-```
-- **Test Suites**: 6 passed, 6 total (100%)
-- **Tests**: 89 passed, 89 total (100%)
-- **Coverage**: Verified unit coverage across `AgenticRAGOrchestrator`, `BM25Retriever`, `EmbeddingClient`, `QdrantVectorStore`, `VectorStore`, `SemanticCache`, `PortkeyGateway` / `AIGateway` (LiteLLM support), and REST route mounts.
+Global_Fit_Ulttra includes a dedicated, measurable, reference-backed evaluation framework designed specifically for financial RAG pipelines.
 
-### LiteLLM Self-Hosted AI Gateway ($0 Free)
-Global_Fit_Ulttra natively supports **LiteLLM** (`ghcr.io/berriai/litellm:main-latest`) as an open-source, zero-cost AI Gateway proxy:
-- **Universal Standard**: Translates standard OpenAI `/v1/chat/completions` requests to Groq, Ollama, or Gemini.
-- **Self-Hosted via Docker Compose**: Starts on `http://localhost:8000/v1` via `docker-compose up -d litellm`.
-- **Configured Routing**: Configured via `litellm-config.yaml` with automatic model aliases and retry backoff.
-- **Zero Cost**: Runs entirely locally or on your VPS with zero subscription fees.
+### Supported Evaluation Metric Suites
 
-### B. Financial Evaluation Benchmark (`npm run rag:eval`)
-
-Automated evaluation running against genuine local 384-dimensional embeddings:
-
-| Test ID | Benchmark Test Scenario | Status | Measured Latency | Measured Result |
-| :---: | :--- | :---: | :---: | :--- |
-| **TC-1** | Exact Financial Figures Retrieval | ✅ PASS | **28ms** | Recalled exact Q3 numbers (Confidence: 98%, Citations: 2) |
-| **TC-2** | SEC Statutory Section Item 1A Risk Factors | ✅ PASS | **13ms** | Recalled DMA and antitrust filings (Confidence: 98%, Citations: 2) |
-| **TC-3** | Cloud Revenue & AI Growth Percentage | ✅ PASS | **15ms** | Recalled Azure +30% growth (Confidence: 98%, Citations: 1) |
-| **TC-4** | Nvidia Data Center & Gross Margin Precision | ✅ PASS | **13ms** | Recalled $47.41B / 72.7% margin (Confidence: 98%, Citations: 1) |
-| **TC-5** | Macroeconomic Monetary Policy Rate Target | ✅ PASS | **12ms** | Recalled 5.25%–5.50% target range (Confidence: 98%, Citations: 1) |
-| **TC-6** | Missing Evidence Refusal (Anti-Hallucination) | ✅ PASS | **15ms** | Safely refused without hallucinating missing data |
-| **TC-7** | Cross-Tenant Access Isolation | ✅ PASS | **9ms** | Strict zero-leakage cross-tenant isolation |
-| **TC-8** | Cache Hit & Sub-30ms Acceleration | ✅ PASS | **6ms** | Instant cache hit (<6ms) |
-
-- **Benchmark Score**: 8 / 8 Passed (100%)
-- **Recall@4**: 100% on documented financial facts
-- **Unsupported Claim Refusal**: 100% (zero hallucination on missing data)
-- **Multi-Tenant Isolation**: 100% (zero cross-organization leakage)
+| Category | Metric Name | Required Inputs | Scoring Method | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Retrieval** | `context_precision` | `retrievedChunks`, `referenceContextIds` | Reference-based (0.0–1.0) | Mean reciprocal precision weighted by relevance at each rank up to Top-K. |
+| **Retrieval** | `context_recall` | `retrievedChunks`, `referenceAnswer`/claims | Deterministic token coverage (0.0–1.0) | Proportion of reference facts/claims supported in the retrieved context. |
+| **Retrieval** | `context_entities_recall` | `retrievedChunks`, `referenceEntities` | Deterministic entity matching (0.0–1.0) | Proportion of required financial entities (tickers, metrics, periods) in context. |
+| **Retrieval** | `context_utilization` | `retrievedChunks`, `generatedAnswer` | Citation & lexical usage (0.0–1.0) | Proportion of retrieved chunks actually reflected or cited in the answer. |
+| **Retrieval** | `recall_at_k` | `retrievedChunks`, `referenceContextIds` | Set overlap (0.0–1.0) | Fraction of known relevant chunks retrieved within the top K results. |
+| **Retrieval** | `mrr` | `retrievedChunks`, `referenceContextIds` | Reciprocal rank (0.0–1.0) | Reciprocal rank of the highest-ranked relevant chunk (1 / rank). |
+| **Retrieval** | `ndcg_at_k` | `retrievedChunks`, `referenceContextIds` | Discounted cumulative gain (0.0–1.0) | Normalized DCG measuring ranking quality and relevance discount. |
+| **Retrieval** | `context_relevance` | `question`, `retrievedChunks` | Rank-weighted token alignment (0.0–1.0) | Query-to-context semantic and lexical alignment, independent of answer. |
+| **Retrieval** | `noise_sensitivity` | `cleanResult`, `noisyResult` | Controlled Jaccard divergence (0.0–1.0) | Measure of answer degradation when irrelevant/distracting context is added. |
+| **Generation** | `faithfulness` | `generatedAnswer`, `retrievedChunks` | Claim verification (0.0–1.0) | Proportion of factual claims in answer strictly supported by retrieved context. |
+| **Generation** | `response_groundedness` | `generatedAnswer`, `retrievedChunks` | Lexical grounding density (0.0–1.0) | Overall text grounding density across the entire response. |
+| **Generation** | `answer_relevancy` | `question`, `generatedAnswer` | Term coverage (0.0–1.0) | Alignment with original query without penalizing concise responses. |
+| **Generation** | `factual_correctness` | `generatedAnswer`, `referenceAnswer`, `expectedValues` | Claim & value audit (0.0–1.0) | Statement and key financial value agreement against trusted reference. |
+| **Generation** | `citation_correctness` | `generatedAnswer`, `citations`, `retrievedChunks` | Citation validity & support (0.0–1.0) | Verifies real source IDs (`[Source X]`) and confirms cited passage supports claim. |
+| **Generation** | `answer_completeness` | `generatedAnswer`, `expectedEntities`, `expectedValues` | Itemized coverage (0.0–1.0) | Assesses whether all required entities, values, and caveats are answered. |
+| **Generation** | `answer_accuracy` | `generatedAnswer`, `referenceAnswer` | Token F1 agreement (0.0–1.0) | Harmonic mean of precision and recall against trusted reference. |
+| **Financial** | `numerical_accuracy` | `generatedAnswer`, `expectedFinancialValues` | Deterministic scale parser (0.0–1.0) | Parses monetary scales, percentages, accounting parens with explicit tolerance. |
+| **Financial** | `financial_entity_accuracy` | `generatedAnswer`, `expectedEntities`, `period`, `currency` | Entity matcher & synonyms (0.0–1.0) | Validates tickers, periods, and currency symbols (`$` for `USD`, `€` for `EUR`). |
+| **Financial** | `abstention_accuracy` | `result`, `expectedBehavior` | Behavioral refusal check (0.0 or 1.0) | Validates safe refusal on missing data; detects hallucinations & false refusals. |
+| **Agentic** | `tool_call_accuracy` | `agentTrace`, `expectedIntent`, `expectedSymbol` | Trace audit (0.0–1.0) | Validates query intent classification, ticker extraction, and tool execution. |
+| **Agentic** | `tool_call_f1` | `agentTrace`, `expectedTools` | Set F1 (0.0–1.0) | Precision and recall of executed orchestration pipeline stages. |
+| **Agentic** | `bounded_iteration_accuracy` | `agentTrace`, `maxIterations` | Iteration boundary check (0.0 or 1.0) | Enforces iteration limits (<= 3) and timeout boundaries. |
 
 ---
 
-## 7. Operational Commands
+### Root-Cause Failure Diagnosis (Section 7)
+
+The evaluation runner classifies every sample failure into one of five root causes:
+- **Case A: Retrieval Failure (`CASE_A_RETRIEVAL_FAILURE`)**: Relevant evidence was never retrieved or scored below the safety threshold.
+- **Case B: Generation Failure (`CASE_B_GENERATION_FAILURE`)**: Relevant evidence was retrieved, but the generated answer contradicts it or introduced unsupported claims.
+- **Case C: Context Error (`CASE_C_CONTEXT_ERROR`)**: The answer faithfully reflects the retrieved chunks, but the retrieved chunks contain outdated, conflicting, or incorrect figures compared to ground-truth reference.
+- **Case D: Citation Failure (`CASE_D_CITATION_FAILURE`)**: Answer is factually consistent, but citations are fabricated, out-of-bounds, or misaligned with source passages.
+- **Case E: Correct Limitation Acknowledgement (`CASE_E_CORRECT_ABSTENTION`)**: The question cannot be answered from available evidence, and the system correctly acknowledged the limitation without hallucinating (scored as a success).
+
+---
+
+### Evaluation Dataset & Provenance
+
+The golden benchmark dataset is stored in `backend/data/evaluation_datasets/financial_rag_benchmark.json` and validated via Zod schema (`backend/src/evaluation/dataset/datasetSchema.js`).
+
+Every record contains:
+- `id`: Unique identifier (e.g., `FIN-EVAL-001`).
+- `question`: Natural language financial query.
+- `symbol` & `filing_type`: Ticker and SEC statutory document type.
+- `reference_answer`: Manually verified ground-truth answer.
+- `reference_contexts` & `reference_context_ids`: Expected chunk IDs.
+- `reference_entities`: Key tickers, metrics, periods.
+- `expected_financial_values`: Exact figures (`$39,296 million`, `46.3%`).
+- `expected_behavior`: `'ANSWER'` | `'REFUSE'` | `'SECURITY_ISOLATION'`.
+- `provenance`: Origin document, auditing team, and verification status (`VERIFIED_AUTHENTIC` | `PROVISIONAL` | `SYNTHETIC_CONTROL`).
+
+---
+
+### Quality Thresholds & Baseline Comparison
+
+Configurable quality thresholds enforce minimum standards:
+```javascript
+export const DEFAULT_THRESHOLDS = {
+  faithfulness: 0.75,
+  context_precision: 0.70,
+  context_recall: 0.70,
+  answer_relevancy: 0.65,
+  factual_correctness: 0.75,
+  citation_correctness: 0.80,
+  numerical_accuracy: 1.00,        // Strict 100% financial number correctness
+  financial_entity_accuracy: 0.85,
+  abstention_accuracy: 1.00,        // Zero hallucinations on unanswerable queries
+};
+```
+
+When `--baseline <path>` is supplied, the runner automatically computes regression deltas and reports:
+- **Improved metrics** ($\Delta > +0.02$)
+- **Regressed metrics** ($\Delta < -0.02$)
+- **Unchanged metrics**
+- **Sample-level status regressions** (passed in baseline, failed in new run)
+
+---
+
+### Operational Commands
 
 ```bash
-# 1. Run all automated unit and integration tests
+# 1. Run all automated unit and integration tests (139 tests across 7 suites)
 npm test --prefix backend
 
-# 2. Run the Financial RAG Evaluation Benchmark suite
+# 2. Run the Financial RAG Evaluation Benchmark CLI
 npm run rag:eval --prefix backend
 
-# 3. Ingest and vectorize all PDF filings in data/financial_documents/
+# 3. Run evaluation with custom top-K and verbose output
+node backend/scripts/evaluateRAG.js --topK 4 --verbose
+
+# 4. Compare current run against a previous baseline report
+node backend/scripts/evaluateRAG.js --baseline ./data/evaluation_reports/baseline.json
+
+# 5. Ingest and vectorize all PDF filings in data/financial_documents/
 npm run rag:ingest --prefix backend
 
-# 4. Interactive CLI queries with citation verification
+# 6. Interactive CLI queries with citation verification
 npm run rag:test --prefix backend
+```
 
-# 5. Download official filings from SEC EDGAR and Federal Reserve
-npm run rag:download --prefix backend
+### REST API Evaluation Endpoint (Admin-Only)
+
+```http
+POST /api/v1/ai/rag/evaluate HTTP/1.1
+Host: localhost:4000
+Content-Type: application/json
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+
+{
+  "topK": 4
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "runId": "eval-1792952704624",
+    "timestamp": "2026-10-25T18:25:04.624Z",
+    "summary": {
+      "totalSamples": 8,
+      "passedSamples": 8,
+      "failedSamples": 0,
+      "durationMs": 162,
+      "overallThresholdsPassed": true
+    },
+    "thresholdResults": { "overallPassed": true, "checks": { ... } },
+    "aggregateMetrics": { ... }
+  }
+}
 ```

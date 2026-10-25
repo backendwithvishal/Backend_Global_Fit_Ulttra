@@ -1,0 +1,4954 @@
+{
+  "runId": "eval-1792953210203-yegd9",
+  "timestamp": "2026-10-25T18:33:30.367Z",
+  "datasetVersion": "1.0.0",
+  "datasetName": "Global_Fit_Ulttra Financial RAG Golden Benchmark",
+  "configuration": {
+    "topK": 4,
+    "thresholds": {
+      "faithfulness": 0.75,
+      "context_precision": 0.7,
+      "context_recall": 0.7,
+      "answer_relevancy": 0.65,
+      "factual_correctness": 0.75,
+      "citation_correctness": 0.8,
+      "numerical_accuracy": 1,
+      "financial_entity_accuracy": 0.85,
+      "abstention_accuracy": 1
+    },
+    "llmJudge": {
+      "enabled": false,
+      "provider": "deterministic",
+      "model": "llama-3.3-70b-versatile",
+      "callCount": 0,
+      "estimatedTotalCostUsd": 0
+    }
+  },
+  "summary": {
+    "totalSamples": 8,
+    "passedSamples": 5,
+    "failedSamples": 3,
+    "durationMs": 164,
+    "overallThresholdsPassed": true
+  },
+  "thresholdResults": {
+    "overallPassed": true,
+    "checks": {
+      "faithfulness": {
+        "threshold": 0.75,
+        "actual": 0.784,
+        "status": "PASSED",
+        "reason": "Score 0.784 met threshold >= 0.75"
+      },
+      "context_precision": {
+        "threshold": 0.7,
+        "actual": 1,
+        "status": "PASSED",
+        "reason": "Score 1 met threshold >= 0.7"
+      },
+      "context_recall": {
+        "threshold": 0.7,
+        "actual": 1,
+        "status": "PASSED",
+        "reason": "Score 1 met threshold >= 0.7"
+      },
+      "answer_relevancy": {
+        "threshold": 0.65,
+        "actual": 0.963,
+        "status": "PASSED",
+        "reason": "Score 0.963 met threshold >= 0.65"
+      },
+      "factual_correctness": {
+        "threshold": 0.75,
+        "actual": 0.962,
+        "status": "PASSED",
+        "reason": "Score 0.962 met threshold >= 0.75"
+      },
+      "citation_correctness": {
+        "threshold": 0.8,
+        "actual": 1,
+        "status": "PASSED",
+        "reason": "Score 1 met threshold >= 0.8"
+      },
+      "numerical_accuracy": {
+        "threshold": 1,
+        "actual": 1,
+        "status": "PASSED",
+        "reason": "Score 1 met threshold >= 1"
+      },
+      "financial_entity_accuracy": {
+        "threshold": 0.85,
+        "actual": 0.924,
+        "status": "PASSED",
+        "reason": "Score 0.924 met threshold >= 0.85"
+      },
+      "abstention_accuracy": {
+        "threshold": 1,
+        "actual": 1,
+        "status": "PASSED",
+        "reason": "Score 1 met threshold >= 1"
+      }
+    }
+  },
+  "regressionReport": {
+    "hasRegressions": false,
+    "improved": [],
+    "regressed": [],
+    "unchanged": [
+      {
+        "metric": "context_precision",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "context_recall",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "context_entities_recall",
+        "baselineScore": 0.967,
+        "currentScore": 0.967,
+        "delta": 0
+      },
+      {
+        "metric": "context_utilization",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "recall_at_4",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "mrr",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "ndcg_at_4",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "context_relevance",
+        "baselineScore": 0.491,
+        "currentScore": 0.491,
+        "delta": 0
+      },
+      {
+        "metric": "faithfulness",
+        "baselineScore": 0.784,
+        "currentScore": 0.784,
+        "delta": 0
+      },
+      {
+        "metric": "response_groundedness",
+        "baselineScore": 0.806,
+        "currentScore": 0.806,
+        "delta": 0
+      },
+      {
+        "metric": "answer_relevancy",
+        "baselineScore": 0.963,
+        "currentScore": 0.963,
+        "delta": 0
+      },
+      {
+        "metric": "factual_correctness",
+        "baselineScore": 0.962,
+        "currentScore": 0.962,
+        "delta": 0
+      },
+      {
+        "metric": "citation_correctness",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "answer_completeness",
+        "baselineScore": 0.732,
+        "currentScore": 0.732,
+        "delta": 0
+      },
+      {
+        "metric": "answer_accuracy",
+        "baselineScore": 0.59,
+        "currentScore": 0.59,
+        "delta": 0
+      },
+      {
+        "metric": "numerical_accuracy",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "financial_entity_accuracy",
+        "baselineScore": 0.924,
+        "currentScore": 0.924,
+        "delta": 0
+      },
+      {
+        "metric": "abstention_accuracy",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "tool_call_accuracy",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      },
+      {
+        "metric": "tool_call_f1",
+        "baselineScore": 0.63,
+        "currentScore": 0.63,
+        "delta": 0
+      },
+      {
+        "metric": "bounded_iteration_accuracy",
+        "baselineScore": 1,
+        "currentScore": 1,
+        "delta": 0
+      }
+    ],
+    "nonComparable": [],
+    "sampleRegressions": []
+  },
+  "aggregateMetrics": {
+    "context_precision": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 2
+      }
+    },
+    "context_recall": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "context_entities_recall": {
+      "mean": 0.967,
+      "median": 1,
+      "min": 0.8,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 2
+      }
+    },
+    "context_utilization": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 2
+      }
+    },
+    "recall_at_4": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "mrr": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "ndcg_at_4": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "context_relevance": {
+      "mean": 0.491,
+      "median": 0.533,
+      "min": 0,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 5,
+        "failed": 3,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "faithfulness": {
+      "mean": 0.784,
+      "median": 0.778,
+      "min": 0.6,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 5,
+        "failed": 3,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "response_groundedness": {
+      "mean": 0.806,
+      "median": 0.767,
+      "min": 0.676,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 7,
+        "failed": 1,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "answer_relevancy": {
+      "mean": 0.963,
+      "median": 1,
+      "min": 0.8,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "factual_correctness": {
+      "mean": 0.962,
+      "median": 0.965,
+      "min": 0.911,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "citation_correctness": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "answer_completeness": {
+      "mean": 0.732,
+      "median": 1,
+      "min": 0,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 6,
+        "failed": 2,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "answer_accuracy": {
+      "mean": 0.59,
+      "median": 0.639,
+      "min": 0.286,
+      "max": 0.742,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 3,
+        "failed": 3,
+        "skipped": 2,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "numerical_accuracy": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 5,
+      "coverage": 0.63,
+      "statuses": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 3,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "financial_entity_accuracy": {
+      "mean": 0.924,
+      "median": 1,
+      "min": 0.667,
+      "max": 1,
+      "evaluatedCount": 6,
+      "coverage": 0.75,
+      "statuses": {
+        "passed": 5,
+        "failed": 1,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 2
+      }
+    },
+    "abstention_accuracy": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "tool_call_accuracy": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "tool_call_f1": {
+      "mean": 0.63,
+      "median": 0.667,
+      "min": 0.333,
+      "max": 0.8,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 1,
+        "failed": 7,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    },
+    "bounded_iteration_accuracy": {
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "evaluatedCount": 8,
+      "coverage": 1,
+      "statuses": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "not_applicable": 0
+      }
+    }
+  },
+  "sampleResults": [
+    {
+      "sampleId": "FIN-EVAL-001",
+      "question": "What were Apple's iPhone and Services revenue numbers in Q3 2024?",
+      "symbol": "AAPL",
+      "status": "passed",
+      "failureDiagnosis": {
+        "classification": "NORMAL_EXECUTION",
+        "severity": "NONE",
+        "description": "Pipeline executed within standard tolerances."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 2 chunks; 1 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 1,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-aapl-1",
+                "isRelevant": true
+              },
+              {
+                "rank": 2,
+                "id": "chunk-aapl-2",
+                "isRelevant": false
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "3 of 3 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 3,
+            "supportedCount": 3,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "In Q3 2024, Apple Inc.",
+                "matchRatio": 1
+              },
+              {
+                "claim": "reported iPhone net sales of $39,296 million (down 1% year-over-year) and Services revenue of $24,213 million (up 14% to an all-time record).",
+                "matchRatio": 0.78
+              },
+              {
+                "claim": "Total net sales were $85,777 million with a gross margin of 46.3%.",
+                "matchRatio": 1
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "6/6 reference financial entities detected in retrieved context (100%)",
+          "details": {
+            "total": 6,
+            "matched": [
+              "AAPL",
+              "Apple Inc.",
+              "iPhone",
+              "Services",
+              "Q3 2024",
+              "Gross Margin"
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "2 of 2 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 2,
+            "utilizedCount": 2,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              },
+              {
+                "rank": 2,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 1/1 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 1,
+            "matchedCount": 1,
+            "matchedIds": [
+              "chunk-aapl-1"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 2
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.000, IDCG: 1.000)",
+          "details": {
+            "k": 4,
+            "dcg": 1,
+            "idcg": 1,
+            "rels": [
+              1,
+              0
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0.557,
+          "status": "passed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 56%",
+          "details": {
+            "totalChunks": 2,
+            "chunkScores": [
+              0.75,
+              0.25
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.778,
+          "status": "passed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "7 of 9 claims supported by retrieved context (78%)",
+          "details": {
+            "totalClaims": 9,
+            "supportedCount": 7,
+            "unsupportedCount": 2,
+            "supportedClaims": [
+              {
+                "sentence": "Form 10-Q Q3 2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Revenue by Product Category: iPhone net sales were $39,296 million (down 1%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Services reached an all-time record of $24,213 million (up 14%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Total net sales were $85,777 million with gross margin of 46.3%.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "[Source 2: AAPL (10-Q) - Item 1A: Risk Factors, Page 4]",
+                "supportRatio": 0.5
+              },
+              {
+                "sentence": "Item 1A: Risk Factors.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "The Company faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 2 financial sources:",
+                "supportRatio": 0
+              },
+              {
+                "sentence": "[Source 1: AAPL (10-Q) - Statements of Operations, Page 1]",
+                "supportRatio": 0
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.767,
+          "status": "passed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "46/60 significant answer tokens grounded in context (77%)",
+          "details": {
+            "totalTokens": 60,
+            "groundedTokens": 46
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "7/8 core question terms addressed in response (100%)",
+          "details": {
+            "qTerms": [
+              "were",
+              "apple",
+              "iphone",
+              "and",
+              "services",
+              "revenue",
+              "numbers",
+              "2024"
+            ],
+            "matchedTerms": [
+              "were",
+              "apple",
+              "iphone",
+              "and",
+              "services",
+              "revenue",
+              "2024"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 0.943,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 94% (Values: 100%, Narrative: 86%)",
+          "details": {
+            "tokenCoverage": 0.8571428571428571,
+            "valueScore": 1,
+            "valueChecks": [
+              {
+                "expected": "$39,296 million",
+                "found": true
+              },
+              {
+                "expected": "$24,213 million",
+                "found": true
+              },
+              {
+                "expected": "$85,777 million",
+                "found": true
+              },
+              {
+                "expected": "46.3%",
+                "found": true
+              },
+              {
+                "expected": "14%",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 2/2 valid source IDs, 2/2 context-supported claims",
+          "details": {
+            "tagsFound": 2,
+            "validCount": 2,
+            "invalidCount": 0,
+            "supportedCount": 2,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 1,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 11/11 required dimensions (100%)",
+          "details": {
+            "totalRequired": 11,
+            "matched": 11,
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.518,
+          "status": "failed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.518 (Precision: 0.37, Recall: 0.88)",
+          "details": {
+            "precision": 0.37,
+            "recall": 0.88,
+            "f1": 0.518
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedFinancialValues"
+          ],
+          "reason": "5/5 financial numbers verified accurately (100%)",
+          "details": {
+            "tolerance": 0.015,
+            "totalExpected": 5,
+            "matchedCount": 5,
+            "evaluations": [
+              {
+                "expected": "$39,296 million",
+                "found": true,
+                "reason": "Exact representation '$39,296 million' found in text"
+              },
+              {
+                "expected": "$24,213 million",
+                "found": true,
+                "reason": "Exact representation '$24,213 million' found in text"
+              },
+              {
+                "expected": "$85,777 million",
+                "found": true,
+                "reason": "Exact representation '$85,777 million' found in text"
+              },
+              {
+                "expected": "46.3%",
+                "found": true,
+                "reason": "Exact representation '46.3%' found in text"
+              },
+              {
+                "expected": "14%",
+                "found": true,
+                "reason": "Exact representation '14%' found in text"
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "8/8 financial entities accurately identified (100%)",
+          "details": {
+            "totalEntities": 8,
+            "matched": 8,
+            "entityResults": [
+              {
+                "entity": "AAPL",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Apple Inc.",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "iPhone",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Services",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Q3 2024",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Gross Margin",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Q3 2024",
+                "type": "PERIOD",
+                "found": true
+              },
+              {
+                "entity": "USD",
+                "type": "CURRENCY",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 608,
+            "confidence": 98,
+            "retrievalCount": 2
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 6/6 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 6,
+            "passedChecks": 6,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "AAPL",
+                "actual": [
+                  "AAPL"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CITATION_VALIDATION",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.8,
+          "status": "passed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.8 (Precision: 0.67, Recall: 1.00)",
+          "details": {
+            "precision": 0.67,
+            "recall": 1,
+            "f1": 0.8
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 16,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 2,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 11
+    },
+    {
+      "sampleId": "FIN-EVAL-002",
+      "question": "What regulatory risks does Apple face under the European Union Digital Markets Act according to Item 1A?",
+      "symbol": "AAPL",
+      "status": "passed",
+      "failureDiagnosis": {
+        "classification": "NORMAL_EXECUTION",
+        "severity": "NONE",
+        "description": "Pipeline executed within standard tolerances."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 2 chunks; 1 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 1,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-aapl-2",
+                "isRelevant": true
+              },
+              {
+                "rank": 2,
+                "id": "chunk-aapl-1",
+                "isRelevant": false
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "1 of 1 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 1,
+            "supportedCount": 1,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "Under Item 1A Risk Factors, Apple faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures.",
+                "matchRatio": 1
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "6/6 reference financial entities detected in retrieved context (100%)",
+          "details": {
+            "total": 6,
+            "matched": [
+              "AAPL",
+              "Apple Inc.",
+              "European Union",
+              "Digital Markets Act",
+              "App Store",
+              "Item 1A"
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "2 of 2 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 2,
+            "utilizedCount": 2,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              },
+              {
+                "rank": 2,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 1/1 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 1,
+            "matchedCount": 1,
+            "matchedIds": [
+              "chunk-aapl-2"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 2
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.000, IDCG: 1.000)",
+          "details": {
+            "k": 4,
+            "dcg": 1,
+            "idcg": 1,
+            "rels": [
+              1,
+              0
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0.509,
+          "status": "passed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 51%",
+          "details": {
+            "totalChunks": 2,
+            "chunkScores": [
+              0.7857142857142857,
+              0.07142857142857142
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.778,
+          "status": "passed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "7 of 9 claims supported by retrieved context (78%)",
+          "details": {
+            "totalClaims": 9,
+            "supportedCount": 7,
+            "unsupportedCount": 2,
+            "supportedClaims": [
+              {
+                "sentence": "[Source 1: AAPL (10-Q) - Item 1A: Risk Factors, Page 4]",
+                "supportRatio": 0.5
+              },
+              {
+                "sentence": "Item 1A: Risk Factors.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "The Company faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Form 10-Q Q3 2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Revenue by Product Category: iPhone net sales were $39,296 million (down 1%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Services reached an all-time record of $24,213 million (up 14%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Total net sales were $85,777 million with gross margin of 46.3%.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 2 financial sources:",
+                "supportRatio": 0
+              },
+              {
+                "sentence": "[Source 2: AAPL (10-Q) - Statements of Operations, Page 1]",
+                "supportRatio": 0
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.767,
+          "status": "passed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "46/60 significant answer tokens grounded in context (77%)",
+          "details": {
+            "totalTokens": 60,
+            "groundedTokens": 46
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 0.943,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "11/14 core question terms addressed in response (94%)",
+          "details": {
+            "qTerms": [
+              "regulatory",
+              "risks",
+              "does",
+              "apple",
+              "face",
+              "under",
+              "the",
+              "european",
+              "union",
+              "digital",
+              "markets",
+              "act",
+              "according",
+              "item"
+            ],
+            "matchedTerms": [
+              "regulatory",
+              "apple",
+              "face",
+              "under",
+              "the",
+              "european",
+              "union",
+              "digital",
+              "markets",
+              "act",
+              "item"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 100% (Values: 100%, Narrative: 100%)",
+          "details": {
+            "tokenCoverage": 1,
+            "valueScore": 1,
+            "valueChecks": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 2/2 valid source IDs, 2/2 context-supported claims",
+          "details": {
+            "tagsFound": 2,
+            "validCount": 2,
+            "invalidCount": 0,
+            "supportedCount": 2,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 1,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 6/6 required dimensions (100%)",
+          "details": {
+            "totalRequired": 6,
+            "matched": 6,
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.571,
+          "status": "failed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.571 (Precision: 0.40, Recall: 1.00)",
+          "details": {
+            "precision": 0.4,
+            "recall": 1,
+            "f1": 0.571
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": null,
+          "status": "skipped",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No expected financial values provided in dataset record",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "7/7 financial entities accurately identified (100%)",
+          "details": {
+            "totalEntities": 7,
+            "matched": 7,
+            "entityResults": [
+              {
+                "entity": "AAPL",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Apple Inc.",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "European Union",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Digital Markets Act",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "App Store",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Item 1A",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Q3 2024",
+                "type": "PERIOD",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 608,
+            "confidence": 98,
+            "retrievalCount": 2
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 5/5 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 5,
+            "passedChecks": 5,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "RISK_ANALYSIS",
+                "actual": "RISK_ANALYSIS",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "AAPL",
+                "actual": [
+                  "AAPL"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.667,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.667 (Precision: 0.50, Recall: 1.00)",
+          "details": {
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.667
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 9,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 2,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 2
+    },
+    {
+      "sampleId": "FIN-EVAL-003",
+      "question": "What was Microsoft consolidated revenue and Azure cloud growth rate in FY2024?",
+      "symbol": "MSFT",
+      "status": "failed",
+      "failureDiagnosis": {
+        "classification": "NORMAL_EXECUTION",
+        "severity": "NONE",
+        "description": "Pipeline executed within standard tolerances."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 1 chunks; 1 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 1,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-msft-1",
+                "isRelevant": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "2 of 2 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 2,
+            "supportedCount": 2,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "reported consolidated revenue of $245.1 billion for FY2024, up 16%.",
+                "matchRatio": 0.86
+              },
+              {
+                "claim": "Intelligent Cloud revenue was $105.4 billion, and Azure and other cloud services revenue grew 30%, with 8 points of growth driven by AI services.",
+                "matchRatio": 0.89
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "5/5 reference financial entities detected in retrieved context (100%)",
+          "details": {
+            "total": 5,
+            "matched": [
+              "MSFT",
+              "Microsoft Corp.",
+              "Intelligent Cloud",
+              "Azure",
+              "FY2024"
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "1 of 1 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 1,
+            "utilizedCount": 1,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 1/1 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 1,
+            "matchedCount": 1,
+            "matchedIds": [
+              "chunk-msft-1"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.000, IDCG: 1.000)",
+          "details": {
+            "k": 4,
+            "dcg": 1,
+            "idcg": 1,
+            "rels": [
+              1
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0.8,
+          "status": "passed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 80%",
+          "details": {
+            "totalChunks": 1,
+            "chunkScores": [
+              0.8
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.714,
+          "status": "failed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "5 of 7 claims supported by retrieved context (71%)",
+          "details": {
+            "totalClaims": 7,
+            "supportedCount": 5,
+            "unsupportedCount": 2,
+            "supportedClaims": [
+              {
+                "sentence": "Microsoft Corp.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Form 10-K FY2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Consolidated revenue was $245.1 billion, up 16%.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Intelligent Cloud revenue was $105.4 billion.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Azure and other cloud services revenue grew 30%, with 8 points from AI services.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 1 financial sources:",
+                "supportRatio": 0.2
+              },
+              {
+                "sentence": "[Source 1: MSFT (10-K) - Item 7: MD&A, Page 2]",
+                "supportRatio": 0
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.71,
+          "status": "passed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "22/31 significant answer tokens grounded in context (71%)",
+          "details": {
+            "totalTokens": 31,
+            "groundedTokens": 22
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 0.96,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "8/10 core question terms addressed in response (96%)",
+          "details": {
+            "qTerms": [
+              "was",
+              "microsoft",
+              "consolidated",
+              "revenue",
+              "and",
+              "azure",
+              "cloud",
+              "growth",
+              "rate",
+              "fy2024"
+            ],
+            "matchedTerms": [
+              "was",
+              "microsoft",
+              "consolidated",
+              "revenue",
+              "and",
+              "azure",
+              "cloud",
+              "fy2024"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 0.956,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 96% (Values: 100%, Narrative: 89%)",
+          "details": {
+            "tokenCoverage": 0.8888888888888888,
+            "valueScore": 1,
+            "valueChecks": [
+              {
+                "expected": "$245.1 billion",
+                "found": true
+              },
+              {
+                "expected": "$105.4 billion",
+                "found": true
+              },
+              {
+                "expected": "16%",
+                "found": true
+              },
+              {
+                "expected": "30%",
+                "found": true
+              },
+              {
+                "expected": "8 points",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 1/1 valid source IDs, 1/1 context-supported claims",
+          "details": {
+            "tagsFound": 1,
+            "validCount": 1,
+            "invalidCount": 0,
+            "supportedCount": 1,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 1,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 10/10 required dimensions (100%)",
+          "details": {
+            "totalRequired": 10,
+            "matched": 10,
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.706,
+          "status": "passed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.706 (Precision: 0.62, Recall: 0.82)",
+          "details": {
+            "precision": 0.62,
+            "recall": 0.82,
+            "f1": 0.706
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedFinancialValues"
+          ],
+          "reason": "5/5 financial numbers verified accurately (100%)",
+          "details": {
+            "tolerance": 0.015,
+            "totalExpected": 5,
+            "matchedCount": 5,
+            "evaluations": [
+              {
+                "expected": "$245.1 billion",
+                "found": true,
+                "reason": "Exact representation '$245.1 billion' found in text"
+              },
+              {
+                "expected": "$105.4 billion",
+                "found": true,
+                "reason": "Exact representation '$105.4 billion' found in text"
+              },
+              {
+                "expected": "16%",
+                "found": true,
+                "reason": "Exact representation '16%' found in text"
+              },
+              {
+                "expected": "30%",
+                "found": true,
+                "reason": "Exact representation '30%' found in text"
+              },
+              {
+                "expected": "8 points",
+                "found": true,
+                "reason": "Exact representation '8 points' found in text"
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "7/7 financial entities accurately identified (100%)",
+          "details": {
+            "totalEntities": 7,
+            "matched": 7,
+            "entityResults": [
+              {
+                "entity": "MSFT",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Microsoft Corp.",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Intelligent Cloud",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Azure",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FY2024",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FY2024",
+                "type": "PERIOD",
+                "found": true
+              },
+              {
+                "entity": "USD",
+                "type": "CURRENCY",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 310,
+            "confidence": 98,
+            "retrievalCount": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 5/5 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 5,
+            "passedChecks": 5,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "MSFT",
+                "actual": [
+                  "MSFT"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.667,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.667 (Precision: 0.50, Recall: 1.00)",
+          "details": {
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.667
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 7,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 1,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 2
+    },
+    {
+      "sampleId": "FIN-EVAL-004",
+      "question": "What was Nvidia Data Center revenue and GAAP gross margin in FY2024?",
+      "symbol": "NVDA",
+      "status": "failed",
+      "failureDiagnosis": {
+        "classification": "CASE_B_GENERATION_FAILURE",
+        "severity": "HIGH",
+        "description": "Relevant evidence was retrieved, but the generated answer contradicts the evidence or introduced unsupported claims."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 1 chunks; 1 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 1,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-nvda-1",
+                "isRelevant": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "2 of 2 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 2,
+            "supportedCount": 2,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "NVIDIA Corporation reported Compute & Networking Data Center platform revenue of $47,405 million, up 217% year-over-year.",
+                "matchRatio": 0.93
+              },
+              {
+                "claim": "GAAP gross margin reached 72.7%, driven by strong demand for HGX Hopper architecture.",
+                "matchRatio": 1
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "6/6 reference financial entities detected in retrieved context (100%)",
+          "details": {
+            "total": 6,
+            "matched": [
+              "NVDA",
+              "NVIDIA Corporation",
+              "Data Center",
+              "GAAP Gross Margin",
+              "FY2024",
+              "Hopper"
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "1 of 1 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 1,
+            "utilizedCount": 1,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 1/1 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 1,
+            "matchedCount": 1,
+            "matchedIds": [
+              "chunk-nvda-1"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.000, IDCG: 1.000)",
+          "details": {
+            "k": 4,
+            "dcg": 1,
+            "idcg": 1,
+            "rels": [
+              1
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 1,
+          "status": "passed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 100%",
+          "details": {
+            "totalChunks": 1,
+            "chunkScores": [
+              1
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.6,
+          "status": "failed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "3 of 5 claims supported by retrieved context (60%)",
+          "details": {
+            "totalClaims": 5,
+            "supportedCount": 3,
+            "unsupportedCount": 2,
+            "supportedClaims": [
+              {
+                "sentence": "NVIDIA Corporation Form 10-K FY2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Compute & Networking Data Center platform revenue reached $47,405 million, up 217% year-over-year.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "GAAP gross margin was 72.7%, driven by strong HGX Hopper architecture demand.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 1 financial sources:",
+                "supportRatio": 0
+              },
+              {
+                "sentence": "[Source 1: NVDA (10-K) - Executive Highlights, Page 1]",
+                "supportRatio": 0
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.676,
+          "status": "failed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "23/34 significant answer tokens grounded in context (68%)",
+          "details": {
+            "totalTokens": 34,
+            "groundedTokens": 23
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "10/10 core question terms addressed in response (100%)",
+          "details": {
+            "qTerms": [
+              "was",
+              "nvidia",
+              "data",
+              "center",
+              "revenue",
+              "and",
+              "gaap",
+              "gross",
+              "margin",
+              "fy2024"
+            ],
+            "matchedTerms": [
+              "was",
+              "nvidia",
+              "data",
+              "center",
+              "revenue",
+              "and",
+              "gaap",
+              "gross",
+              "margin",
+              "fy2024"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 0.985,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 99% (Values: 100%, Narrative: 96%)",
+          "details": {
+            "tokenCoverage": 0.9615384615384616,
+            "valueScore": 1,
+            "valueChecks": [
+              {
+                "expected": "$47,405 million",
+                "found": true
+              },
+              {
+                "expected": "217%",
+                "found": true
+              },
+              {
+                "expected": "72.7%",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 1/1 valid source IDs, 1/1 context-supported claims",
+          "details": {
+            "tagsFound": 1,
+            "validCount": 1,
+            "invalidCount": 0,
+            "supportedCount": 1,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 1,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 9/9 required dimensions (100%)",
+          "details": {
+            "totalRequired": 9,
+            "matched": 9,
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.742,
+          "status": "passed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.742 (Precision: 0.62, Recall: 0.92)",
+          "details": {
+            "precision": 0.62,
+            "recall": 0.92,
+            "f1": 0.742
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedFinancialValues"
+          ],
+          "reason": "3/3 financial numbers verified accurately (100%)",
+          "details": {
+            "tolerance": 0.015,
+            "totalExpected": 3,
+            "matchedCount": 3,
+            "evaluations": [
+              {
+                "expected": "$47,405 million",
+                "found": true,
+                "reason": "Exact representation '$47,405 million' found in text"
+              },
+              {
+                "expected": "217%",
+                "found": true,
+                "reason": "Exact representation '217%' found in text"
+              },
+              {
+                "expected": "72.7%",
+                "found": true,
+                "reason": "Exact representation '72.7%' found in text"
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "8/8 financial entities accurately identified (100%)",
+          "details": {
+            "totalEntities": 8,
+            "matched": 8,
+            "entityResults": [
+              {
+                "entity": "NVDA",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "NVIDIA Corporation",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Data Center",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "GAAP Gross Margin",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FY2024",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Hopper",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FY2024",
+                "type": "PERIOD",
+                "found": true
+              },
+              {
+                "entity": "USD",
+                "type": "CURRENCY",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 322,
+            "confidence": 98,
+            "retrievalCount": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 5/5 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 5,
+            "passedChecks": 5,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "NVDA",
+                "actual": [
+                  "NVDA"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.667,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.667 (Precision: 0.50, Recall: 1.00)",
+          "details": {
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.667
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 7,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 1,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 2
+    },
+    {
+      "sampleId": "FIN-EVAL-005",
+      "question": "What was the Federal Reserve federal funds rate target in the FOMC monetary policy decision statement?",
+      "symbol": "FED",
+      "status": "failed",
+      "failureDiagnosis": {
+        "classification": "CASE_B_GENERATION_FAILURE",
+        "severity": "HIGH",
+        "description": "Relevant evidence was retrieved, but the generated answer contradicts the evidence or introduced unsupported claims."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 1 chunks; 1 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 1,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-fed-1",
+                "isRelevant": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "1 of 1 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 1,
+            "supportedCount": 1,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "The Federal Reserve FOMC decided to maintain the target range for the federal funds rate at 5.25 to 5.50 percent, observing that inflation has eased over the past year but remains elevated toward the 2 percent objective.",
+                "matchRatio": 0.94
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 0.8,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "4/5 reference financial entities detected in retrieved context (80%)",
+          "details": {
+            "total": 5,
+            "matched": [
+              "FED",
+              "FOMC",
+              "Federal Reserve",
+              "Federal Funds Rate"
+            ],
+            "missing": [
+              "Inflation Target"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "1 of 1 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 1,
+            "utilizedCount": 1,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 1/1 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 1,
+            "matchedCount": 1,
+            "matchedIds": [
+              "chunk-fed-1"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.000, IDCG: 1.000)",
+          "details": {
+            "k": 4,
+            "dcg": 1,
+            "idcg": 1,
+            "rels": [
+              1
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0.714,
+          "status": "passed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 71%",
+          "details": {
+            "totalChunks": 1,
+            "chunkScores": [
+              0.7142857142857143
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.6,
+          "status": "failed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "3 of 5 claims supported by retrieved context (60%)",
+          "details": {
+            "totalClaims": 5,
+            "supportedCount": 3,
+            "unsupportedCount": 2,
+            "supportedClaims": [
+              {
+                "sentence": "Federal Reserve Federal Open Market Committee (FOMC) Statement.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "The Committee decided to maintain the target range for the federal funds rate at 5.25 to 5.50 percent.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Inflation has eased over the past year but remains elevated toward the 2 percent objective.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 1 financial sources:",
+                "supportRatio": 0
+              },
+              {
+                "sentence": "[Source 1: FED (FOMC) - Monetary Policy Decision, Page 1]",
+                "supportRatio": 0.17
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.718,
+          "status": "passed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "28/39 significant answer tokens grounded in context (72%)",
+          "details": {
+            "totalTokens": 39,
+            "groundedTokens": 28
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "13/14 core question terms addressed in response (100%)",
+          "details": {
+            "qTerms": [
+              "was",
+              "the",
+              "federal",
+              "reserve",
+              "federal",
+              "funds",
+              "rate",
+              "target",
+              "the",
+              "fomc",
+              "monetary",
+              "policy",
+              "decision",
+              "statement"
+            ],
+            "matchedTerms": [
+              "the",
+              "federal",
+              "reserve",
+              "federal",
+              "funds",
+              "rate",
+              "target",
+              "the",
+              "fomc",
+              "monetary",
+              "policy",
+              "decision",
+              "statement"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 0.974,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 97% (Values: 100%, Narrative: 94%)",
+          "details": {
+            "tokenCoverage": 0.9354838709677419,
+            "valueScore": 1,
+            "valueChecks": [
+              {
+                "expected": "5.25 to 5.50 percent",
+                "found": true
+              },
+              {
+                "expected": "2 percent",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 1/1 valid source IDs, 1/1 context-supported claims",
+          "details": {
+            "tagsFound": 1,
+            "validCount": 1,
+            "invalidCount": 0,
+            "supportedCount": 1,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 0.857,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 6/7 required dimensions (86%)",
+          "details": {
+            "totalRequired": 7,
+            "matched": 6,
+            "missing": [
+              "Inflation Target"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.719,
+          "status": "passed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.719 (Precision: 0.59, Recall: 0.92)",
+          "details": {
+            "precision": 0.59,
+            "recall": 0.92,
+            "f1": 0.719
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedFinancialValues"
+          ],
+          "reason": "2/2 financial numbers verified accurately (100%)",
+          "details": {
+            "tolerance": 0.015,
+            "totalExpected": 2,
+            "matchedCount": 2,
+            "evaluations": [
+              {
+                "expected": "5.25 to 5.50 percent",
+                "found": true,
+                "reason": "Exact representation '5.25 to 5.50 percent' found in text"
+              },
+              {
+                "expected": "2 percent",
+                "found": true,
+                "reason": "Exact representation '2 percent' found in text"
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 0.667,
+          "status": "failed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "4/6 financial entities accurately identified (67%)",
+          "details": {
+            "totalEntities": 6,
+            "matched": 4,
+            "entityResults": [
+              {
+                "entity": "FED",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FOMC",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Federal Reserve",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Federal Funds Rate",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Inflation Target",
+                "type": "ENTITY",
+                "found": false
+              },
+              {
+                "entity": "2024",
+                "type": "PERIOD",
+                "found": false
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 370,
+            "confidence": 98,
+            "retrievalCount": 1
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 5/5 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 5,
+            "passedChecks": 5,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "FED",
+                "actual": [
+                  "FED"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.667,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.667 (Precision: 0.50, Recall: 1.00)",
+          "details": {
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.667
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 5,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 1,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 2
+    },
+    {
+      "sampleId": "FIN-EVAL-006",
+      "question": "Compare Apple total revenue and Microsoft consolidated revenue from their respective filings.",
+      "symbol": "ALL",
+      "status": "passed",
+      "failureDiagnosis": {
+        "classification": "NORMAL_EXECUTION",
+        "severity": "NONE",
+        "description": "Pipeline executed within standard tolerances."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": 1,
+          "status": "passed",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Evaluated 3 chunks; 2 relevant items with precision score 1",
+          "details": {
+            "topK": 4,
+            "relevantCount": 2,
+            "chunkAssessments": [
+              {
+                "rank": 1,
+                "id": "chunk-aapl-1",
+                "isRelevant": true
+              },
+              {
+                "rank": 2,
+                "id": "chunk-msft-1",
+                "isRelevant": true
+              },
+              {
+                "rank": 3,
+                "id": "chunk-aapl-2",
+                "isRelevant": false
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_token_coverage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceAnswer"
+          ],
+          "reason": "2 of 2 reference claims/facts supported in retrieved context (100%)",
+          "details": {
+            "totalClaims": 2,
+            "supportedCount": 2,
+            "missingCount": 0,
+            "supported": [
+              {
+                "claim": "In Q3 2024, Apple reported total net sales of $85,777 million ($85.78 billion).",
+                "matchRatio": 0.89
+              },
+              {
+                "claim": "In FY2024, Microsoft reported full-year consolidated revenue of $245.1 billion (up 16%).",
+                "matchRatio": 0.67
+              }
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": 1,
+          "status": "passed",
+          "method": "entity_matching",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceEntities"
+          ],
+          "reason": "6/6 reference financial entities detected in retrieved context (100%)",
+          "details": {
+            "total": 6,
+            "matched": [
+              "AAPL",
+              "MSFT",
+              "Apple",
+              "Microsoft",
+              "Q3 2024",
+              "FY2024"
+            ],
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": 1,
+          "status": "passed",
+          "method": "lexical_and_citation_usage",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "3 of 3 retrieved chunks utilized in response (100%)",
+          "details": {
+            "totalChunks": 3,
+            "utilizedCount": 3,
+            "chunkUtilization": [
+              {
+                "rank": 1,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              },
+              {
+                "rank": 2,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              },
+              {
+                "rank": 3,
+                "isExplicitlyCited": false,
+                "lexicalOverlap": 1,
+                "isUtilized": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "set_overlap",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "Retrieved 2/2 expected chunks in top 4",
+          "details": {
+            "k": 4,
+            "totalExpected": 2,
+            "matchedCount": 2,
+            "matchedIds": [
+              "chunk-aapl-1",
+              "chunk-msft-1"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": 1,
+          "status": "passed",
+          "method": "reciprocal_rank",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "First relevant chunk found at rank 1 (MRR: 1)",
+          "details": {
+            "firstRank": 1,
+            "totalRetrieved": 3
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": 1,
+          "status": "passed",
+          "method": "ndcg_formula",
+          "inputsUsed": [
+            "retrievedChunks",
+            "referenceContextIds"
+          ],
+          "reason": "nDCG@4 = 1 (DCG: 1.631, IDCG: 1.631)",
+          "details": {
+            "k": 4,
+            "dcg": 1.631,
+            "idcg": 1.631,
+            "rels": [
+              1,
+              1,
+              0
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0.344,
+          "status": "failed",
+          "method": "rank_weighted_token_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "Rank-weighted query token overlap with retrieved chunks: 34%",
+          "details": {
+            "totalChunks": 3,
+            "chunkScores": [
+              0.3333333333333333,
+              0.5,
+              0.16666666666666666
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 0.8,
+          "status": "passed",
+          "method": "deterministic_claim_overlap",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "12 of 15 claims supported by retrieved context (80%)",
+          "details": {
+            "totalClaims": 15,
+            "supportedCount": 12,
+            "unsupportedCount": 3,
+            "supportedClaims": [
+              {
+                "sentence": "Form 10-Q Q3 2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Revenue by Product Category: iPhone net sales were $39,296 million (down 1%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Services reached an all-time record of $24,213 million (up 14%).",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Total net sales were $85,777 million with gross margin of 46.3%.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Microsoft Corp.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Form 10-K FY2024.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Consolidated revenue was $245.1 billion, up 16%.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Intelligent Cloud revenue was $105.4 billion.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "Azure and other cloud services revenue grew 30%, with 8 points from AI services.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "[Source 3: AAPL (10-Q) - Item 1A: Risk Factors, Page 4]",
+                "supportRatio": 0.5
+              },
+              {
+                "sentence": "Item 1A: Risk Factors.",
+                "supportRatio": 1
+              },
+              {
+                "sentence": "The Company faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures.",
+                "supportRatio": 1
+              }
+            ],
+            "unsupportedClaims": [
+              {
+                "sentence": "Verified Context retrieved from 3 financial sources:",
+                "supportRatio": 0.2
+              },
+              {
+                "sentence": "[Source 1: AAPL (10-Q) - Statements of Operations, Page 1]",
+                "supportRatio": 0
+              },
+              {
+                "sentence": "[Source 2: MSFT (10-K) - Item 7: MD&A, Page 2]",
+                "supportRatio": 0.25
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 0.812,
+          "status": "passed",
+          "method": "lexical_grounding_density",
+          "inputsUsed": [
+            "generatedAnswer",
+            "retrievedChunks"
+          ],
+          "reason": "69/85 significant answer tokens grounded in context (81%)",
+          "details": {
+            "totalTokens": 85,
+            "groundedTokens": 69
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 0.8,
+          "status": "passed",
+          "method": "deterministic_term_coverage",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "8/12 core question terms addressed in response (80%)",
+          "details": {
+            "qTerms": [
+              "compare",
+              "apple",
+              "total",
+              "revenue",
+              "and",
+              "microsoft",
+              "consolidated",
+              "revenue",
+              "from",
+              "their",
+              "respective",
+              "filings"
+            ],
+            "matchedTerms": [
+              "apple",
+              "total",
+              "revenue",
+              "and",
+              "microsoft",
+              "consolidated",
+              "revenue",
+              "from"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": 0.911,
+          "status": "passed",
+          "method": "deterministic_claim_and_value_check",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer",
+            "expectedValues"
+          ],
+          "reason": "Factual agreement: 91% (Values: 100%, Narrative: 78%)",
+          "details": {
+            "tokenCoverage": 0.7777777777777778,
+            "valueScore": 1,
+            "valueChecks": [
+              {
+                "expected": "$85,777 million",
+                "found": true
+              },
+              {
+                "expected": "$245.1 billion",
+                "found": true
+              },
+              {
+                "expected": "16%",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_validity_and_support_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Citations: 3/3 valid source IDs, 3/3 context-supported claims",
+          "details": {
+            "tagsFound": 3,
+            "validCount": 3,
+            "invalidCount": 0,
+            "supportedCount": 3,
+            "validityScore": 1,
+            "supportScore": 1,
+            "invalidTags": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 1,
+          "status": "passed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 9/9 required dimensions (100%)",
+          "details": {
+            "totalRequired": 9,
+            "matched": 9,
+            "missing": []
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": 0.286,
+          "status": "failed",
+          "method": "token_f1_reference_agreement",
+          "inputsUsed": [
+            "generatedAnswer",
+            "referenceAnswer"
+          ],
+          "reason": "Token F1 accuracy against reference: 0.286 (Precision: 0.17, Recall: 0.81)",
+          "details": {
+            "precision": 0.17,
+            "recall": 0.81,
+            "f1": 0.286
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedFinancialValues"
+          ],
+          "reason": "3/3 financial numbers verified accurately (100%)",
+          "details": {
+            "tolerance": 0.015,
+            "totalExpected": 3,
+            "matchedCount": 3,
+            "evaluations": [
+              {
+                "expected": "$85,777 million",
+                "found": true,
+                "reason": "Exact representation '$85,777 million' found in text"
+              },
+              {
+                "expected": "$245.1 billion",
+                "found": true,
+                "reason": "Exact representation '$245.1 billion' found in text"
+              },
+              {
+                "expected": "16%",
+                "found": true,
+                "reason": "Exact representation '16%' found in text"
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": 0.875,
+          "status": "passed",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities"
+          ],
+          "reason": "7/8 financial entities accurately identified (88%)",
+          "details": {
+            "totalEntities": 8,
+            "matched": 7,
+            "entityResults": [
+              {
+                "entity": "AAPL",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "MSFT",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Apple",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Microsoft",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Q3 2024",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "FY2024",
+                "type": "ENTITY",
+                "found": true
+              },
+              {
+                "entity": "Q3 2024 / FY2024",
+                "type": "PERIOD",
+                "found": false
+              },
+              {
+                "entity": "USD",
+                "type": "CURRENCY",
+                "found": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly generated grounded answer when evidence was sufficient",
+          "details": {
+            "expectedBehavior": "ANSWER",
+            "isRefusal": false,
+            "answerLength": 866,
+            "confidence": 98,
+            "retrievalCount": 3
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 4/4 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 4,
+            "passedChecks": 4,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "COMPARISON",
+                "actual": "COMPARISON",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "SYNTHESIS",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.667,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.667 (Precision: 0.50, Recall: 1.00)",
+          "details": {
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.667
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 1 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 1,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 7,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 3,
+          "confidence": 98
+        }
+      },
+      "evaluationDurationMs": 3
+    },
+    {
+      "sampleId": "FIN-EVAL-007",
+      "question": "What was Tesla's commercial aircraft division revenue and passenger jet sales in 2024?",
+      "symbol": "TSLA",
+      "status": "passed",
+      "failureDiagnosis": {
+        "classification": "CASE_E_CORRECT_ABSTENTION",
+        "severity": "NONE",
+        "description": "Question cannot be answered from available evidence, and the system correctly acknowledged the limitation without hallucinating."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": null,
+          "status": "not_applicable",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs or reference contexts provided for ground-truth comparison",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference answer, reference claims, or reference contexts available to assess recall",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": null,
+          "status": "not_applicable",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "Negative/unanswerable test query: entity absence expected in knowledge base",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": null,
+          "status": "not_applicable",
+          "method": "context_answer_alignment",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "No retrieved chunks available to assess utilization",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for Recall@K evaluation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for MRR calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for nDCG calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0,
+          "status": "failed",
+          "method": "query_context_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "No chunks retrieved",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 1,
+          "status": "passed",
+          "method": "abstention_faithfulness_handler",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Safely acknowledged limitations without generating unfaithful claims",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 1,
+          "status": "passed",
+          "method": "abstention_groundedness_handler",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Safe refusal on insufficient evidence is fully grounded",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 1,
+          "status": "passed",
+          "method": "refusal_relevancy_handler",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "Grounded refusal correctly and directly addresses insufficient evidence",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No trusted reference answer or expected values available for factual comparison",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Correct abstention requires no citations; zero fabricated citations",
+          "details": {
+            "tagsFound": 0,
+            "validCitations": 0,
+            "invalidCitations": 0
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 0,
+          "status": "failed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 0/3 required dimensions (0%)",
+          "details": {
+            "totalRequired": 3,
+            "matched": 0,
+            "missing": [
+              "TSLA",
+              "Tesla",
+              "commercial aircraft"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No reference answer provided for accuracy calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": null,
+          "status": "skipped",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No expected financial values provided in dataset record",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": null,
+          "status": "not_applicable",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Negative/unanswerable test query: entity absence expected in refusal response",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly acknowledged missing evidence and safely refused without hallucination",
+          "details": {
+            "expectedBehavior": "REFUSE",
+            "isRefusal": true,
+            "answerLength": 49,
+            "confidence": 0,
+            "retrievalCount": 0
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 4/4 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 4,
+            "passedChecks": 4,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "TSLA",
+                "actual": [
+                  "TSLA"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "PLANNING",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.571,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.571 (Precision: 0.40, Recall: 1.00)",
+          "details": {
+            "precision": 0.4,
+            "recall": 1,
+            "f1": 0.571
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 3 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 3,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 21,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 0,
+          "confidence": 0
+        }
+      },
+      "evaluationDurationMs": 0
+    },
+    {
+      "sampleId": "FIN-EVAL-008",
+      "question": "What is the confidential proprietary target valuation for Acme Financial?",
+      "symbol": "ACME",
+      "status": "passed",
+      "failureDiagnosis": {
+        "classification": "CASE_E_CORRECT_ABSTENTION",
+        "severity": "NONE",
+        "description": "Question cannot be answered from available evidence, and the system correctly acknowledged the limitation without hallucinating."
+      },
+      "metrics": {
+        "context_precision": {
+          "name": "context_precision",
+          "score": null,
+          "status": "not_applicable",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs or reference contexts provided for ground-truth comparison",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_recall": {
+          "name": "context_recall",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference answer, reference claims, or reference contexts available to assess recall",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_entities_recall": {
+          "name": "context_entities_recall",
+          "score": null,
+          "status": "not_applicable",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "Negative/unanswerable test query: entity absence expected in knowledge base",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_utilization": {
+          "name": "context_utilization",
+          "score": null,
+          "status": "not_applicable",
+          "method": "context_answer_alignment",
+          "inputsUsed": [
+            "retrievedChunks",
+            "generatedAnswer"
+          ],
+          "reason": "No retrieved chunks available to assess utilization",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "recall_at_4": {
+          "name": "recall_at_4",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for Recall@K evaluation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "mrr": {
+          "name": "mrr",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for MRR calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "ndcg_at_4": {
+          "name": "ndcg_at_4",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "retrievedChunks"
+          ],
+          "reason": "No reference context IDs available for nDCG calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "context_relevance": {
+          "name": "context_relevance",
+          "score": 0,
+          "status": "failed",
+          "method": "query_context_alignment",
+          "inputsUsed": [
+            "question",
+            "retrievedChunks"
+          ],
+          "reason": "No chunks retrieved",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "faithfulness": {
+          "name": "faithfulness",
+          "score": 1,
+          "status": "passed",
+          "method": "abstention_faithfulness_handler",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Safely acknowledged limitations without generating unfaithful claims",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "response_groundedness": {
+          "name": "response_groundedness",
+          "score": 1,
+          "status": "passed",
+          "method": "abstention_groundedness_handler",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Safe refusal on insufficient evidence is fully grounded",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_relevancy": {
+          "name": "answer_relevancy",
+          "score": 1,
+          "status": "passed",
+          "method": "refusal_relevancy_handler",
+          "inputsUsed": [
+            "question",
+            "generatedAnswer"
+          ],
+          "reason": "Grounded refusal correctly and directly addresses insufficient evidence",
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "factual_correctness": {
+          "name": "factual_correctness",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No trusted reference answer or expected values available for factual comparison",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "citation_correctness": {
+          "name": "citation_correctness",
+          "score": 1,
+          "status": "passed",
+          "method": "citation_audit",
+          "inputsUsed": [
+            "generatedAnswer",
+            "citations",
+            "retrievedChunks"
+          ],
+          "reason": "Correct abstention requires no citations; zero fabricated citations",
+          "details": {
+            "tagsFound": 0,
+            "validCitations": 0,
+            "invalidCitations": 0
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "answer_completeness": {
+          "name": "answer_completeness",
+          "score": 0,
+          "status": "failed",
+          "method": "itemized_completeness",
+          "inputsUsed": [
+            "generatedAnswer",
+            "expectedEntities",
+            "expectedValues"
+          ],
+          "reason": "Answer covered 0/2 required dimensions (0%)",
+          "details": {
+            "totalRequired": 2,
+            "matched": 0,
+            "missing": [
+              "ACME",
+              "valuation"
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "answer_accuracy": {
+          "name": "answer_accuracy",
+          "score": null,
+          "status": "skipped",
+          "method": "reference_based",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No reference answer provided for accuracy calculation",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "numerical_accuracy": {
+          "name": "numerical_accuracy",
+          "score": null,
+          "status": "skipped",
+          "method": "deterministic_financial_parser",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "No expected financial values provided in dataset record",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "financial_entity_accuracy": {
+          "name": "financial_entity_accuracy",
+          "score": null,
+          "status": "not_applicable",
+          "method": "deterministic_entity_matcher",
+          "inputsUsed": [
+            "generatedAnswer"
+          ],
+          "reason": "Negative/unanswerable test query: entity absence expected in refusal response",
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "abstention_accuracy": {
+          "name": "abstention_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "behavioral_abstention_check",
+          "inputsUsed": [
+            "result",
+            "expectedBehavior"
+          ],
+          "reason": "System correctly acknowledged missing evidence and safely refused without hallucination",
+          "details": {
+            "expectedBehavior": "SECURITY_ISOLATION",
+            "isRefusal": true,
+            "answerLength": 49,
+            "confidence": 0,
+            "retrievalCount": 0
+          },
+          "isDeterministic": true,
+          "isReferenceBased": true
+        },
+        "tool_call_accuracy": {
+          "name": "tool_call_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "trace_audit",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedIntent",
+            "expectedSymbol"
+          ],
+          "reason": "Agentic routing accuracy: 3/3 orchestration checks passed (100%)",
+          "details": {
+            "totalChecks": 3,
+            "passedChecks": 3,
+            "auditDetails": [
+              {
+                "check": "INTENT",
+                "expected": "DOCUMENT_QA",
+                "actual": "DOCUMENT_QA",
+                "passed": true
+              },
+              {
+                "check": "SYMBOL",
+                "expected": "ACME",
+                "actual": [
+                  "ACME"
+                ],
+                "passed": true
+              },
+              {
+                "check": "TOOL_EXECUTION",
+                "expected": "CLASSIFICATION",
+                "passed": true
+              }
+            ]
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "tool_call_f1": {
+          "name": "tool_call_f1",
+          "score": 0.333,
+          "status": "failed",
+          "method": "set_f1",
+          "inputsUsed": [
+            "agentTrace",
+            "expectedTools"
+          ],
+          "reason": "Tool call F1: 0.333 (Precision: 0.20, Recall: 1.00)",
+          "details": {
+            "precision": 0.2,
+            "recall": 1,
+            "f1": 0.333
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        },
+        "bounded_iteration_accuracy": {
+          "name": "bounded_iteration_accuracy",
+          "score": 1,
+          "status": "passed",
+          "method": "iteration_boundary_check",
+          "inputsUsed": [
+            "agentTrace"
+          ],
+          "reason": "Agent completed in 3 iterations (Max allowed: 3)",
+          "details": {
+            "iterationCount": 3,
+            "maxIterations": 3,
+            "hasInfiniteLoop": false
+          },
+          "isDeterministic": true,
+          "isReferenceBased": false
+        }
+      },
+      "operational": {
+        "latency": {
+          "totalMs": 14,
+          "cached": false,
+          "speedup": "Normal Generation"
+        },
+        "tokens": {
+          "promptTokens": null,
+          "completionTokens": null,
+          "totalTokens": null,
+          "estimatedCostUsd": null
+        },
+        "retrieval": {
+          "retrievalCount": 0,
+          "confidence": 0
+        }
+      },
+      "evaluationDurationMs": 0
+    }
+  ]
+}

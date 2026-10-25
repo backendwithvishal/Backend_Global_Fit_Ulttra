@@ -149,9 +149,18 @@ export class AgenticRAGOrchestrator {
     for (const subQ of subQueries) {
       const queryEmbedding = await this.embeddingClient.embedQuery(subQ);
 
+      let targetSymbol = filterOptions.symbol;
+      if (classification.intent === 'COMPARISON' || (classification.symbols && classification.symbols.length > 1)) {
+        const subUpper = subQ.toUpperCase();
+        const matchedSym = (classification.symbols || []).find(s => s !== 'ALL' && new RegExp(`\\b${s}\\b`, 'i').test(subUpper));
+        targetSymbol = matchedSym || undefined;
+      } else if (classification.primarySymbol !== 'ALL') {
+        targetSymbol = classification.primarySymbol;
+      }
+
       const targetFilter = {
         ...filterOptions,
-        symbol: classification.primarySymbol !== 'ALL' ? classification.primarySymbol : filterOptions.symbol,
+        symbol: targetSymbol,
         filingType: classification.filingType || filterOptions.filingType,
       };
 
@@ -238,7 +247,7 @@ export class AgenticRAGOrchestrator {
 
     // Check which citations are actually referenced in answer
     const referencedSourceIds = new Set();
-    const citationRegex = /\[Source\s+(\d+)\]/gi;
+    const citationRegex = /\[Source\s+(\d+)(?::[^\]]*)?\]/gi;
     let match;
     while ((match = citationRegex.exec(answerText)) !== null) {
       const srcId = parseInt(match[1], 10);
@@ -301,7 +310,7 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
         rawAnswer = `Retrieved ${topChunks.length} verified context sources, but LLM synthesis was unavailable: ${err.message}`;
       }
     } else {
-      rawAnswer = `Verified Context retrieved from ${topChunks.length} financial sources:\n\n${topChunks.map((c, i) => `[Source ${i+1}]: ${c.chunk.content}`).join('\n\n')}`;
+      rawAnswer = `Verified Context retrieved from ${topChunks.length} financial sources:\n\n${contextBlocks.join('\n\n')}`;
     }
 
     return rawAnswer;
@@ -433,6 +442,15 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
 
     trace.push({ stage: 'RETRIEVAL_COMPLETE', totalIterations: iteration, finalCount: topChunks.length });
 
+    const formattedContexts = (topChunks || []).map((item, idx) => ({
+      rank: idx + 1,
+      id: (item.chunk?._id || `${item.chunk?.documentId || 'doc'}:${item.chunk?.chunkIndex || idx}`).toString(),
+      documentId: item.chunk?.documentId,
+      content: item.chunk?.content || '',
+      metadata: item.chunk?.metadata || {},
+      score: item.relevanceScore || item.rrfScore || 0,
+    }));
+
     // Step 5b: Refuse safely without hallucinating if evidence remains insufficient
     if (!sufficiency.isSufficient) {
       return {
@@ -441,6 +459,7 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
         symbol: classification.primarySymbol,
         confidence: sufficiency.confidenceScore,
         retrievalCount: topChunks.length,
+        retrievedContexts: formattedContexts,
         agentTrace: trace,
         latencyMs: Date.now() - startTime,
         cached: false,
@@ -465,6 +484,7 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
       symbol: classification.primarySymbol,
       confidence: sufficiency.confidenceScore,
       retrievalCount: topChunks.length,
+      retrievedContexts: formattedContexts,
       agentTrace: trace,
       latencyMs: Date.now() - startTime,
       cached: false,

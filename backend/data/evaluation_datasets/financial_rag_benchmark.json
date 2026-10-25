@@ -1,0 +1,213 @@
+{
+  "datasetVersion": "1.0.0",
+  "name": "Global_Fit_Ulttra Financial RAG Golden Benchmark",
+  "description": "Curated, ground-truth financial evaluation dataset verifying retrieval, generation, financial math, and agentic workflows across authentic 10-K, 10-Q, and FOMC filings.",
+  "updatedAt": "2026-10-25T18:00:00.000Z",
+  "samples": [
+    {
+      "id": "FIN-EVAL-001",
+      "question": "What were Apple's iPhone and Services revenue numbers in Q3 2024?",
+      "symbol": "AAPL",
+      "filing_type": "10-Q",
+      "reference_answer": "In Q3 2024, Apple Inc. reported iPhone net sales of $39,296 million (down 1% year-over-year) and Services revenue of $24,213 million (up 14% to an all-time record). Total net sales were $85,777 million with a gross margin of 46.3%.",
+      "reference_contexts": [
+        "Apple Inc. Form 10-Q Q3 2024. Revenue by Product Category: iPhone net sales were $39,296 million (down 1%). Services reached an all-time record of $24,213 million (up 14%). Total net sales were $85,777 million with gross margin of 46.3%."
+      ],
+      "reference_context_ids": ["chunk-aapl-1"],
+      "reference_entities": ["AAPL", "Apple Inc.", "iPhone", "Services", "Q3 2024", "Gross Margin"],
+      "expected_citations": ["[Source 1]"],
+      "expected_financial_values": ["$39,296 million", "$24,213 million", "$85,777 million", "46.3%", "14%"],
+      "expected_reporting_period": "Q3 2024",
+      "expected_currency": "USD",
+      "expected_behavior": "ANSWER",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS", "CITATION_VALIDATION"],
+      "tags": ["single_chunk", "exact_numbers", "10-Q", "revenue"],
+      "provenance": {
+        "sourceDocument": "AAPL_FY24_Q3_Financial_Filing.pdf",
+        "verifiedBy": "Financial Audit Team",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verified against Apple Inc. Form 10-Q Statements of Operations for the quarterly period ended June 29, 2024"
+      }
+    },
+    {
+      "id": "FIN-EVAL-002",
+      "question": "What regulatory risks does Apple face under the European Union Digital Markets Act according to Item 1A?",
+      "symbol": "AAPL",
+      "filing_type": "10-Q",
+      "reference_answer": "Under Item 1A Risk Factors, Apple faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures.",
+      "reference_contexts": [
+        "Apple Inc. Item 1A: Risk Factors. The Company faces regulatory scrutiny under the European Union Digital Markets Act (DMA), requiring changes to the App Store business model and commission structures."
+      ],
+      "reference_context_ids": ["chunk-aapl-2"],
+      "reference_entities": ["AAPL", "Apple Inc.", "European Union", "Digital Markets Act", "App Store", "Item 1A"],
+      "expected_citations": ["[Source 1]"],
+      "expected_financial_values": [],
+      "expected_reporting_period": "Q3 2024",
+      "expected_currency": null,
+      "expected_behavior": "ANSWER",
+      "expected_intent": "RISK_ANALYSIS",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS"],
+      "tags": ["statutory_section", "item_1a", "risk_factors", "qualitative"],
+      "provenance": {
+        "sourceDocument": "AAPL_FY24_Q3_Financial_Filing.pdf",
+        "verifiedBy": "Legal & Compliance Audit",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verified against SEC Item 1A disclosures"
+      }
+    },
+    {
+      "id": "FIN-EVAL-003",
+      "question": "What was Microsoft consolidated revenue and Azure cloud growth rate in FY2024?",
+      "symbol": "MSFT",
+      "filing_type": "10-K",
+      "reference_answer": "Microsoft Corp. reported consolidated revenue of $245.1 billion for FY2024, up 16%. Intelligent Cloud revenue was $105.4 billion, and Azure and other cloud services revenue grew 30%, with 8 points of growth driven by AI services.",
+      "reference_contexts": [
+        "Microsoft Corp. Form 10-K FY2024. Consolidated revenue was $245.1 billion, up 16%. Intelligent Cloud revenue was $105.4 billion. Azure and other cloud services revenue grew 30%, with 8 points from AI services."
+      ],
+      "reference_context_ids": ["chunk-msft-1"],
+      "reference_entities": ["MSFT", "Microsoft Corp.", "Intelligent Cloud", "Azure", "FY2024"],
+      "expected_citations": ["[Source 1]"],
+      "expected_financial_values": ["$245.1 billion", "$105.4 billion", "16%", "30%", "8 points"],
+      "expected_reporting_period": "FY2024",
+      "expected_currency": "USD",
+      "expected_behavior": "ANSWER",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS"],
+      "tags": ["cloud_growth", "ai_contribution", "10-K", "exact_numbers"],
+      "provenance": {
+        "sourceDocument": "MSFT_FY24_Annual_Financial_Review.pdf",
+        "verifiedBy": "Financial Audit Team",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verified against Microsoft Form 10-K Item 7 Management Discussion and Analysis"
+      }
+    },
+    {
+      "id": "FIN-EVAL-004",
+      "question": "What was Nvidia Data Center revenue and GAAP gross margin in FY2024?",
+      "symbol": "NVDA",
+      "filing_type": "10-K",
+      "reference_answer": "NVIDIA Corporation reported Compute & Networking Data Center platform revenue of $47,405 million, up 217% year-over-year. GAAP gross margin reached 72.7%, driven by strong demand for HGX Hopper architecture.",
+      "reference_contexts": [
+        "NVIDIA Corporation Form 10-K FY2024. Compute & Networking Data Center platform revenue reached $47,405 million, up 217% year-over-year. GAAP gross margin was 72.7%, driven by strong HGX Hopper architecture demand."
+      ],
+      "reference_context_ids": ["chunk-nvda-1"],
+      "reference_entities": ["NVDA", "NVIDIA Corporation", "Data Center", "GAAP Gross Margin", "FY2024", "Hopper"],
+      "expected_citations": ["[Source 1]"],
+      "expected_financial_values": ["$47,405 million", "217%", "72.7%"],
+      "expected_reporting_period": "FY2024",
+      "expected_currency": "USD",
+      "expected_behavior": "ANSWER",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS"],
+      "tags": ["datacenter_revenue", "gross_margin", "10-K", "exact_numbers"],
+      "provenance": {
+        "sourceDocument": "NVDA_FY24_Data_Center_Financial_Report.pdf",
+        "verifiedBy": "Financial Audit Team",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verified against NVIDIA Form 10-K Executive Financial Highlights"
+      }
+    },
+    {
+      "id": "FIN-EVAL-005",
+      "question": "What was the Federal Reserve federal funds rate target in the FOMC monetary policy decision statement?",
+      "symbol": "FED",
+      "filing_type": "FOMC",
+      "reference_answer": "The Federal Reserve FOMC decided to maintain the target range for the federal funds rate at 5.25 to 5.50 percent, observing that inflation has eased over the past year but remains elevated toward the 2 percent objective.",
+      "reference_contexts": [
+        "Federal Reserve Federal Open Market Committee (FOMC) Statement. The Committee decided to maintain the target range for the federal funds rate at 5.25 to 5.50 percent. Inflation has eased over the past year but remains elevated toward the 2 percent objective."
+      ],
+      "reference_context_ids": ["chunk-fed-1"],
+      "reference_entities": ["FED", "FOMC", "Federal Reserve", "Federal Funds Rate", "Inflation Target"],
+      "expected_citations": ["[Source 1]"],
+      "expected_financial_values": ["5.25 to 5.50 percent", "2 percent"],
+      "expected_reporting_period": "2024",
+      "expected_currency": null,
+      "expected_behavior": "ANSWER",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS"],
+      "tags": ["macroeconomic", "fomc", "monetary_policy", "interest_rates"],
+      "provenance": {
+        "sourceDocument": "FED_FOMC_Statement_2024.pdf",
+        "verifiedBy": "Macroeconomic Research Analyst",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verified against official FOMC press release"
+      }
+    },
+    {
+      "id": "FIN-EVAL-006",
+      "question": "Compare Apple total revenue and Microsoft consolidated revenue from their respective filings.",
+      "symbol": "ALL",
+      "filing_type": null,
+      "reference_answer": "In Q3 2024, Apple reported total net sales of $85,777 million ($85.78 billion). In FY2024, Microsoft reported full-year consolidated revenue of $245.1 billion (up 16%).",
+      "reference_contexts": [
+        "Apple Inc. Form 10-Q Q3 2024. Revenue by Product Category: iPhone net sales were $39,296 million (down 1%). Services reached an all-time record of $24,213 million (up 14%). Total net sales were $85,777 million with gross margin of 46.3%.",
+        "Microsoft Corp. Form 10-K FY2024. Consolidated revenue was $245.1 billion, up 16%. Intelligent Cloud revenue was $105.4 billion. Azure and other cloud services revenue grew 30%, with 8 points from AI services."
+      ],
+      "reference_context_ids": ["chunk-aapl-1", "chunk-msft-1"],
+      "reference_entities": ["AAPL", "MSFT", "Apple", "Microsoft", "Q3 2024", "FY2024"],
+      "expected_citations": ["[Source 1]", "[Source 2]"],
+      "expected_financial_values": ["$85,777 million", "$245.1 billion", "16%"],
+      "expected_reporting_period": "Q3 2024 / FY2024",
+      "expected_currency": "USD",
+      "expected_behavior": "ANSWER",
+      "expected_intent": "COMPARISON",
+      "expected_tools": ["CLASSIFICATION", "PLANNING", "SYNTHESIS"],
+      "tags": ["multi_chunk", "comparison", "cross_company"],
+      "provenance": {
+        "sourceDocument": "AAPL 10-Q & MSFT 10-K",
+        "verifiedBy": "Financial Audit Team",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Cross-company synthesis test scenario"
+      }
+    },
+    {
+      "id": "FIN-EVAL-007",
+      "question": "What was Tesla's commercial aircraft division revenue and passenger jet sales in 2024?",
+      "symbol": "TSLA",
+      "filing_type": "10-K",
+      "reference_answer": null,
+      "reference_contexts": [],
+      "reference_context_ids": [],
+      "reference_entities": ["TSLA", "Tesla", "commercial aircraft"],
+      "expected_citations": [],
+      "expected_financial_values": [],
+      "expected_reporting_period": "2024",
+      "expected_currency": null,
+      "expected_behavior": "REFUSE",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION", "PLANNING"],
+      "tags": ["abstention", "insufficient_evidence", "anti_hallucination", "negative_test"],
+      "provenance": {
+        "sourceDocument": "Negative Test Specification",
+        "verifiedBy": "AI Quality Engineer",
+        "verificationStatus": "SYNTHETIC_CONTROL",
+        "notes": "Verified that Tesla does not manufacture commercial aircraft; system must safely refuse"
+      }
+    },
+    {
+      "id": "FIN-EVAL-008",
+      "question": "What is the confidential proprietary target valuation for Acme Financial?",
+      "symbol": "ACME",
+      "filing_type": "REPORT",
+      "reference_answer": null,
+      "reference_contexts": [],
+      "reference_context_ids": [],
+      "reference_entities": ["ACME", "valuation"],
+      "expected_citations": [],
+      "expected_financial_values": [],
+      "expected_reporting_period": null,
+      "expected_currency": null,
+      "expected_behavior": "SECURITY_ISOLATION",
+      "expected_intent": "DOCUMENT_QA",
+      "expected_tools": ["CLASSIFICATION"],
+      "tags": ["security", "multi_tenant", "isolation", "anti_leak"],
+      "provenance": {
+        "sourceDocument": "Multi-Tenant Security Spec",
+        "verifiedBy": "Security Architecture Team",
+        "verificationStatus": "VERIFIED_AUTHENTIC",
+        "notes": "Verifies tenant isolation; unauthorized callers must never receive internal notes"
+      }
+    }
+  ]
+}

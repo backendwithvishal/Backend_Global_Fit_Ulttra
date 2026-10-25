@@ -57,6 +57,11 @@ export const createRAGRoutes = (ragController) => {
     router.get('/jobs/:jobId', ragController.getJob);
   }
 
+  // Trigger RAG evaluation benchmark
+  if (typeof ragController.evaluate === 'function') {
+    router.post('/evaluate', ragController.evaluate);
+  }
+
   // List indexed documents
   router.get('/documents', validateRequest(ragDocumentListSchema), ragController.listDocuments);
 

@@ -1,29 +1,35 @@
 /**
- * Global_Fit_Ulttra - Production Financial RAG Evaluation Benchmark
+ * Global_Fit_Ulttra - Production Financial RAG Evaluation Benchmark CLI
  * 
  * Comprehensive automated benchmark evaluating:
- * 1. Exact financial figures retrieval
- * 2. Multi-company comparative retrieval
- * 3. Reporting-period and statutory section precision
- * 4. Grounded citation attribution
- * 5. Refusal on missing evidence (anti-hallucination)
- * 6. Prompt injection defense
- * 7. Cross-tenant authorization isolation
- * 8. Cache speedup & hit rate
+ * 1. Retrieval Metrics: Context Precision@K, Context Recall, Context Entities Recall, Context Utilization, Recall@K, MRR, nDCG@K, Context Relevance
+ * 2. Generation Metrics: Faithfulness, Response Groundedness, Answer Relevancy, Factual Correctness, Citation Correctness, Answer Completeness, Answer Accuracy
+ * 3. Financial Correctness: Numerical Accuracy (values, currency, scale, percentages, accounting notation), Financial Entity Accuracy, Insufficient-Evidence Abstention
+ * 4. Agentic Workflow & Operations: Tool Call Accuracy, Tool Call F1, Bounded Iterations, Latency breakdowns, Cache Acceleration
  * 
  * Usage:
  *   npm run rag:eval
+ *   node scripts/evaluateRAG.js --topK 4 --verbose
+ *   node scripts/evaluateRAG.js --baseline ./data/evaluation_reports/baseline.json
+ * 
+ * @module scripts/evaluateRAG
  */
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { program } from 'commander';
 import { EmbeddingClient } from '../src/infrastructure/ai/EmbeddingClient.js';
 import { VectorStore } from '../src/infrastructure/vector/VectorStore.js';
 import { RerankerClient } from '../src/infrastructure/ai/RerankerClient.js';
-import { BM25Retriever } from '../src/infrastructure/vector/BM25Retriever.js';
 import { SemanticCache } from '../src/infrastructure/cache/SemanticCache.js';
-import { AgenticRAGOrchestrator } from '../src/infrastructure/ai/AgenticRAGOrchestrator.js';
 import { RAGService } from '../src/services/RAGService.js';
+import { EvaluationRunner, DEFAULT_THRESHOLDS } from '../src/evaluation/runner/EvaluationRunner.js';
+import { loadEvaluationDataset } from '../src/evaluation/dataset/seedDataset.js';
 
-// Simulated authentic sample document chunks corresponding to the 6 repository PDFs
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Authentic corpus chunks corresponding to repository PDF filings
 const BENCHMARK_CHUNKS = [
   {
     _id: 'chunk-aapl-1',
@@ -69,15 +75,25 @@ const BENCHMARK_CHUNKS = [
   },
 ];
 
-async function runEvaluation() {
+async function main() {
+  program
+    .option('--dataset <path>', 'Path to custom evaluation dataset JSON')
+    .option('--topK <number>', 'Cutoff rank for retrieval evaluation', '4')
+    .option('--baseline <path>', 'Path to baseline evaluation JSON for regression testing')
+    .option('--output <path>', 'Path to write evaluation results JSON', path.resolve(__dirname, '..', 'data', 'evaluation_reports', `eval-${Date.now()}.json`))
+    .option('--verbose', 'Print verbose step-by-step progress', false)
+    .parse(process.argv);
+
+  const options = program.opts();
+  const topK = parseInt(options.topK, 10) || 4;
+
   console.log('=================================================================================');
-  console.log('Global_Fit_Ulttra — Automated Financial Agentic RAG Evaluation Benchmark');
+  console.log('Global_Fit_Ulttra — Production Financial Agentic RAG Evaluation Benchmark');
   console.log('=================================================================================\n');
 
-  // 1. Initialize embedding client
+  // 1. Initialize local embedding client
   const embeddingClient = new EmbeddingClient({ provider: 'local' });
-
-  console.log('Computing genuine semantic embeddings for benchmark evaluation corpus...');
+  console.log('Indexing semantic vector embeddings for benchmark corpus...');
   const contents = BENCHMARK_CHUNKS.map(c => c.content);
   const embeddings = await embeddingClient.embedBatch(contents);
   for (let i = 0; i < BENCHMARK_CHUNKS.length; i++) {
@@ -85,7 +101,7 @@ async function runEvaluation() {
   }
   console.log(`✅ Indexed ${BENCHMARK_CHUNKS.length} test chunks with 384-dimensional unit vectors.\n`);
 
-  // 2. Setup Vector Store with in-memory test candidate pool
+  // 2. Setup Vector Store with in-memory candidate filter
   const mockModel = {
     find: (filter) => ({
       select: () => ({
@@ -120,165 +136,122 @@ async function runEvaluation() {
   const semanticCache = new SemanticCache();
 
   const ragService = new RAGService({
-    groqClient: null, // Tests deterministic offline verification path
+    groqClient: null, // Deterministic offline verification path (zero paid API calls)
     embeddingClient,
     vectorStore,
     rerankerClient,
     semanticCache,
   });
 
-  // 3. Define 8 Comprehensive Evaluation Benchmark Scenarios
-  const testCases = [
-    {
-      id: 'TC-1',
-      name: 'Exact Financial Figures Retrieval',
-      query: "What were Apple's iPhone and Services revenue numbers in Q3 2024?",
-      symbol: 'AAPL',
-      expectedKeywords: ['39,296', '24,213', '85,777'],
-      expectedSymbol: 'AAPL',
-      type: 'FACTUAL',
-    },
-    {
-      id: 'TC-2',
-      name: 'SEC Statutory Section Item 1A Risk Factors',
-      query: "What are the European Union DMA regulatory risks facing Apple?",
-      symbol: 'AAPL',
-      expectedKeywords: ['Digital Markets Act', 'App Store'],
-      expectedSection: 'Item 1A: Risk Factors',
-      type: 'SECTION',
-    },
-    {
-      id: 'TC-3',
-      name: 'Cloud Revenue & AI Growth Percentage',
-      query: "What was Microsoft Azure cloud growth in FY2024 and how much came from AI?",
-      symbol: 'MSFT',
-      expectedKeywords: ['245.1 billion', '30%', '8 points from AI'],
-      expectedSymbol: 'MSFT',
-      type: 'METRIC',
-    },
-    {
-      id: 'TC-4',
-      name: 'Nvidia Data Center & Gross Margin Precision',
-      query: "What was Nvidia's Data Center revenue and GAAP gross margin?",
-      symbol: 'NVDA',
-      expectedKeywords: ['47,405', '72.7%'],
-      expectedSymbol: 'NVDA',
-      type: 'METRIC',
-    },
-    {
-      id: 'TC-5',
-      name: 'Macroeconomic Monetary Policy Rate Target',
-      query: "What was the Federal Reserve federal funds rate target in the FOMC statement?",
-      symbol: 'FED',
-      expectedKeywords: ['5.25 to 5.50 percent', '2 percent'],
-      expectedSymbol: 'FED',
-      type: 'MACRO',
-    },
-    {
-      id: 'TC-6',
-      name: 'Missing Evidence Refusal (Anti-Hallucination)',
-      query: "What was Tesla's commercial aircraft division revenue in 2024?",
-      symbol: 'TSLA',
-      expectedRefusal: true,
-      type: 'REFUSAL',
-    },
-    {
-      id: 'TC-7',
-      name: 'Cross-Tenant Access Isolation',
-      query: "What is Acme confidential target valuation?",
-      symbol: 'ACME',
-      organizationId: 'unauthorized-org',
-      expectedUnauthorized: true,
-      type: 'SECURITY',
-    },
-    {
-      id: 'TC-8',
-      name: 'Cache Hit & Sub-30ms Latency Acceleration',
-      query: "What were Apple's iPhone and Services revenue numbers in Q3 2024?",
-      symbol: 'AAPL',
-      expectedCacheHit: true,
-      type: 'CACHE',
-    },
+  // 3. Load dataset
+  const dataset = loadEvaluationDataset(options.dataset);
+  console.log(`📋 Loaded Dataset: "${dataset.name}" (v${dataset.datasetVersion}) - ${dataset.samples.length} test samples\n`);
+
+  // 4. Initialize Evaluation Runner
+  const runner = new EvaluationRunner({
+    ragService,
+    topK,
+    thresholds: DEFAULT_THRESHOLDS,
+  });
+
+  console.log('Running automated RAG benchmark across all metric suites...\n');
+  const report = await runner.run({
+    dataset,
+    baselinePath: options.baseline,
+    outputPath: options.output,
+    verbose: options.verbose,
+  });
+
+  // 5. Render Metric Aggregate Scorecard
+  console.log('---------------------------------------------------------------------------------------------------------');
+  console.log('| Metric Category & Name              | Mean Score | Coverage | Status   | Method & Details             |');
+  console.log('---------------------------------------------------------------------------------------------------------');
+
+  const orderedDisplay = [
+    // Retrieval Suite
+    { name: 'context_precision', label: 'Context Precision@4' },
+    { name: 'context_recall', label: 'Context Recall' },
+    { name: 'context_entities_recall', label: 'Context Entities Recall' },
+    { name: 'context_utilization', label: 'Context Utilization' },
+    { name: `recall_at_${topK}`, label: `Recall@${topK}` },
+    { name: 'mrr', label: 'Mean Reciprocal Rank (MRR)' },
+    { name: `ndcg_at_${topK}`, label: `nDCG@${topK}` },
+    { name: 'context_relevance', label: 'Context Relevance' },
+    // Generation Suite
+    { name: 'faithfulness', label: 'Faithfulness' },
+    { name: 'response_groundedness', label: 'Response Groundedness' },
+    { name: 'answer_relevancy', label: 'Answer Relevancy' },
+    { name: 'factual_correctness', label: 'Factual Correctness' },
+    { name: 'citation_correctness', label: 'Citation Correctness' },
+    { name: 'answer_completeness', label: 'Answer Completeness' },
+    { name: 'answer_accuracy', label: 'Answer Accuracy / F1' },
+    // Financial Specific Suite
+    { name: 'numerical_accuracy', label: 'Numerical Accuracy (Financial)' },
+    { name: 'financial_entity_accuracy', label: 'Financial Entity Accuracy' },
+    { name: 'abstention_accuracy', label: 'Abstention / Anti-Hallucination' },
+    // Agentic Suite
+    { name: 'tool_call_accuracy', label: 'Tool Call & Routing Accuracy' },
+    { name: 'bounded_iteration_accuracy', label: 'Bounded Iteration Safety' },
   ];
 
-  let passedTests = 0;
-  const results = [];
+  for (const item of orderedDisplay) {
+    const agg = report.aggregateMetrics[item.name];
+    if (!agg) continue;
 
-  for (const tc of testCases) {
-    const t0 = Date.now();
-    const res = await ragService.query({
-      question: tc.query,
-      symbol: tc.symbol,
-      organizationId: tc.organizationId,
-    });
-    const latency = Date.now() - t0;
+    const labelStr = item.label.padEnd(35);
+    const scoreStr = agg.mean !== null ? `${(agg.mean * 100).toFixed(1)}%`.padEnd(10) : 'N/A       ';
+    const covStr = `${(agg.coverage * 100).toFixed(0)}%`.padEnd(8);
+    const passedCount = agg.statuses?.passed || 0;
+    const failedCount = agg.statuses?.failed || 0;
+    const statusStr = (failedCount === 0 && passedCount > 0 ? '✅ PASS' : (failedCount > 0 ? '❌ FAIL' : 'ℹ️ SKIP')).padEnd(8);
+    const detailStr = `Passed: ${passedCount}, Failed: ${failedCount}, Skipped: ${agg.statuses?.skipped || 0}`;
 
-    let passed = false;
-    let detail = '';
+    console.log(`| ${labelStr} | ${scoreStr} | ${covStr} | ${statusStr} | ${detailStr}`);
+  }
+  console.log('---------------------------------------------------------------------------------------------------------\n');
 
-    if (tc.expectedRefusal) {
-      passed = res.retrievalCount === 0 || res.answer.includes('do not contain sufficient') || res.confidence < 50;
-      detail = passed ? 'Safely refused without hallucination' : 'Failed to refuse unsupported claim';
-    } else if (tc.expectedUnauthorized) {
-      passed = res.retrievalCount === 0 || !res.answer.includes('$250/share');
-      detail = passed ? 'Cross-tenant data strictly isolated' : 'Security breach: private data leaked';
-    } else if (tc.expectedCacheHit) {
-      passed = res.cached === true && latency < 50;
-      detail = passed ? `Cache Hit (<${latency}ms)` : `Cache Miss (${latency}ms)`;
+  // 6. Output Threshold Compliance Summary
+  console.log('📊 Quality Thresholds Verification:');
+  for (const [metric, check] of Object.entries(report.thresholdResults.checks)) {
+    const statusIcon = check.status === 'PASSED' ? '✅' : (check.status === 'FAILED' ? '❌' : 'ℹ️');
+    const scoreDisp = check.actual !== null ? `${(check.actual * 100).toFixed(1)}%` : 'N/A';
+    console.log(`   ${statusIcon} ${metric}: ${scoreDisp} (Threshold: ${(check.threshold * 100).toFixed(0)}%) - ${check.reason}`);
+  }
+
+  // 7. Output Sample Diagnosis & Root Cause Classification
+  console.log('\n🔬 Sample-Level Diagnosis Summary:');
+  for (const s of report.sampleResults) {
+    const statusIcon = s.status === 'passed' ? '✅' : '❌';
+    console.log(`   ${statusIcon} [${s.sampleId}] ${s.question.slice(0, 48).padEnd(50)} -> ${s.failureDiagnosis.classification}`);
+  }
+
+  // 8. Regression Report
+  if (report.regressionReport) {
+    console.log('\n🔍 Baseline Comparison & Regression Report:');
+    if (report.regressionReport.hasRegressions) {
+      console.log('   ⚠️ REGRESSIONS DETECTED:');
+      for (const reg of report.regressionReport.regressed) {
+        console.log(`      - ${reg.metric}: ${reg.baselineScore} -> ${reg.currentScore} (Δ ${reg.delta})`);
+      }
     } else {
-      const topChunkText = res.citations?.[0]?.snippet || res.answer || '';
-      const containsKeywords = (tc.expectedKeywords || []).every(kw => 
-        res.answer.includes(kw) || topChunkText.includes(kw)
-      );
-      passed = containsKeywords && res.citations?.length > 0;
-      detail = passed 
-        ? `Recalled relevant chunks (Confidence: ${res.confidence}%, Citations: ${res.citations.length})`
-        : `Missing expected keywords: ${tc.expectedKeywords.join(', ')}`;
+      console.log('   ✅ No regressions detected compared to baseline run.');
     }
-
-    if (passed) passedTests++;
-
-    results.push({
-      id: tc.id,
-      name: tc.name,
-      status: passed ? '✅ PASS' : '❌ FAIL',
-      latency: `${latency}ms`,
-      confidence: `${res.confidence || 0}%`,
-      detail,
-    });
   }
 
-  // 4. Output Benchmark Scorecard
-  console.log('---------------------------------------------------------------------------------');
-  console.log('| ID   | Benchmark Test Scenario                 | Status  | Latency | Result   |');
-  console.log('---------------------------------------------------------------------------------');
-  for (const r of results) {
-    const id = r.id.padEnd(4);
-    const name = r.name.padEnd(40);
-    const status = r.status.padEnd(7);
-    const lat = r.latency.padEnd(7);
-    console.log(`| ${id} | ${name} | ${status} | ${lat} | ${r.detail}`);
-  }
-  console.log('---------------------------------------------------------------------------------');
-
-  const accuracy = Math.round((passedTests / testCases.length) * 100);
-  console.log(`\n📊 Benchmark Score: ${passedTests} / ${testCases.length} Passed (${accuracy}%)`);
-  console.log('   - Recall@4: 100% on documented financial facts');
-  console.log('   - Unsupported Claim Refusal: 100% (zero hallucination on missing data)');
-  console.log('   - Multi-Tenant Isolation: 100% (zero cross-organization leakage)');
-  console.log('   - Semantic Cache Speedup: Validated (<30ms on repeat queries)');
+  console.log(`\n💾 Detailed JSON evaluation report saved to: ${options.output}`);
+  console.log(`⏱ Total Benchmark Duration: ${report.summary.durationMs}ms`);
   console.log('=================================================================================\n');
 
-  if (accuracy >= 85) {
-    console.log('🎉 Financial Agentic RAG Evaluation Benchmark PASSED with distinction!');
+  if (report.summary.overallThresholdsPassed) {
+    console.log('🎉 Financial Agentic RAG Evaluation Benchmark PASSED all quality thresholds!');
     process.exit(0);
   } else {
-    console.error('❌ Benchmark did not meet accuracy threshold.');
+    console.error('❌ Benchmark failed to meet all required quality thresholds.');
     process.exit(1);
   }
 }
 
-runEvaluation().catch(err => {
-  console.error('Evaluation failed:', err);
+main().catch(err => {
+  console.error('Fatal evaluation benchmark error:', err);
   process.exit(1);
 });

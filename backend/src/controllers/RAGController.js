@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import { Document } from '../models/Document.js';
 import { DocumentChunk } from '../models/DocumentChunk.js';
 import { logger } from '../config/logger.js';
+import { EvaluationRunner } from '../evaluation/runner/EvaluationRunner.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +34,7 @@ export class RAGController {
     this.getHealth = this.getHealth.bind(this);
     this.reindex = this.reindex.bind(this);
     this.getJob = this.getJob.bind(this);
+    this.evaluate = this.evaluate.bind(this);
   }
 
   /**
@@ -351,6 +353,50 @@ export class RAGController {
         requestId: req.requestId,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/ai/rag/evaluate
+   * Triggers automated RAG evaluation benchmark with bounds.
+   */
+  async evaluate(req, res, next) {
+    try {
+      if (!this.ragService) {
+        return res.status(503).json({
+          success: false,
+          error: {
+            code: 'E5003',
+            message: 'RAG service is currently unavailable.',
+          },
+          requestId: req.requestId,
+        });
+      }
+
+      const { topK = 4 } = req.body || {};
+      const boundedTopK = Math.min(10, Math.max(1, parseInt(topK, 10) || 4));
+
+      const runner = new EvaluationRunner({
+        ragService: this.ragService,
+        topK: boundedTopK,
+      });
+
+      const report = await runner.run();
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          runId: report.runId,
+          timestamp: report.timestamp,
+          summary: report.summary,
+          thresholdResults: report.thresholdResults,
+          aggregateMetrics: report.aggregateMetrics,
+        },
+        requestId: req.requestId,
+      });
+    } catch (error) {
+      this.logger.error('Evaluation endpoint failed', { error: error.message });
       next(error);
     }
   }

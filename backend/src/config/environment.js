@@ -1,8 +1,17 @@
 // Environment configuration with Zod validation
 // Single source of truth for all config values
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { z } from 'zod';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Explicitly load backend/.env, then fallback to root .env if present
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 // Zod schema for all environment variables
 // All numeric values are strings with .transform(Number) because process.env values are always strings

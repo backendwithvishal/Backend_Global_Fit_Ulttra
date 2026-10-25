@@ -43,6 +43,9 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: globalfit-ulttra-qdrant
+    profiles:
+      - full
+      - ai-local
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -55,14 +58,19 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: globalfit-ulttra-litellm
+    profiles:
+      - full
+      - ai-local
     ports:
       - "8000:4000"
     volumes:
       - ./litellm-config.yaml:/app/config.yaml
+    env_file:
+      - ./backend/.env
     environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
-      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-default}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY:-sk-default}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     restart: unless-stopped
     networks:

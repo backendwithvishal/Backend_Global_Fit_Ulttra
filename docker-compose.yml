@@ -1,7 +1,8 @@
 # docker-compose.yml
-# Runs Redis, RabbitMQ, and the application service locally.
-# Hardened for development: strictly requires secrets from .env,
-# enforces non-root privilege restrictions, resource limits, and localhost-only port binding.
+# Runs Redis and the application service locally.
+# MongoDB is hosted on Atlas (cloud) — configured via MONGODB_URI in backend/.env.
+# RabbitMQ is hosted on CloudAMQP — configured via RABBITMQ_URL in backend/.env.
+# Local RabbitMQ is available under the "local-mq" profile if needed for offline development.
 
 name: global_fit_ulttra
 
@@ -11,16 +12,17 @@ services:
     container_name: globalfit-ulttra-redis
     security_opt:
       - no-new-privileges:true
+    env_file:
+      - ./backend/.env
     command: >
       sh -c '
         mkdir -p /usr/local/etc/redis &&
         echo "protected-mode yes" > /usr/local/etc/redis/redis.conf &&
-        echo "requirepass $${REDIS_PASSWORD}" >> /usr/local/etc/redis/redis.conf &&
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          echo "requirepass $${REDIS_PASSWORD}" >> /usr/local/etc/redis/redis.conf
+        fi &&
         exec redis-server /usr/local/etc/redis/redis.conf
       '
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
-      - REDISCLI_AUTH=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
@@ -33,42 +35,11 @@ services:
         reservations:
           memory: 64M
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG; else redis-cli ping | grep PONG; fi"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
-    restart: unless-stopped
-    networks:
-      - globalfit-ulttra-network
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: globalfit-ulttra-rabbitmq
-    hostname: rabbitmq
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER must be configured in .env}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS must be configured in .env}
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: 1G
-        reservations:
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
     restart: unless-stopped
     networks:
       - globalfit-ulttra-network
@@ -89,14 +60,11 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=development
       - PORT=4000
       - HOST=0.0.0.0
       - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/global_fit_ulttra}
       - REDIS_URL=redis://redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER must be configured in .env}:${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS must be configured in .env}@rabbitmq:5672
-      - RABBITMQ_QUEUE_PREFIX=${RABBITMQ_QUEUE_PREFIX:-global_fit_ulttra}
     deploy:
       resources:
         limits:
@@ -107,8 +75,38 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+    networks:
+      - globalfit-ulttra-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: globalfit-ulttra-rabbitmq
+    hostname: rabbitmq
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - local-mq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - globalfit-ulttra-network
 
@@ -148,10 +146,6 @@ services:
       - ./litellm-config.yaml:/app/config.yaml:ro
     env_file:
       - ./backend/.env
-    environment:
-      - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
-      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY:-}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     deploy:
       resources:

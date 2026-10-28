@@ -32,6 +32,7 @@
  * @module server
  */
 
+import './src/utils/polyfills.js';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 

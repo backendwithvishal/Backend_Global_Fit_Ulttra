@@ -1,18 +1,4 @@
-# Stage 1: Build
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy backend package files
-COPY backend/package*.json ./
-
-# Install all dependencies (including dev)
-RUN npm ci
-
-# Copy backend source code
-COPY backend/ .
-
-# Stage 2: Production
+# Stage 1: Production
 FROM node:20-alpine AS production
 
 # Set environment
@@ -27,12 +13,12 @@ RUN addgroup -g 1001 -S nodejs && \
 # Copy package files
 COPY backend/package*.json ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# Install only production dependencies (omit dev & optional dependencies like sharp)
+RUN npm ci --omit=dev --omit=optional && npm cache clean --force
 
-# Copy source from builder
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/server.js ./server.js
+# Copy backend source code
+COPY backend/src ./src
+COPY backend/server.js ./server.js
 
 # Create logs directory
 RUN mkdir -p logs && chown -R nodejs:nodejs logs

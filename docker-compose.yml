@@ -1,14 +1,24 @@
 # docker-compose.yml
-# Runs ONLY Redis + RabbitMQ locally.
-# MongoDB is hosted on Atlas (cloud) — no local mongo container needed.
-# The backend app is run separately via: npm run backend:dev
+# Runs Redis, RabbitMQ, and the application service locally.
+# MongoDB is hosted on Atlas (cloud) — configured via MONGODB_URI in backend/.env.
+
+name: global_fit_ulttra
 
 services:
   redis:
     image: redis:7-alpine
     container_name: globalfit-ulttra-redis
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
+        exec redis-server --requirepass "$$REDIS_PASSWORD"
+      else
+        exec redis-server
+      fi'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-user932198}
+      - REDISCLI_AUTH=${REDIS_PASSWORD:-user932198}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -16,6 +26,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
     restart: unless-stopped
     networks:
       - globalfit-ulttra-network
@@ -23,20 +34,51 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: globalfit-ulttra-rabbitmq
+    hostname: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
+    networks:
+      - globalfit-ulttra-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: globalfit-ulttra-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4000
+      - HOST=0.0.0.0
+      - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/global_fit_ulttra}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-user932198}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+      - RABBITMQ_QUEUE_PREFIX=${RABBITMQ_QUEUE_PREFIX:-global_fit_ulttra}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - globalfit-ulttra-network
 
@@ -47,8 +89,8 @@ services:
       - full
       - ai-local
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
     volumes:
       - qdrant-data:/qdrant/storage
     restart: unless-stopped
@@ -62,7 +104,7 @@ services:
       - full
       - ai-local
     ports:
-      - "8000:4000"
+      - "127.0.0.1:8000:4000"
     volumes:
       - ./litellm-config.yaml:/app/config.yaml
     env_file:

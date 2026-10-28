@@ -1,6 +1,7 @@
 # docker-compose.yml
 # Runs Redis, RabbitMQ, and the application service locally.
-# MongoDB is hosted on Atlas (cloud) — configured via MONGODB_URI in backend/.env.
+# Hardened for development: strictly requires secrets from .env,
+# enforces non-root privilege restrictions, resource limits, and localhost-only port binding.
 
 name: global_fit_ulttra
 
@@ -8,19 +9,29 @@ services:
   redis:
     image: redis:7-alpine
     container_name: globalfit-ulttra-redis
+    security_opt:
+      - no-new-privileges:true
     command: >
-      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
-        exec redis-server --requirepass "$$REDIS_PASSWORD"
-      else
-        exec redis-server
-      fi'
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "protected-mode yes" > /usr/local/etc/redis/redis.conf &&
+        echo "requirepass $${REDIS_PASSWORD}" >> /usr/local/etc/redis/redis.conf &&
+        exec redis-server /usr/local/etc/redis/redis.conf
+      '
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-user932198}
-      - REDISCLI_AUTH=${REDIS_PASSWORD:-user932198}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
+      - REDISCLI_AUTH=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 64M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -35,14 +46,23 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: globalfit-ulttra-rabbitmq
     hostname: rabbitmq
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER must be configured in .env}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS must be configured in .env}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          memory: 256M
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -58,6 +78,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: globalfit-ulttra-app
+    init: true
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
@@ -71,9 +94,16 @@ services:
       - HOST=0.0.0.0
       - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/global_fit_ulttra}
       - REDIS_URL=redis://redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-user932198}
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be configured in .env}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER must be configured in .env}:${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS must be configured in .env}@rabbitmq:5672
       - RABBITMQ_QUEUE_PREFIX=${RABBITMQ_QUEUE_PREFIX:-global_fit_ulttra}
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          memory: 256M
     depends_on:
       redis:
         condition: service_healthy
@@ -85,6 +115,8 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: globalfit-ulttra-qdrant
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - full
       - ai-local
@@ -93,6 +125,11 @@ services:
       - "127.0.0.1:6334:6334"
     volumes:
       - qdrant-data:/qdrant/storage
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
     restart: unless-stopped
     networks:
       - globalfit-ulttra-network
@@ -100,20 +137,27 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: globalfit-ulttra-litellm
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - full
       - ai-local
     ports:
       - "127.0.0.1:8000:4000"
     volumes:
-      - ./litellm-config.yaml:/app/config.yaml
+      - ./litellm-config.yaml:/app/config.yaml:ro
     env_file:
       - ./backend/.env
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-default}
-      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY:-sk-default}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY:-}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     restart: unless-stopped
     networks:
       - globalfit-ulttra-network

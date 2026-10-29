@@ -1,0 +1,144 @@
+name: Security Hardening & Quality Gate
+
+on:
+  push:
+    branches: [main, security-hardening]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly audit on Sundays at 04:00 UTC
+    - cron: '0 4 * * 0'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ─── 1. Secrets Leak Detection ─────────────────────────────────────────────
+  gitleaks:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret detection
+        uses: gitleaks/gitleaks-action@f65e2be003fb020295eb13f8c5b591b920bfd6b6 # v2.3.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── 2. Dependency Audit & Vulnerabilities ────────────────────────────────
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Run npm audit across all package directories (high severity threshold)
+        run: |
+          echo "Auditing root workspace..."
+          npm audit --omit=dev --audit-level=high
+          echo "Auditing backend workspace..."
+          cd backend
+          npm audit --omit=dev --audit-level=high
+
+  # ─── 3. Code Linting & Static Analysis ─────────────────────────────────────
+  lint:
+    name: Lint & Style Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run ESLint
+        run: |
+          cd backend
+          npm run lint
+
+  # ─── 4. Unit & Security Tests ─────────────────────────────────────────────
+  tests:
+    name: Unit & Security Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run Test Suite with Coverage
+        run: |
+          cd backend
+          npm test
+
+  # ─── 5. Semgrep Static Application Security Testing (SAST) ────────────────
+  semgrep:
+    name: Semgrep SAST Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:1.88.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Run Semgrep security rules
+        run: |
+          semgrep scan --config auto --error --exclude "__tests__" --exclude "node_modules"
+
+  # ─── 6. Trivy Vulnerability Scanner ────────────────────────────────────────
+  trivy:
+    name: Trivy Security Scan (FS & Image)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@6e7b7f1fb3e7217a45e573323cb695a25ec373cb # v0.24.0
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          format: 'table'
+
+      - name: Build Docker image for container scan
+        run: docker build -t globalfit-ulttra:ci -f Dockerfile .
+
+      - name: Run Trivy container image scan
+        uses: aquasecurity/trivy-action@6e7b7f1fb3e7217a45e573323cb695a25ec373cb # v0.24.0
+        with:
+          image-ref: 'globalfit-ulttra:ci'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          format: 'table'

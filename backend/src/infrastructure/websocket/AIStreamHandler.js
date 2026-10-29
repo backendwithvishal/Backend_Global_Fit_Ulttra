@@ -1,6 +1,7 @@
 // AI stream handler for real-time WebSocket streaming
 
 import { logger } from '../../config/logger.js';
+import { checkSocketAIQuota } from '../../middleware/aiQuotaMiddleware.js';
 
 export class AIStreamHandler {
   constructor({ io, groqClient, aiNewsService, aiMarketService, ragService = null }) {
@@ -44,10 +45,43 @@ export class AIStreamHandler {
     this.logger.info('AI stream handler initialized');
   }
 
+  _checkSocketRateLimit(socket) {
+    const now = Date.now();
+    if (!socket._aiRateLimit) {
+      socket._aiRateLimit = { count: 0, resetAt: now + 60000 };
+    }
+    if (now > socket._aiRateLimit.resetAt) {
+      socket._aiRateLimit = { count: 0, resetAt: now + 60000 };
+    }
+    socket._aiRateLimit.count++;
+    if (socket._aiRateLimit.count > 10) {
+      socket.emit('ai:error', { error: 'Rate limit exceeded: Max 10 AI stream requests per minute.' });
+      return false;
+    }
+    return true;
+  }
+
+  async _checkSocketAccess(socket, estimatedTokens = 100) {
+    if (!this._checkSocketRateLimit(socket)) return false;
+    const userId = socket.user?.userId || socket.handshake.address;
+    const allowed = await checkSocketAIQuota(userId, estimatedTokens);
+    if (!allowed) {
+      socket.emit('ai:error', { error: 'Daily AI token quota exceeded for this session.' });
+      return false;
+    }
+    return true;
+  }
+
   async handleRAGQuery(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 250))) return;
+
     const { question, symbol, sessionId = 'rag-session' } = data || {};
-    if (!question) {
-      socket.emit('ai:error', { error: 'Question is required' });
+    if (!question || typeof question !== 'string') {
+      socket.emit('ai:error', { error: 'Valid question string is required' });
+      return;
+    }
+    if (question.length > 1000) {
+      socket.emit('ai:error', { error: 'Question exceeds maximum length of 1000 characters' });
       return;
     }
     if (!this.ragService) {
@@ -55,13 +89,16 @@ export class AIStreamHandler {
       return;
     }
 
+    const organizationId = socket.user?.organizationId || null;
+
     this.activeStreams.set(socket.id, true);
     socket.emit('ai:stream:start', { sessionId, type: 'rag' });
 
     try {
       await this.ragService.streamQuery({
         question,
-        symbol,
+        symbol: symbol ? String(symbol).toUpperCase().trim() : undefined,
+        organizationId,
         onCitations: (citations) => {
           socket.emit('ai:rag:citations', { sessionId, citations });
         },
@@ -87,15 +124,23 @@ export class AIStreamHandler {
   }
 
   async handleChat(socket, data) {
-    const { message, sessionId } = data;
+    if (!(await this._checkSocketAccess(socket, 150))) return;
 
-    if (!message) {
-      socket.emit('ai:error', { error: 'Message is required' });
+    const { message, sessionId = 'chat-session' } = data || {};
+
+    if (!message || typeof message !== 'string') {
+      socket.emit('ai:error', { error: 'Message string is required' });
+      return;
+    }
+
+    if (message.length > 4000) {
+      socket.emit('ai:error', { error: 'Message exceeds maximum length of 4000 characters' });
       return;
     }
 
     this.logger.info('AI chat request', {
       socketId: socket.id,
+      userId: socket.user?.userId,
       sessionId,
       messageLength: message.length
     });
@@ -152,6 +197,8 @@ export class AIStreamHandler {
   }
 
   async handleAnalyze(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { symbol, priceData } = data;
 
     if (!symbol || !priceData) {
@@ -195,6 +242,8 @@ export class AIStreamHandler {
   }
 
   async handleSentiment(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { text, type } = data;
 
     if (!text) {
@@ -249,6 +298,8 @@ Return JSON: { "sentiment": "positive|negative|neutral", "confidence": 85 }`;
   }
 
   async handleRecommend(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { userProfile, marketData } = data;
 
     if (!userProfile || !marketData) {

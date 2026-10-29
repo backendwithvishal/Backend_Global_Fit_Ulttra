@@ -13,28 +13,56 @@ export class SocketManager {
         this.io.on('connection', (socket) => {
             logger.info('Socket connected', { socketId: socket.id });
 
+            const authenticatedUserId = socket.user?.userId || socket.user?.id;
+
             socket.emit('connection-acknowledged', {
                 socketId: socket.id,
+                userId: authenticatedUserId,
                 timestamp: new Date().toISOString(),
             });
 
-            socket.on('join-live-stream', (payload) => {
+            // Automatically join personal room for targeted alerts/notifications
+            if (authenticatedUserId) {
+                socket.join(`user:${authenticatedUserId}`);
+            }
+
+            // Per-socket rate limiter: max 60 events per minute
+            let messageCount = 0;
+            let windowStart = Date.now();
+            const checkRateLimit = () => {
+                const now = Date.now();
+                if (now - windowStart > 60000) {
+                    messageCount = 0;
+                    windowStart = now;
+                }
+                messageCount++;
+                if (messageCount > 60) {
+                    socket.emit('error', { code: 'E1015', message: 'Too many messages. Rate limit exceeded.' });
+                    return false;
+                }
+                return true;
+            };
+
+            socket.on('join-live-stream', () => {
+                if (!checkRateLimit()) return;
                 socket.join(this.LIVE_STREAM_ROOM);
                 logger.debug('Socket joined live-stream', {
                     socketId: socket.id,
-                    userId: payload?.userId,
+                    userId: authenticatedUserId,
                 });
             });
 
-            socket.on('leave-live-stream', (payload) => {
+            socket.on('leave-live-stream', () => {
+                if (!checkRateLimit()) return;
                 socket.leave(this.LIVE_STREAM_ROOM);
                 logger.debug('Socket left live-stream', {
                     socketId: socket.id,
-                    userId: payload?.userId,
+                    userId: authenticatedUserId,
                 });
             });
 
             socket.on('request-current-data', () => {
+                if (!checkRateLimit()) return;
                 logger.debug('Current data requested', { socketId: socket.id });
                 socket.emit('data-request-acknowledged', {
                     message: 'Request received, fetching data...',

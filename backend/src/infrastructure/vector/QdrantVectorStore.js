@@ -201,10 +201,10 @@ export class QdrantVectorStore {
         { key: 'organizationId', match: { value: filter.organizationId.toString() } },
         { key: 'isPublic', match: { value: true } }
       );
-    } else if (filter.isPublic !== undefined) {
+    } else {
       mustConditions.push({
         key: 'isPublic',
-        match: { value: filter.isPublic },
+        match: { value: filter.isPublic !== undefined ? filter.isPublic : true },
       });
     }
 

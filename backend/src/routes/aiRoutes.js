@@ -35,6 +35,8 @@
 
 import { Router } from 'express';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
+import { checkAIQuota } from '../middleware/aiQuotaMiddleware.js';
 import {
   validateRequest,
   sentimentSchema,
@@ -60,6 +62,10 @@ import { createRAGRoutes } from './ragRoutes.js';
 export const createAIRoutes = (aiController, ragController = null) => {
   const router = Router();
 
+  // Apply authentication and AI rate limiter to all AI routes
+  router.use(requireAuth);
+  router.use(aiRateLimiter);
+
   // Return 503 Service Unavailable if AI services are disabled
   if (!aiController && !ragController) {
     router.use((req, res) => {
@@ -74,9 +80,6 @@ export const createAIRoutes = (aiController, ragController = null) => {
     });
     return router;
   }
-
-  // Apply AI-specific rate limiter to all AI routes (10 req / 1 min)
-  router.use(aiRateLimiter);
 
   // Mount RAG routes at /rag if ragController is available
   if (ragController) {
@@ -114,39 +117,39 @@ export const createAIRoutes = (aiController, ragController = null) => {
 
   // ─── Sentiment Analysis ────────────────────────────────────────────────
   // Analyzes text for bullish/bearish/neutral sentiment with confidence score
-  router.post('/sentiment', validateRequest(sentimentSchema), aiController.analyzeSentiment);
+  router.post('/sentiment', checkAIQuota, validateRequest(sentimentSchema), aiController.analyzeSentiment);
 
   // ─── Asset Analysis ────────────────────────────────────────────────────
   // Deep analysis of a single asset (trend, support/resistance, recommendation)
-  router.post('/analyze', validateRequest(analyzeSchema), aiController.analyzeAsset);
+  router.post('/analyze', checkAIQuota, validateRequest(analyzeSchema), aiController.analyzeAsset);
 
   // Compare two or more assets side-by-side
-  router.post('/compare', validateRequest(compareSchema), aiController.compareAssets);
+  router.post('/compare', checkAIQuota, validateRequest(compareSchema), aiController.compareAssets);
 
   // ─── Recommendations ───────────────────────────────────────────────────
   // Personalized investment recommendations based on user profile and market data
-  router.post('/recommend', validateRequest(recommendSchema), aiController.generateRecommendation);
+  router.post('/recommend', checkAIQuota, validateRequest(recommendSchema), aiController.generateRecommendation);
 
   // Portfolio health analysis with diversification and risk assessment
-  router.post('/portfolio', validateRequest(portfolioSchema), aiController.analyzePortfolio);
+  router.post('/portfolio', checkAIQuota, validateRequest(portfolioSchema), aiController.analyzePortfolio);
 
   // ─── Predictions ───────────────────────────────────────────────────────
   // AI-powered price prediction (disclaimer: not financial advice)
-  router.post('/predict', validateRequest(predictSchema), aiController.predictPrice);
+  router.post('/predict', checkAIQuota, validateRequest(predictSchema), aiController.predictPrice);
 
   // Natural language explanation of recent price movements
-  router.post('/explain', validateRequest(explainSchema), aiController.explainMovement);
+  router.post('/explain', checkAIQuota, validateRequest(explainSchema), aiController.explainMovement);
 
   // ─── News Analysis ─────────────────────────────────────────────────────
   // Analyze potential market impact of news articles
-  router.post('/news/impact', validateRequest(newsImpactSchema), aiController.analyzeNewsImpact);
+  router.post('/news/impact', checkAIQuota, validateRequest(newsImpactSchema), aiController.analyzeNewsImpact);
 
   // Generate concise summary of multiple news articles
-  router.post('/news/summary', validateRequest(newsSummarySchema), aiController.generateNewsSummary);
+  router.post('/news/summary', checkAIQuota, validateRequest(newsSummarySchema), aiController.generateNewsSummary);
 
   // ─── Job Queue (Async Processing) ─────────────────────────────────────
   // Submit a long-running AI job to the RabbitMQ queue
-  router.post('/jobs', validateRequest(jobSchema), aiController.submitJob);
+  router.post('/jobs', checkAIQuota, validateRequest(jobSchema), aiController.submitJob);
 
   // Get current job queue statistics (pending, processing, completed)
   router.get('/jobs/stats', aiController.getQueueStats);

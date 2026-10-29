@@ -1,8 +1,9 @@
 # ===========================================
-# Render.com Deployment Blueprint
+# Render.com Deployment Blueprint (Hardened)
 # ===========================================
 # Deploy with: Render Dashboard → New → Blueprint → Connect repo
-# Secrets (sync: false) must be set manually in the Render dashboard.
+# All sensitive secrets (sync: false) MUST be set in the Render Dashboard.
+# autoDeploy is intentionally set to false so untested commits do not automatically trigger live deploys.
 
 services:
   - type: web
@@ -14,6 +15,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health
+    # autoDeploy: false prevents automatic continuous deployment on git push without CI signoff
+    autoDeploy: false
     envVars:
       # ── Server ──────────────────────────────────────
       - key: NODE_ENV
@@ -54,12 +57,24 @@ services:
         value: llama-3.3-70b-versatile
       - key: GROQ_FAST_MODEL
         value: llama-3.1-8b-instant
+      - key: AI_DAILY_TOKEN_QUOTA
+        value: "50000"
+      - key: AI_MAX_PROMPT_LENGTH
+        value: "4000"
+      - key: AI_MAX_TOKENS
+        value: "4096"
 
-      # ── Security ─────────────────────────────────────
-      - key: JWT_SECRET
+      # ── Security & Authentication (secrets) ──────────
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
         sync: false
       - key: JWT_EXPIRES_IN
+        value: "15m"
+      - key: JWT_REFRESH_EXPIRES_IN
         value: "7d"
+      - key: BCRYPT_ROUNDS
+        value: "12"
       - key: CORS_ORIGIN
         sync: false
       - key: SOCKET_IO_CORS_ORIGIN
@@ -106,6 +121,8 @@ services:
         value: "0.40"
       - key: RAG_MAX_AGENT_ITERATIONS
         value: "3"
+      - key: RAG_MAX_FILE_SIZE_BYTES
+        value: "10485760"
 
       # ── LiteLLM AI Gateway (disabled in production by default) ──
       - key: LITELLM_ENABLED
@@ -136,4 +153,3 @@ services:
       # ── Logging ──────────────────────────────────────
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true

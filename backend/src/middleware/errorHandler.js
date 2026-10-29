@@ -54,6 +54,28 @@ export const errorHandler = (err, req, res, _next) => {
         });
     }
 
+    // Handle Multer upload errors
+    if (err.name === 'MulterError') {
+        const statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+        return res.status(statusCode).json({
+            error: {
+                code: 'E1017',
+                message: err.message,
+            },
+            requestId,
+        });
+    }
+
+    if (err.code === 'INVALID_FILE_TYPE' || err.code === 'INVALID_MIME_TYPE') {
+        return res.status(400).json({
+            error: {
+                code: 'E1017',
+                message: err.message,
+            },
+            requestId,
+        });
+    }
+
     // Unknown errors - hide details in production for security
     return res.status(500).json({
         error: {

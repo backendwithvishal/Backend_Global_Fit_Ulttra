@@ -2,6 +2,7 @@
 
 import { User } from '../../models/index.js';
 import { logger } from '../../config/logger.js';
+import { config } from '../../config/environment.js';
 
 export class UserRepository {
     // Create new user
@@ -11,7 +12,8 @@ export class UserRepository {
             const dataToSave = { ...userData };
             if (dataToSave.password) {
                 const bcrypt = await import('bcrypt');
-                dataToSave.passwordHash = await bcrypt.default.hash(dataToSave.password, 10);
+                const rounds = config.security?.bcryptRounds || 12;
+                dataToSave.passwordHash = await bcrypt.default.hash(dataToSave.password, rounds);
                 delete dataToSave.password;
             }
 

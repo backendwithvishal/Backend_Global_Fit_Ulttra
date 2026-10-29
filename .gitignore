@@ -145,3 +145,29 @@ dist
 
 /src/generated/prisma
 /generated/prisma
+
+# ===========================================
+# Security & Secret Protection
+# ===========================================
+.env
+.env*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+
+# Uploads, RAG storage & Database dumps
+uploads/
+**/uploads/
+data/financial_documents/
+dumps/
+qdrant_storage/
+caddy_data/
+caddy_config/
+
+# Scratch scripts & temporary test artifacts
+scratch/
+.system_generated/
+
+.gitleaksignore

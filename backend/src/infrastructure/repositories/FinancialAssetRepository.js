@@ -39,10 +39,13 @@ export class FinancialAssetRepository {
             const skip = (page - 1) * limit;
 
             if (search) {
-                filter.$or = [
-                    { symbol: { $regex: search, $options: 'i' } },
-                    { name: { $regex: search, $options: 'i' } },
-                ];
+                const sanitizedSearch = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').trim();
+                if (sanitizedSearch) {
+                    filter.$or = [
+                        { symbol: { $regex: sanitizedSearch, $options: 'i' } },
+                        { name: { $regex: sanitizedSearch, $options: 'i' } },
+                    ];
+                }
             }
 
             const [assets, total] = await Promise.all([

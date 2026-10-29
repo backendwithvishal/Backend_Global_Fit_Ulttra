@@ -19,6 +19,9 @@ export class BillingService {
             'SAASNEW': { discountPercent: 15, valid: true },
             'INVESTORFREE': { discountPercent: 100, valid: true }
         };
+
+        // In-memory registry for issued checkout sessions (to prevent client-side plan forging)
+        this.pendingSessions = new Map();
     }
 
     async createCheckoutSession(userId, planId, billingCycle = 'monthly', couponCode = '') {
@@ -29,7 +32,7 @@ export class BillingService {
             }
 
             const plan = this.plans[planId];
-            if (!plan) {
+            if (!plan || planId === 'Free') {
                 throw new Error('Invalid plan selected');
             }
 
@@ -46,8 +49,15 @@ export class BillingService {
 
             // In production, instantiate Stripe here and create a Stripe Checkout Session
             // const session = await stripe.checkout.sessions.create({...})
-            // Since this is a demonstration environment, we'll return a simulated sandbox payment link
+            // Track issued session to ensure only valid sessions can activate tiers
             const mockSessionId = `cs_test_${Math.random().toString(36).substring(7)}`;
+            this.pendingSessions.set(mockSessionId, {
+                userId: userId.toString(),
+                planId,
+                billingCycle,
+                createdAt: Date.now()
+            });
+
             const redirectUrl = `http://localhost:5173/billing?checkout_session=${mockSessionId}&plan=${planId}&cycle=${billingCycle}&price=${price}&coupon=${couponCode}`;
 
             logger.info('Billing checkout session generated', { userId, planId, billingCycle, price });
@@ -64,6 +74,28 @@ export class BillingService {
             if (!user) {
                 throw new Error('User not found');
             }
+
+            if (!sessionId) {
+                throw new Error('Invalid session ID');
+            }
+
+            const session = this.pendingSessions.get(sessionId);
+            if (!session) {
+                throw new Error('Invalid or expired checkout session');
+            }
+            if (session.userId !== userId.toString()) {
+                throw new Error('Session does not belong to this user');
+            }
+            if (session.planId !== planId) {
+                throw new Error('Session plan mismatch');
+            }
+            if (Date.now() - session.createdAt > 3600 * 1000) {
+                this.pendingSessions.delete(sessionId);
+                throw new Error('Checkout session expired');
+            }
+
+            // Invalidate session to prevent replay
+            this.pendingSessions.delete(sessionId);
 
             const endPeriod = new Date();
             if (billingCycle === 'yearly') {

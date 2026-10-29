@@ -24,6 +24,7 @@
 
 import { Router } from 'express';
 import { authenticatedUserRateLimiter } from '../middleware/index.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import {
     createWatchlistSchema,
@@ -46,6 +47,7 @@ export const createWatchlistRoutes = (controller) => {
 
     // Apply authenticated-user rate limiter to all watchlist routes (1000 req / 15 min)
     router.use(authenticatedUserRateLimiter);
+    router.use(requireAuth);
 
     // GET /watchlists — List all watchlists with optional filters (userId, isPublic, etc.)
     router.get('/', validateRequest(listWatchlistsSchema), (req, res, next) => controller.listWatchlists(req, res, next));

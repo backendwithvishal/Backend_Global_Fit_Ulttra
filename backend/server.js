@@ -35,6 +35,7 @@
 import './src/utils/polyfills.js';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
 
 import {
     config,
@@ -233,6 +234,36 @@ const startServer = async () => {
             },
             pingTimeout: 60000, // 60s before considering a client disconnected
             pingInterval: 25000, // 25s heartbeat interval
+            maxHttpBufferSize: 1e6, // 1MB payload ceiling prevents memory exhaustion DoS
+        });
+
+        // ─── Socket.io Handshake Authentication Middleware ───────────
+        io.use((socket, next) => {
+            const token = socket.handshake.auth?.token ||
+                socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '');
+
+            if (!token) {
+                return next(new Error('Authentication error: Missing authentication token'));
+            }
+
+            try {
+                const secret = config.security?.jwtAccessSecret || config.auth?.jwtAccessSecret;
+                const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
+
+                if (decoded.tokenType === 'refresh') {
+                    return next(new Error('Authentication error: Refresh tokens cannot be used for WebSocket connections'));
+                }
+
+                socket.user = {
+                    userId: decoded.userId || decoded.id,
+                    role: decoded.role || 'Member',
+                    organizationId: decoded.organizationId || null,
+                    email: decoded.email,
+                };
+                next();
+            } catch (err) {
+                return next(new Error('Authentication error: Invalid or expired token'));
+            }
         });
 
         // ─── Step 6: Initialize DI Container ────────────────────────

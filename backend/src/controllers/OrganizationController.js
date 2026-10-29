@@ -29,6 +29,21 @@ export class OrganizationController {
             if (!org) {
                 return res.status(404).json({ error: 'Organization not found', requestId: req.requestId });
             }
+
+            const callerId = req.user.userId.toString();
+            const isMember = org.members && org.members.some(m => {
+                const memberId = (m.userId?._id || m.userId)?.toString();
+                return memberId === callerId;
+            });
+            const isAdmin = req.user.role?.toLowerCase() === 'admin';
+
+            if (!isMember && !isAdmin) {
+                return res.status(403).json({
+                    error: 'Forbidden: You do not have access to this organization',
+                    requestId: req.requestId
+                });
+            }
+
             res.json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),

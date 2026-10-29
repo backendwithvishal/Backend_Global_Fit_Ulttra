@@ -1,30 +1,114 @@
 # docker-compose.yml
-# Runs Redis and the application service locally.
-# MongoDB is hosted on Atlas (cloud) — configured via MONGODB_URI in backend/.env.
-# RabbitMQ is hosted on CloudAMQP — configured via RABBITMQ_URL in backend/.env.
-# Local RabbitMQ is available under the "local-mq" profile if needed for offline development.
+# Global_Fit_Ulttra - Hardened Multi-Tier Infrastructure
+#
+# Network Isolation Architecture:
+# - "frontend": Public bridge network. Only the App (or reverse proxy) is accessible on host loopback.
+# - "backend": Internal-only network (internal: true). Data stores and AI gateways are completely
+#   unreachable from the host machine and external internet, preventing direct port exposure.
 
 name: global_fit_ulttra
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: globalfit-ulttra-redis
+  # ─── Application Service ───────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: globalfit-ulttra-app
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      # Bound to loopback interface only — not 0.0.0.0 public interface
+      - "127.0.0.1:4000:4000"
     env_file:
       - ./backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/global_fit_ulttra?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-admin}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - LITELLM_URL=http://litellm:4000/v1
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "node", "-e", "const port = process.env.PORT || 4000; import('http').then(h => h.get('http://127.0.0.1:' + port + '/api/v1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+  # ─── MongoDB (Isolated Backend Only, No Host Ports) ────────────────────────
+  mongo:
+    image: mongo:7.0.14
+    container_name: globalfit-ulttra-mongo
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETPCAP
+      - SETUID
+      - SETGID
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Error: MONGO_INITDB_ROOT_PASSWORD must be set}
+      MONGO_INITDB_DATABASE: global_fit_ulttra
+    volumes:
+      - mongo-data:/data/db
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - backend
+
+  # ─── Redis (Password-Protected, Isolated Backend Only) ──────────────────────
+  redis:
+    image: redis:7.2.6-alpine
+    container_name: globalfit-ulttra-redis
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command: >
       sh -c '
-        mkdir -p /usr/local/etc/redis &&
-        echo "protected-mode yes" > /usr/local/etc/redis/redis.conf &&
-        if [ -n "$$REDIS_PASSWORD" ]; then
-          echo "requirepass $${REDIS_PASSWORD}" >> /usr/local/etc/redis/redis.conf
-        fi &&
-        exec redis-server /usr/local/etc/redis/redis.conf
+        exec redis-server --requirepass "$${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}" --protected-mode yes
       '
-    ports:
-      - "127.0.0.1:6379:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}
     volumes:
       - redis-data:/data
     deploy:
@@ -35,130 +119,112 @@ services:
         reservations:
           memory: 64M
     healthcheck:
-      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG; else redis-cli ping | grep PONG; fi"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
-    restart: unless-stopped
     networks:
-      - globalfit-ulttra-network
+      - backend
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: globalfit-ulttra-app
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:4000:4000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    env_file:
-      - ./backend/.env
-    environment:
-      - NODE_ENV=development
-      - PORT=4000
-      - HOST=0.0.0.0
-      - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/global_fit_ulttra}
-      - REDIS_URL=redis://redis:6379
-      - QDRANT_URL=http://qdrant:6333
-      - LITELLM_URL=http://litellm:4000/v1
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          memory: 256M
-    depends_on:
-      redis:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-    networks:
-      - globalfit-ulttra-network
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: globalfit-ulttra-rabbitmq
-    hostname: rabbitmq
-    security_opt:
-      - no-new-privileges:true
-    profiles:
-      - local-mq
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
-    env_file:
-      - ./backend/.env
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: 1G
-        reservations:
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    networks:
-      - globalfit-ulttra-network
-
+  # ─── Qdrant Vector DB (API Key Auth, Isolated Backend Only) ────────────────
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.12.1
     container_name: globalfit-ulttra-qdrant
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    ports:
-      - "127.0.0.1:6333:6333"
-      - "127.0.0.1:6334:6334"
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Error: QDRANT_API_KEY must be set}
+      QDRANT__TELEMETRY_DISABLED: "true"
     volumes:
       - qdrant-data:/qdrant/storage
     deploy:
       resources:
         limits:
           cpus: '1.5'
-          memory: 1G
-    restart: unless-stopped
+          memory: 1024M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 && echo -e \"GET /readyz HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3' || exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
-      - globalfit-ulttra-network
+      - backend
 
-  litellm:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: globalfit-ulttra-litellm
+  # ─── RabbitMQ Message Broker (Non-Default Credentials, Isolated) ───────────
+  rabbitmq:
+    image: rabbitmq:3.13.7-management-alpine
+    container_name: globalfit-ulttra-rabbitmq
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    ports:
-      - "127.0.0.1:8000:4000"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-globalfit_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Error: RABBITMQ_DEFAULT_PASS must be set}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - backend
+
+  # ─── LiteLLM Gateway (Internal AI Gateway) ─────────────────────────────────
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.51.0
+    container_name: globalfit-ulttra-litellm
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./litellm-config.yaml:/app/config.yaml:ro
-    env_file:
-      - ./backend/.env
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-globalfit-master-key-2026}
+      GROQ_API_KEY: ${GROQ_API_KEY}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:4000/health/liveliness || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
-      - globalfit-ulttra-network
+      - backend
 
+# ─── Storage Volumes ─────────────────────────────────────────────────────────
 volumes:
+  mongo-data:
+    name: globalfit-ulttra-mongo-data
   redis-data:
-  rabbitmq-data:
+    name: globalfit-ulttra-redis-data
   qdrant-data:
+    name: globalfit-ulttra-qdrant-data
+  rabbitmq-data:
+    name: globalfit-ulttra-rabbitmq-data
 
+# ─── Isolated Network Topologies ─────────────────────────────────────────────
 networks:
-  globalfit-ulttra-network:
+  frontend:
     driver: bridge
+  backend:
+    driver: bridge
+    internal: true

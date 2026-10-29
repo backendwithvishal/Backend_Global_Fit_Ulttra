@@ -137,8 +137,8 @@ export function numericalAccuracy({
   let matchedCount = 0;
 
   for (const expected of expectedFinancialValues) {
-    let expectedRaw = typeof expected === 'object' ? (expected.value || expected.raw) : expected;
-    let expectedParsed = parseFinancialNumber(String(expectedRaw));
+    const expectedRaw = typeof expected === 'object' ? (expected.value || expected.raw) : expected;
+    const expectedParsed = parseFinancialNumber(String(expectedRaw));
 
     let found = false;
     let reason = '';

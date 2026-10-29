@@ -6,9 +6,52 @@
 
 import express from 'express';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
+import { config } from '../../src/config/environment.js';
 import { createAIRoutes } from '../../src/routes/aiRoutes.js';
 
 describe('aiRoutes', () => {
+    const testToken = jwt.sign(
+        { userId: 'test-user-123', role: 'Member', email: 'test@example.com' },
+        config.auth.jwtAccessSecret,
+        { expiresIn: '15m' }
+    );
+
+    const mockAIController = {
+        analyzeSentiment: (req, res) => res.json({
+            success: true,
+            data: { sentiment: 'positive', confidence: 90, reasoning: 'Strong rally' }
+        }),
+        analyzeAsset: (req, res) => res.json({ success: true, data: {} }),
+        compareAssets: (req, res) => res.json({ success: true, data: {} }),
+        generateRecommendation: (req, res) => res.json({ success: true, data: {} }),
+        analyzePortfolio: (req, res) => res.json({ success: true, data: {} }),
+        predictPrice: (req, res) => res.json({ success: true, data: {} }),
+        explainMovement: (req, res) => res.json({ success: true, data: {} }),
+        analyzeNewsImpact: (req, res) => res.json({ success: true, data: {} }),
+        generateNewsSummary: (req, res) => res.json({ success: true, data: {} }),
+        submitJob: (req, res) => res.json({ success: true, data: {} }),
+        getQueueStats: (req, res) => res.json({ success: true, data: {} }),
+    };
+
+    describe('Unauthenticated access', () => {
+        let app;
+        beforeEach(() => {
+            app = express();
+            app.use(express.json());
+            app.use('/api/v1/ai', createAIRoutes(mockAIController));
+        });
+
+        it('should reject unauthenticated requests with 401', async () => {
+            const res = await request(app)
+                .post('/api/v1/ai/sentiment')
+                .send({ text: 'Bitcoin rallies 10 percent' });
+
+            expect(res.status).toBe(401);
+            expect(res.body.error.code).toBe('E1003');
+        });
+    });
+
     describe('Disabled AI service (no aiController)', () => {
         let app;
 
@@ -21,6 +64,7 @@ describe('aiRoutes', () => {
         it('should return 503 and E5003 error when AI is disabled', async () => {
             const res = await request(app)
                 .post('/api/v1/ai/sentiment')
+                .set('Authorization', `Bearer ${testToken}`)
                 .send({ text: 'Bitcoin rallies 10 percent' });
 
             expect(res.status).toBe(503);
@@ -34,26 +78,8 @@ describe('aiRoutes', () => {
 
     describe('Enabled AI service (with aiController)', () => {
         let app;
-        let mockAIController;
 
         beforeEach(() => {
-            mockAIController = {
-                analyzeSentiment: (req, res) => res.json({
-                    success: true,
-                    data: { sentiment: 'positive', confidence: 90, reasoning: 'Strong rally' }
-                }),
-                analyzeAsset: (req, res) => res.json({ success: true, data: {} }),
-                compareAssets: (req, res) => res.json({ success: true, data: {} }),
-                generateRecommendation: (req, res) => res.json({ success: true, data: {} }),
-                analyzePortfolio: (req, res) => res.json({ success: true, data: {} }),
-                predictPrice: (req, res) => res.json({ success: true, data: {} }),
-                explainMovement: (req, res) => res.json({ success: true, data: {} }),
-                analyzeNewsImpact: (req, res) => res.json({ success: true, data: {} }),
-                generateNewsSummary: (req, res) => res.json({ success: true, data: {} }),
-                submitJob: (req, res) => res.json({ success: true, data: {} }),
-                getQueueStats: (req, res) => res.json({ success: true, data: {} }),
-            };
-
             app = express();
             app.use(express.json());
             app.use('/api/v1/ai', createAIRoutes(mockAIController));
@@ -62,6 +88,7 @@ describe('aiRoutes', () => {
         it('should route sentiment requests to aiController when enabled', async () => {
             const res = await request(app)
                 .post('/api/v1/ai/sentiment')
+                .set('Authorization', `Bearer ${testToken}`)
                 .send({ text: 'Bitcoin rallies 10 percent' });
 
             expect(res.status).toBe(200);
@@ -71,7 +98,8 @@ describe('aiRoutes', () => {
 
         it('should return AI service discovery info on GET /', async () => {
             const res = await request(app)
-                .get('/api/v1/ai');
+                .get('/api/v1/ai')
+                .set('Authorization', `Bearer ${testToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
@@ -81,6 +109,7 @@ describe('aiRoutes', () => {
         it('should return 400 validation error if text is missing', async () => {
             const res = await request(app)
                 .post('/api/v1/ai/sentiment')
+                .set('Authorization', `Bearer ${testToken}`)
                 .send({});
 
             expect(res.status).toBe(400);

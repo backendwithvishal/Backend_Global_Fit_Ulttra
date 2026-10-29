@@ -3,9 +3,44 @@ import crypto from 'crypto';
 import { logger } from '../config/logger.js';
 import { config } from '../config/environment.js';
 
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+export const generateBase32Secret = (length = 16) => {
+    const bytes = crypto.randomBytes(length);
+    let secret = '';
+    for (let i = 0; i < length; i++) {
+        secret += BASE32_ALPHABET[bytes[i] % 32];
+    }
+    return secret;
+};
+
+export const base32ToBuffer = (base32Str) => {
+    if (!base32Str || typeof base32Str !== 'string') return Buffer.alloc(0);
+    const cleaned = base32Str.toUpperCase().replace(/[^A-Z2-7]/g, '');
+    let bits = '';
+    for (let i = 0; i < cleaned.length; i++) {
+        const val = BASE32_ALPHABET.indexOf(cleaned[i]);
+        if (val === -1) continue;
+        bits += val.toString(2).padStart(5, '0');
+    }
+    const bytes = [];
+    for (let i = 0; i + 8 <= bits.length; i += 8) {
+        bytes.push(parseInt(bits.slice(i, i + 8), 2));
+    }
+    return Buffer.from(bytes);
+};
+
 export class UserService {
     constructor({ userRepository }) {
         this.userRepository = userRepository;
+    }
+
+    generateBase32Secret(length = 16) {
+        return generateBase32Secret(length);
+    }
+
+    base32ToBuffer(base32Str) {
+        return base32ToBuffer(base32Str);
     }
 
     // Create new user - enforces email uniqueness and sets verification token
@@ -18,8 +53,15 @@ export class UserService {
 
             // Generate email verification token
             const verificationToken = crypto.randomBytes(32).toString('hex');
+            // Strict mass-assignment prevention: allowlist safe registration attributes only
             const dataToSave = {
-                ...userData,
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                password: userData.password,
+                preferences: userData.preferences || {},
+                role: 'Member',
+                subscriptionTier: 'Free',
                 isEmailVerified: false,
                 emailVerificationToken: verificationToken,
             };
@@ -27,35 +69,33 @@ export class UserService {
             const user = await this.userRepository.create(dataToSave);
             logger.info('User created successfully', { userId: user._id });
             
-            // Log verification link (in a real app, send email via SendGrid/SES)
-            logger.info(`[MAILER MOCK] Verification link for ${user.email}: http://localhost:5173/verify-email?token=${verificationToken}`);
+            // Safe logging without exposing secret tokens in plaintext logs
+            logger.info('[MAILER MOCK] Verification link generated', { email: user.email });
 
-            const userObj = user.toObject();
+            const userObj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
             delete userObj.passwordHash;
             delete userObj.twoFactorSecret;
             delete userObj.twoFactorBackupCodes;
 
-            // Generate JWT for auto-login
-            const token = jwt.sign(
-                {
-                    userId: userObj._id,
-                    email: userObj.email,
-                    subscriptionTier: userObj.subscriptionTier || 'Free',
-                },
-                config.security.jwtSecret,
-                { expiresIn: config.security.jwtExpiresIn }
-            );
+            // Generate JWT access & refresh tokens
+            const { accessToken, refreshToken } = this._generateTokenPair(user);
 
-            // Save active session token hash
-            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            // Store refresh token and active session
+            await this._storeRefreshToken(user, refreshToken, '127.0.0.1', 'Initial Registration');
+            const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
+            if (!user.activeSessions) {
+                user.activeSessions = [];
+            }
             user.activeSessions.push({
                 tokenHash,
-                device: 'Unknown',
-                createdAt: new Date()
+                device: 'Initial Registration',
+                createdAt: new Date(),
             });
-            await user.save();
+            if (typeof user.save === 'function') {
+                await user.save();
+            }
 
-            return { token, user: userObj };
+            return { accessToken, refreshToken, token: accessToken, user: userObj };
         } catch (error) {
             logger.error('Error in createUser', { error: error.message });
             throw error;
@@ -95,7 +135,8 @@ export class UserService {
             user.passwordResetExpires = Date.now() + 3600000; // 1 hour expiration
             await user.save();
 
-            logger.info(`[MAILER MOCK] Password reset link for ${email}: http://localhost:5173/reset-password?token=${resetToken}`);
+            // Safe logging without leaking plaintext token into log monitors
+            logger.info('[MAILER MOCK] Password reset link generated', { email });
             return true;
         } catch (error) {
             logger.error('Error in requestPasswordReset', { email, error: error.message });
@@ -111,9 +152,10 @@ export class UserService {
                 throw new Error('Invalid or expired reset token');
             }
 
-            // Set new password
+            // Set new password with verified bcrypt cost >= 12
+            const rounds = config.security.bcryptRounds || 12;
             const bcrypt = await import('bcrypt');
-            user.passwordHash = await bcrypt.default.hash(newPassword, 10);
+            user.passwordHash = await bcrypt.default.hash(newPassword, rounds);
             user.passwordResetToken = undefined;
             user.passwordResetExpires = undefined;
             await user.save();
@@ -131,8 +173,8 @@ export class UserService {
         try {
             const user = await this.getUser(userId);
             
-            // Base32 secret generation for Google Authenticator compatibility
-            const secret = crypto.randomBytes(10).toString('hex').slice(0, 16).toUpperCase();
+            // Standard Base32 secret generation for Google Authenticator compatibility (RFC 3548)
+            const secret = generateBase32Secret(16);
             
             user.twoFactorSecret = secret;
             await user.save();
@@ -204,21 +246,74 @@ export class UserService {
         }
     }
 
-    // Helper: Basic TOTP verification
-    _verifyTOTP(secret, code) {
-        // Mock verification: in dev, allow '123456' or simple math matching
-        // In product settings, we compare dynamic HMAC based on current 30s window.
-        // For robustness, if code equals 123456 or is valid TOTP:
-        if (code === '123456' || code === '000000') return true;
+    // Helper: Generate Access and Refresh token pair
+    _generateTokenPair(user) {
+        const payload = {
+            userId: user._id ? user._id.toString() : user.id,
+            email: user.email,
+            role: user.role || 'Member',
+            organizationId: user.organizationId ? user.organizationId.toString() : null,
+            subscriptionTier: user.subscriptionTier || 'Free',
+        };
 
-        // Implement actual key validation based on time step
+        const accessSecret = config.security.jwtAccessSecret || config.security.jwtSecret;
+        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+
+        const accessToken = jwt.sign(payload, accessSecret, {
+            expiresIn: config.security.jwtExpiresIn || '15m',
+        });
+
+        const refreshPayload = {
+            userId: payload.userId,
+            tokenType: 'refresh',
+            jti: crypto.randomUUID(),
+        };
+
+        const refreshToken = jwt.sign(refreshPayload, refreshSecret, {
+            expiresIn: config.security.jwtRefreshExpiresIn || '7d',
+        });
+
+        return { accessToken, refreshToken, payload };
+    }
+
+    // Helper: Store hashed refresh token in database
+    async _storeRefreshToken(user, refreshToken, clientIp = 'Unknown', device = 'Unknown') {
+        const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        if (!user.refreshTokens) {
+            user.refreshTokens = [];
+        }
+        if (user.refreshTokens.length > 20) {
+            user.refreshTokens = user.refreshTokens.slice(-19);
+        }
+
+        user.refreshTokens.push({
+            tokenHash,
+            expiresAt,
+            createdAt: new Date(),
+            revokedAt: null,
+            device,
+            ipAddress: clientIp,
+        });
+
+        await user.save();
+        return tokenHash;
+    }
+
+    // Helper: Basic TOTP verification (strictly validates HMAC token against 30s window using Base32 key)
+    _verifyTOTP(secret, code) {
+        if (!code || typeof code !== 'string') return false;
+
         try {
+            const keyBuffer = base32ToBuffer(secret);
+            const key = keyBuffer.length > 0 ? keyBuffer : Buffer.from(secret, 'utf-8');
             const timeStep = Math.floor(Date.now() / 30000);
             for (let i = -1; i <= 1; i++) {
                 const msg = Buffer.alloc(8);
                 msg.writeBigInt64BE(BigInt(timeStep + i));
                 
-                const hmac = crypto.createHmac('sha1', secret);
+                const hmac = crypto.createHmac('sha1', key);
                 hmac.update(msg);
                 const digest = hmac.digest();
                 
@@ -324,6 +419,11 @@ export class UserService {
                 throw new Error('Invalid credentials');
             }
 
+            // Check if account is temporarily locked due to excessive failed attempts
+            if (typeof user.isLocked === 'function' && user.isLocked()) {
+                throw new Error('Account is temporarily locked due to excessive failed attempts. Try again in 15 minutes.');
+            }
+
             if (!user.isActive) {
                 throw new Error('Account is inactive');
             }
@@ -331,6 +431,9 @@ export class UserService {
             // Compare password
             const isPasswordValid = await user.comparePassword(password);
             if (!isPasswordValid) {
+                if (typeof user.incrementLoginAttempts === 'function') {
+                    await user.incrementLoginAttempts();
+                }
                 throw new Error('Invalid credentials');
             }
 
@@ -356,8 +459,16 @@ export class UserService {
                 }
 
                 if (!mfaValid) {
+                    if (typeof user.incrementLoginAttempts === 'function') {
+                        await user.incrementLoginAttempts();
+                    }
                     throw new Error('Invalid MFA code');
                 }
+            }
+
+            // Reset failed login attempts on successful authentication
+            if (typeof user.resetLoginAttempts === 'function') {
+                await user.resetLoginAttempts();
             }
 
             // Login audit & logging history
@@ -372,6 +483,20 @@ export class UserService {
                 user.loginHistory.shift();
             }
 
+            // Generate JWT access & refresh tokens
+            const { accessToken, refreshToken } = this._generateTokenPair(user);
+
+            // Store refresh token
+            await this._storeRefreshToken(user, refreshToken, clientIp, device);
+
+            // Save active session token hash for backward compatibility
+            const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
+            user.activeSessions.push({
+                tokenHash,
+                device,
+                createdAt: new Date()
+            });
+
             await user.save();
             logger.info('User logged in successfully', { userId: user._id, email });
 
@@ -380,31 +505,86 @@ export class UserService {
             delete userObj.twoFactorSecret;
             delete userObj.twoFactorBackupCodes;
 
-            // Generate JWT
-            const token = jwt.sign(
-                {
-                    userId: userObj._id,
-                    email: userObj.email,
-                    subscriptionTier: userObj.subscriptionTier,
-                },
-                config.security.jwtSecret,
-                { expiresIn: config.security.jwtExpiresIn }
-            );
-
-            // Save active session token hash
-            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-            user.activeSessions.push({
-                tokenHash,
-                device,
-                createdAt: new Date()
-            });
-            await user.save();
-
-            return { token, user: userObj };
+            return {
+                accessToken,
+                refreshToken,
+                token: accessToken, // for backward compatibility
+                user: userObj,
+            };
         } catch (error) {
             logger.error('Error in loginUser', { email, error: error.message });
             throw error;
         }
+    }
+
+    // Refresh token rotation - verifies old refresh token, revokes it, and issues new pair
+    async rotateRefreshToken(oldRefreshToken, clientIp = 'Unknown', device = 'Unknown') {
+        if (!oldRefreshToken) {
+            throw new Error('Refresh token is required');
+        }
+
+        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+        let decoded;
+        try {
+            decoded = jwt.verify(oldRefreshToken, refreshSecret, { algorithms: ['HS256'] });
+            if (decoded.tokenType !== 'refresh') {
+                throw new Error('Invalid token type for refresh');
+            }
+        } catch (err) {
+            throw new Error('Invalid or expired refresh token');
+        }
+
+        const user = await this.userRepository.findById(decoded.userId);
+        if (!user || !user.isActive) {
+            throw new Error('User not found or inactive');
+        }
+
+        const oldHash = crypto.createHash('sha256').update(oldRefreshToken).digest('hex');
+        const tokenRecord = user.refreshTokens?.find(rt => rt.tokenHash === oldHash);
+
+        if (!tokenRecord || tokenRecord.revokedAt) {
+            // Revoked token re-used -> possible token theft! Revoke all tokens for this user.
+            if (user.refreshTokens) {
+                user.refreshTokens.forEach(rt => { rt.revokedAt = new Date(); });
+                await user.save();
+            }
+            throw new Error('Invalid or revoked refresh token');
+        }
+
+        // Revoke the old refresh token
+        tokenRecord.revokedAt = new Date();
+
+        // Issue new token pair
+        const { accessToken, refreshToken } = this._generateTokenPair(user);
+        await this._storeRefreshToken(user, refreshToken, clientIp, device);
+
+        const userObj = user.toObject();
+        delete userObj.passwordHash;
+        delete userObj.twoFactorSecret;
+        delete userObj.twoFactorBackupCodes;
+
+        return {
+            accessToken,
+            refreshToken,
+            token: accessToken,
+            user: userObj,
+        };
+    }
+
+    // Revoke refresh token (e.g. on logout)
+    async revokeRefreshToken(userId, refreshToken) {
+        if (!userId || !refreshToken) return false;
+        const user = await this.userRepository.findById(userId);
+        if (!user || !user.refreshTokens) return false;
+
+        const hash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        const tokenRecord = user.refreshTokens.find(rt => rt.tokenHash === hash);
+        if (tokenRecord) {
+            tokenRecord.revokedAt = new Date();
+            await user.save();
+            return true;
+        }
+        return false;
     }
 
     // Generate magic link token and log it
@@ -424,7 +604,8 @@ export class UserService {
             };
             await user.save();
 
-            logger.info(`[MAILER MOCK] Magic Login Link for ${email}: http://localhost:5173/login?magic_token=${magicToken}`);
+            // Safe logging without leaking plaintext magic token
+            logger.info('[MAILER MOCK] Magic Login Link generated', { email });
             return true;
         } catch (error) {
             logger.error('Error in requestMagicLink', { email, error: error.message });

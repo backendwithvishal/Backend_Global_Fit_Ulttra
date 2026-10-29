@@ -168,4 +168,6 @@ caddy_config/
 
 # Scratch scripts & temporary test artifacts
 scratch/
-.system_generated/
+.system_generated/
+
+.gitleaksignore

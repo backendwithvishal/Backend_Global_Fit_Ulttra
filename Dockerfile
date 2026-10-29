@@ -36,12 +36,12 @@ RUN mkdir -p logs uploads/rag data/financial_documents && \
 # Switch to unprivileged runtime user
 USER nodejs
 
-# Expose standardized application port
-EXPOSE 4000
+# Expose standardized application port (10000 for Render / container runtime)
+EXPOSE 10000
 
 # Container healthcheck querying internal loopback
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD node -e "const port = process.env.PORT || 4000; import('http').then(h => h.get('http://127.0.0.1:' + port + '/api/v1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)))"
+    CMD node -e "const port = process.env.PORT || 10000; import('http').then(h => h.get('http://127.0.0.1:' + port + '/api/v1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)))"
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server.js"]

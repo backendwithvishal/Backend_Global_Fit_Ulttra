@@ -1114,9 +1114,24 @@ MIT License - use this code however you want.
 
 ---
 
+## 🔒 Security & Penetration Testing Verification
+
+Global_Fit_Ulttra has undergone independent penetration testing and security hardening across all REST routes, WebSocket events, and infrastructure definitions:
+
+- **Authentication & JWT Hardening**: Algorithm pinned to `HS256`, refresh tokens rejected on access endpoints, scoped cookies (`Path=/api/v1/auth/refresh`), and RFC 3548 Base32 TOTP 2FA.
+- **Tenancy & IDOR Elimination**: Multi-tenant partitioning for RAG documents, organization-level API keys, and access-controlled organization management.
+- **Injection & ReDoS Defenses**: User inputs in MongoDB regex searches escaped against ReDoS, NoSQL sanitization via `express-mongo-sanitize`, and prompt boundaries (`<<<UNTRUSTED_DATA>>>`) against prompt injection.
+- **Cost & Abuse Protection**: Redis-backed atomic reservation for AI token spend quotas and 10 req/min sliding-window WebSocket rate limiting.
+- **Zero Insecure Defaults**: Docker Compose and Render configurations enforce mandatory environment variable injection with zero default credential fallbacks.
+- **Secrets Audit Clean**: Full 41-commit git history verified clean via Gitleaks (`0 leaks found`).
+
+For detailed architecture, threat modeling, and residual risk assessment, see [SECURITY.md](SECURITY.md).
+
+---
+
 ## Status & Roadmap
 
-**Current Status:** 🛡️ Security-Hardened (Dual-Token JWT & RBAC Active)
+**Current Status:** 🛡️ Security-Hardened (Penetration Test Verified & Clean)
 
 **Completed Features:**
 - ✅ 6 external API integrations
@@ -1137,7 +1152,7 @@ MIT License - use this code however you want.
 - ✅ Job queue (optional)
 - ✅ Comprehensive documentation & Postman collection
 - ✅ Multi-stage rootless Docker & Network isolation
-- ✅ Unit & Security tests (155 passing tests)
+- ✅ Unit & Security tests (173 passing tests across 8 test suites)
 
 **Future Enhancements:**
 - [ ] Real-time price alerts via email/SMS

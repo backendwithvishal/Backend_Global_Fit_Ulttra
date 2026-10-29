@@ -16,6 +16,7 @@
 
 import { logger } from '../../config/logger.js';
 import { AI_CONFIG } from './aiConfig.js';
+import { sanitizeForPrompt } from '../../middleware/aiQuotaMiddleware.js';
 
 // Pre-defined ticker dictionaries for deterministic recognition
 const TICKER_MAP = {
@@ -274,7 +275,7 @@ export class AgenticRAGOrchestrator {
       const chunk = item.chunk;
       const meta = chunk.metadata || {};
       const sourceId = idx + 1;
-      return `[Source ${sourceId}: ${meta.symbol} (${meta.filingType}) - ${meta.section}, Page ${meta.pageNumber || 1}]\n${chunk.content}`;
+      return `[Source ${sourceId}: ${meta.symbol} (${meta.filingType}) - ${meta.section}, Page ${meta.pageNumber || 1}]\n${sanitizeForPrompt(chunk.content)}`;
     });
 
     const contextText = contextBlocks.join('\n\n────────────────────────────────────────\n\n');
@@ -292,7 +293,7 @@ MANDATORY RULES:
     const userPrompt = `Financial Context:
 ${contextText}
 
-Question: ${query}
+Question: ${sanitizeForPrompt(query)}
 
 Provide a well-structured financial analysis with explicit citations [Source X]:`;
 

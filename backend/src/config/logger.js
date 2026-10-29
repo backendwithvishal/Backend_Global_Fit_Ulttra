@@ -31,8 +31,11 @@ const maskObject = (obj) => {
     return obj;
 };
 
-const maskSensitiveData = winston.format((info) => {
+export const maskSensitiveData = winston.format((info) => {
     maskObject(info);
+    if (typeof info.message === 'string') {
+        info.message = info.message.replace(/(token|magic_token|password|secret|api_?key)=([a-zA-Z0-9_\-.~%]+)/gi, '$1=[REDACTED]');
+    }
     return info;
 });
 

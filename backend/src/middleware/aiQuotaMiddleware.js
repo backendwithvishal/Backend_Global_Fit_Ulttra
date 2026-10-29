@@ -25,7 +25,7 @@ const getQuotaKey = (userId) => {
 };
 
 /**
- * Checks if the user has remaining daily AI token quota.
+ * Checks if the user has remaining daily AI token quota atomically.
  */
 export const checkAIQuota = async (req, res, next) => {
     try {
@@ -45,20 +45,30 @@ export const checkAIQuota = async (req, res, next) => {
             });
         }
 
-        // 2. Check token quota in Redis or memory
+        // 2. Atomic quota reservation to prevent race conditions
         const quotaKey = getQuotaKey(userId);
         const redis = getRedisClient();
+        const estimatedTokens = Math.max(100, Math.ceil((promptText?.length || 400) / 4));
         let currentTokens = 0;
 
         if (redis && redis.status === 'ready') {
-            const val = await redis.get(quotaKey);
-            currentTokens = val ? parseInt(val, 10) : 0;
+            currentTokens = await redis.incrby(quotaKey, estimatedTokens);
+            if (currentTokens === estimatedTokens) {
+                await redis.expire(quotaKey, 86400);
+            }
         } else {
-            const entry = memoryQuotas.get(quotaKey);
-            currentTokens = entry || 0;
+            const entry = memoryQuotas.get(quotaKey) || 0;
+            currentTokens = entry + estimatedTokens;
+            memoryQuotas.set(quotaKey, currentTokens);
         }
 
-        if (currentTokens >= maxQuota) {
+        if (currentTokens > maxQuota) {
+            // Revert reservation if quota exceeded
+            if (redis && redis.status === 'ready') {
+                await redis.decrby(quotaKey, estimatedTokens);
+            } else {
+                memoryQuotas.set(quotaKey, currentTokens - estimatedTokens);
+            }
             logger.warn('AI daily token quota exceeded', { userId, currentTokens, maxQuota });
             return res.status(429).json({
                 error: {
@@ -75,18 +85,54 @@ export const checkAIQuota = async (req, res, next) => {
             currentTokens,
             maxQuota,
             quotaKey,
+            reservedTokens: estimatedTokens,
         };
 
         next();
     } catch (err) {
         logger.error('Error checking AI quota', { error: err.message });
-        // Fail open or closed: on quota system error, log and allow request through with warning
         next();
     }
 };
 
 /**
- * Record tokens consumed by a user after completion of an AI call.
+ * Checks and reserves token quota for WebSocket operations.
+ */
+export const checkSocketAIQuota = async (userId, estimatedTokens = 100) => {
+    try {
+        const maxQuota = config.ai.dailyTokenQuota || 50000;
+        const quotaKey = getQuotaKey(userId);
+        const redis = getRedisClient();
+        let currentTokens = 0;
+
+        if (redis && redis.status === 'ready') {
+            currentTokens = await redis.incrby(quotaKey, estimatedTokens);
+            if (currentTokens === estimatedTokens) {
+                await redis.expire(quotaKey, 86400);
+            }
+        } else {
+            const entry = memoryQuotas.get(quotaKey) || 0;
+            currentTokens = entry + estimatedTokens;
+            memoryQuotas.set(quotaKey, currentTokens);
+        }
+
+        if (currentTokens > maxQuota) {
+            if (redis && redis.status === 'ready') {
+                await redis.decrby(quotaKey, estimatedTokens);
+            } else {
+                memoryQuotas.set(quotaKey, currentTokens - estimatedTokens);
+            }
+            return false;
+        }
+        return true;
+    } catch (err) {
+        logger.error('Error checking socket AI quota', { error: err.message });
+        return true;
+    }
+};
+
+/**
+ * Record additional tokens consumed by a user after completion of an AI call.
  */
 export const recordTokenSpend = async (userId, tokensUsed = 500) => {
     try {
@@ -95,7 +141,6 @@ export const recordTokenSpend = async (userId, tokensUsed = 500) => {
 
         if (redis && redis.status === 'ready') {
             const newTotal = await redis.incrby(quotaKey, tokensUsed);
-            // Set 24 hour expiration on key if newly created
             if (newTotal === tokensUsed) {
                 await redis.expire(quotaKey, 86400);
             }

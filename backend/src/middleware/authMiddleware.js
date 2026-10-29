@@ -40,7 +40,15 @@ export const requireAuth = (req, res, next) => {
 
     try {
         const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
-        const payload = jwt.verify(token, secret);
+        const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+
+        if (payload.tokenType === 'refresh') {
+            return res.status(401).json({
+                error: { code: 'E1007', message: 'Invalid token: Refresh token cannot be used as an access token.' },
+                requestId: req.requestId,
+            });
+        }
+
         req.user = {
             ...payload,
             // Normalize ID: ensure both userId and id are accessible
@@ -82,13 +90,15 @@ export const optionalAuth = (req, res, next) => {
     if (token) {
         try {
             const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
-            const payload = jwt.verify(token, secret);
-            req.user = {
-                ...payload,
-                userId: payload.userId || payload.id,
-                id: payload.userId || payload.id,
-                role: payload.role || 'Member',
-            };
+            const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+            if (payload.tokenType !== 'refresh') {
+                req.user = {
+                    ...payload,
+                    userId: payload.userId || payload.id,
+                    id: payload.userId || payload.id,
+                    role: payload.role || 'Member',
+                };
+            }
         } catch {
             // Invalid token — treat as unauthenticated
         }

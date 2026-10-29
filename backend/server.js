@@ -247,7 +247,13 @@ const startServer = async () => {
             }
 
             try {
-                const decoded = jwt.verify(token, config.auth.jwtAccessSecret);
+                const secret = config.security?.jwtAccessSecret || config.auth?.jwtAccessSecret;
+                const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
+
+                if (decoded.tokenType === 'refresh') {
+                    return next(new Error('Authentication error: Refresh tokens cannot be used for WebSocket connections'));
+                }
+
                 socket.user = {
                     userId: decoded.userId || decoded.id,
                     role: decoded.role || 'Member',

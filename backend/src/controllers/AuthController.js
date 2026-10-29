@@ -49,6 +49,7 @@ export class AuthController {
                 httpOnly: true,
                 secure: isProd,
                 sameSite: 'strict',
+                path: '/api/v1/auth/refresh',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
 
@@ -108,6 +109,7 @@ export class AuthController {
                 httpOnly: true,
                 secure: isProd,
                 sameSite: 'strict',
+                path: '/api/v1/auth/refresh',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
 
@@ -136,7 +138,7 @@ export class AuthController {
             }
 
             res.clearCookie('token');
-            res.clearCookie('refreshToken');
+            res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
             res.json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),

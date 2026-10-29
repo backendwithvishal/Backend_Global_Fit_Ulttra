@@ -1,6 +1,7 @@
 // AI stream handler for real-time WebSocket streaming
 
 import { logger } from '../../config/logger.js';
+import { checkSocketAIQuota } from '../../middleware/aiQuotaMiddleware.js';
 
 export class AIStreamHandler {
   constructor({ io, groqClient, aiNewsService, aiMarketService, ragService = null }) {
@@ -60,8 +61,19 @@ export class AIStreamHandler {
     return true;
   }
 
+  async _checkSocketAccess(socket, estimatedTokens = 100) {
+    if (!this._checkSocketRateLimit(socket)) return false;
+    const userId = socket.user?.userId || socket.handshake.address;
+    const allowed = await checkSocketAIQuota(userId, estimatedTokens);
+    if (!allowed) {
+      socket.emit('ai:error', { error: 'Daily AI token quota exceeded for this session.' });
+      return false;
+    }
+    return true;
+  }
+
   async handleRAGQuery(socket, data) {
-    if (!this._checkSocketRateLimit(socket)) return;
+    if (!(await this._checkSocketAccess(socket, 250))) return;
 
     const { question, symbol, sessionId = 'rag-session' } = data || {};
     if (!question || typeof question !== 'string') {
@@ -112,7 +124,7 @@ export class AIStreamHandler {
   }
 
   async handleChat(socket, data) {
-    if (!this._checkSocketRateLimit(socket)) return;
+    if (!(await this._checkSocketAccess(socket, 150))) return;
 
     const { message, sessionId = 'chat-session' } = data || {};
 
@@ -185,6 +197,8 @@ export class AIStreamHandler {
   }
 
   async handleAnalyze(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { symbol, priceData } = data;
 
     if (!symbol || !priceData) {
@@ -228,6 +242,8 @@ export class AIStreamHandler {
   }
 
   async handleSentiment(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { text, type } = data;
 
     if (!text) {
@@ -282,6 +298,8 @@ Return JSON: { "sentiment": "positive|negative|neutral", "confidence": 85 }`;
   }
 
   async handleRecommend(socket, data) {
+    if (!(await this._checkSocketAccess(socket, 150))) return;
+
     const { userProfile, marketData } = data;
 
     if (!userProfile || !marketData) {

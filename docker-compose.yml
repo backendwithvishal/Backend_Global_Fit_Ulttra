@@ -65,6 +65,8 @@ services:
       - HOST=0.0.0.0
       - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/global_fit_ulttra}
       - REDIS_URL=redis://redis:6379
+      - QDRANT_URL=http://qdrant:6333
+      - LITELLM_URL=http://litellm:4000/v1
     deploy:
       resources:
         limits:
@@ -75,6 +77,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      qdrant:
+        condition: service_started
     networks:
       - globalfit-ulttra-network
 
@@ -115,9 +119,6 @@ services:
     container_name: globalfit-ulttra-qdrant
     security_opt:
       - no-new-privileges:true
-    profiles:
-      - full
-      - ai-local
     ports:
       - "127.0.0.1:6333:6333"
       - "127.0.0.1:6334:6334"
@@ -137,9 +138,6 @@ services:
     container_name: globalfit-ulttra-litellm
     security_opt:
       - no-new-privileges:true
-    profiles:
-      - full
-      - ai-local
     ports:
       - "127.0.0.1:8000:4000"
     volumes:

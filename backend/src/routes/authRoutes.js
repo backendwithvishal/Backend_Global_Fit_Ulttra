@@ -19,8 +19,9 @@ export const createAuthRoutes = (controller) => {
     // Login (with optional MFA code)
     router.post('/login', authRateLimiter, validateRequest(loginSchema), (req, res, next) => controller.login(req, res, next));
 
-    // Logout
+    // Logout (accessible via standard /logout and cookie-scoped /refresh/logout)
     router.post('/logout', (req, res, next) => controller.logout(req, res, next));
+    router.post('/refresh/logout', (req, res, next) => controller.logout(req, res, next));
 
     // Token Refresh (Rotation)
     router.post('/refresh', (req, res, next) => controller.refreshToken(req, res, next));

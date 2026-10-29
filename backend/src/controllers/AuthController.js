@@ -1,3 +1,6 @@
+import jwt from 'jsonwebtoken';
+import { config } from '../config/environment.js';
+
 export class AuthController {
     constructor({ userService }) {
         this.userService = userService;
@@ -132,13 +135,50 @@ export class AuthController {
 
     async logout(req, res, next) {
         try {
-            const refreshToken = req.body?.refreshToken;
-            if (refreshToken && req.user?.userId) {
-                await this.userService.revokeRefreshToken(req.user.userId, refreshToken);
+            let refreshToken = req.body?.refreshToken;
+            if (!refreshToken && req.headers?.cookie) {
+                const cookies = Object.fromEntries(
+                    req.headers.cookie.split(';').map(c => {
+                        const [k, v] = c.trim().split('=');
+                        return [k, decodeURIComponent(v || '')];
+                    })
+                );
+                refreshToken = cookies['refreshToken'];
+            }
+
+            let userId = req.user?.userId || req.user?.id;
+            if (!userId && req.headers?.authorization) {
+                try {
+                    const token = req.headers.authorization.replace(/^Bearer\s+/i, '');
+                    const accessSecret = config.security?.jwtAccessSecret;
+                    const decoded = jwt.verify(token, accessSecret, { algorithms: ['HS256'] });
+                    userId = decoded.userId || decoded.id;
+                } catch {
+                    // Invalid access token ignored during logout
+                }
+            }
+
+            if (!userId && refreshToken) {
+                try {
+                    const refreshSecret = config.security?.jwtRefreshSecret;
+                    const decoded = jwt.verify(refreshToken, refreshSecret, { algorithms: ['HS256'] });
+                    userId = decoded.userId || decoded.id;
+                } catch {
+                    // Invalid refresh token ignored during logout
+                }
+            }
+
+            if (userId) {
+                if (refreshToken) {
+                    await this.userService.revokeRefreshToken(userId, refreshToken);
+                } else if (typeof this.userService.revokeAllUserRefreshTokens === 'function') {
+                    await this.userService.revokeAllUserRefreshTokens(userId);
+                }
             }
 
             res.clearCookie('token');
             res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
+            res.clearCookie('refreshToken', { path: '/api/v1/auth' });
             res.json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),

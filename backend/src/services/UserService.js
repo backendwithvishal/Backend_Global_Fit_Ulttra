@@ -256,8 +256,8 @@ export class UserService {
             subscriptionTier: user.subscriptionTier || 'Free',
         };
 
-        const accessSecret = config.security.jwtAccessSecret || config.security.jwtSecret;
-        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+        const accessSecret = config.security.jwtAccessSecret;
+        const refreshSecret = config.security.jwtRefreshSecret;
 
         const accessToken = jwt.sign(payload, accessSecret, {
             expiresIn: config.security.jwtExpiresIn || '15m',
@@ -523,7 +523,8 @@ export class UserService {
             throw new Error('Refresh token is required');
         }
 
-        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+        const refreshSecret = config.security.jwtRefreshSecret;
+        const previousRefreshSecret = config.security.jwtRefreshSecretPrevious;
         let decoded;
         try {
             decoded = jwt.verify(oldRefreshToken, refreshSecret, { algorithms: ['HS256'] });
@@ -531,7 +532,18 @@ export class UserService {
                 throw new Error('Invalid token type for refresh');
             }
         } catch (err) {
-            throw new Error('Invalid or expired refresh token');
+            if (previousRefreshSecret) {
+                try {
+                    decoded = jwt.verify(oldRefreshToken, previousRefreshSecret, { algorithms: ['HS256'] });
+                    if (decoded.tokenType !== 'refresh') {
+                        throw new Error('Invalid token type for refresh');
+                    }
+                } catch {
+                    throw new Error('Invalid or expired refresh token');
+                }
+            } else {
+                throw new Error('Invalid or expired refresh token');
+            }
         }
 
         const user = await this.userRepository.findById(decoded.userId);
@@ -585,6 +597,16 @@ export class UserService {
             return true;
         }
         return false;
+    }
+
+    // Revoke all refresh tokens for a user (e.g. on global session revocation or full logout)
+    async revokeAllUserRefreshTokens(userId) {
+        if (!userId) return false;
+        const user = await this.userRepository.findById(userId);
+        if (!user || !user.refreshTokens) return false;
+        user.refreshTokens.forEach(rt => { rt.revokedAt = new Date(); });
+        await user.save();
+        return true;
     }
 
     // Generate magic link token and log it
@@ -645,7 +667,7 @@ export class UserService {
                     email: userObj.email,
                     subscriptionTier: userObj.subscriptionTier,
                 },
-                config.security.jwtSecret,
+                config.security.jwtAccessSecret,
                 { expiresIn: config.security.jwtExpiresIn }
             );
 

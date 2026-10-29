@@ -45,7 +45,8 @@ const envSchema = z.object({
   // JWT Authentication & Cryptography
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters').default('global-fit-ulttra-dev-access-secret-32-chars-minimum-required!'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters').default('global-fit-ulttra-dev-refresh-secret-32-chars-minimum-required!'),
-  JWT_SECRET: z.string().optional().default('global-fit-ulttra-dev-secret-change-in-production'),
+  JWT_ACCESS_SECRET_PREVIOUS: z.string().optional().default(''),
+  JWT_REFRESH_SECRET_PREVIOUS: z.string().optional().default(''),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   BCRYPT_ROUNDS: z.string().transform(Number).default('12'),
@@ -164,24 +165,29 @@ const parseEnv = () => {
     data.HOST = '0.0.0.0';
   }
 
-  // Enforce strong JWT secrets in production (fail fast)
+  // Enforce strong and distinct JWT secrets (fail fast at startup)
   const DEV_JWT_ACCESS_SECRET = 'global-fit-ulttra-dev-access-secret-32-chars-minimum-required!';
   const DEV_JWT_REFRESH_SECRET = 'global-fit-ulttra-dev-refresh-secret-32-chars-minimum-required!';
-  const DEV_JWT_SECRET = 'global-fit-ulttra-dev-secret-change-in-production';
+
+  if (data.JWT_ACCESS_SECRET === data.JWT_REFRESH_SECRET) {
+    console.error('❌ SECURITY ERROR: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must not be identical.');
+    process.exit(1);
+  }
+
+  if (data.JWT_ACCESS_SECRET.length < 32 || data.JWT_REFRESH_SECRET.length < 32) {
+    console.error('❌ SECURITY ERROR: JWT secrets must be at least 32 characters long.');
+    process.exit(1);
+  }
 
   if (data.NODE_ENV === 'production') {
-    if (data.JWT_ACCESS_SECRET === DEV_JWT_ACCESS_SECRET || data.JWT_ACCESS_SECRET.length < 32) {
+    if (data.JWT_ACCESS_SECRET === DEV_JWT_ACCESS_SECRET) {
       console.error('❌ SECURITY ERROR: JWT_ACCESS_SECRET is insecure or default in production.');
       console.error('   Set a cryptographically strong (min 32 chars) JWT_ACCESS_SECRET in production.');
       process.exit(1);
     }
-    if (data.JWT_REFRESH_SECRET === DEV_JWT_REFRESH_SECRET || data.JWT_REFRESH_SECRET.length < 32) {
+    if (data.JWT_REFRESH_SECRET === DEV_JWT_REFRESH_SECRET) {
       console.error('❌ SECURITY ERROR: JWT_REFRESH_SECRET is insecure or default in production.');
       console.error('   Set a cryptographically strong (min 32 chars) JWT_REFRESH_SECRET in production.');
-      process.exit(1);
-    }
-    if (data.JWT_SECRET === DEV_JWT_SECRET) {
-      console.error('❌ SECURITY ERROR: Legacy JWT_SECRET is set to development default in production.');
       process.exit(1);
     }
   }
@@ -228,7 +234,8 @@ export const config = {
     rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
     jwtAccessSecret: env.JWT_ACCESS_SECRET,
     jwtRefreshSecret: env.JWT_REFRESH_SECRET,
-    jwtSecret: env.JWT_ACCESS_SECRET || env.JWT_SECRET, // Fallback for backwards compatibility
+    jwtAccessSecretPrevious: env.JWT_ACCESS_SECRET_PREVIOUS || null,
+    jwtRefreshSecretPrevious: env.JWT_REFRESH_SECRET_PREVIOUS || null,
     jwtExpiresIn: env.JWT_EXPIRES_IN,
     jwtRefreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
     bcryptRounds: env.BCRYPT_ROUNDS,
@@ -237,7 +244,8 @@ export const config = {
   auth: {
     jwtAccessSecret: env.JWT_ACCESS_SECRET,
     jwtRefreshSecret: env.JWT_REFRESH_SECRET,
-    jwtSecret: env.JWT_ACCESS_SECRET || env.JWT_SECRET,
+    jwtAccessSecretPrevious: env.JWT_ACCESS_SECRET_PREVIOUS || null,
+    jwtRefreshSecretPrevious: env.JWT_REFRESH_SECRET_PREVIOUS || null,
     jwtExpiresIn: env.JWT_EXPIRES_IN,
     jwtRefreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
     bcryptRounds: env.BCRYPT_ROUNDS,

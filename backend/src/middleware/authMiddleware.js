@@ -39,8 +39,18 @@ export const requireAuth = (req, res, next) => {
     }
 
     try {
-        const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
-        const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+        const secret = config.security.jwtAccessSecret;
+        const previousSecret = config.security.jwtAccessSecretPrevious;
+        let payload;
+        try {
+            payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+        } catch (verifyErr) {
+            if (previousSecret && verifyErr.name === 'JsonWebTokenError') {
+                payload = jwt.verify(token, previousSecret, { algorithms: ['HS256'] });
+            } else {
+                throw verifyErr;
+            }
+        }
 
         if (payload.tokenType === 'refresh') {
             return res.status(401).json({
@@ -89,8 +99,18 @@ export const optionalAuth = (req, res, next) => {
 
     if (token) {
         try {
-            const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
-            const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+            const secret = config.security.jwtAccessSecret;
+            const previousSecret = config.security.jwtAccessSecretPrevious;
+            let payload;
+            try {
+                payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+            } catch (verifyErr) {
+                if (previousSecret && verifyErr.name === 'JsonWebTokenError') {
+                    payload = jwt.verify(token, previousSecret, { algorithms: ['HS256'] });
+                } else {
+                    throw verifyErr;
+                }
+            }
             if (payload.tokenType !== 'refresh') {
                 req.user = {
                     ...payload,

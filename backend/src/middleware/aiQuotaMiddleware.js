@@ -52,9 +52,16 @@ export const checkAIQuota = async (req, res, next) => {
         let currentTokens = 0;
 
         if (redis && redis.status === 'ready') {
-            currentTokens = await redis.incrby(quotaKey, estimatedTokens);
-            if (currentTokens === estimatedTokens) {
-                await redis.expire(quotaKey, 86400);
+            try {
+                currentTokens = await redis.incrby(quotaKey, estimatedTokens);
+                if (currentTokens === estimatedTokens) {
+                    await redis.expire(quotaKey, 86400);
+                }
+            } catch (redisErr) {
+                logger.warn('Redis incrby failed during AI quota check, falling back to memory quota', { error: redisErr.message });
+                const entry = memoryQuotas.get(quotaKey) || 0;
+                currentTokens = entry + estimatedTokens;
+                memoryQuotas.set(quotaKey, currentTokens);
             }
         } else {
             const entry = memoryQuotas.get(quotaKey) || 0;
@@ -65,9 +72,13 @@ export const checkAIQuota = async (req, res, next) => {
         if (currentTokens > maxQuota) {
             // Revert reservation if quota exceeded
             if (redis && redis.status === 'ready') {
-                await redis.decrby(quotaKey, estimatedTokens);
+                try {
+                    await redis.decrby(quotaKey, estimatedTokens);
+                } catch (_) {
+                    memoryQuotas.set(quotaKey, Math.max(0, currentTokens - estimatedTokens));
+                }
             } else {
-                memoryQuotas.set(quotaKey, currentTokens - estimatedTokens);
+                memoryQuotas.set(quotaKey, Math.max(0, currentTokens - estimatedTokens));
             }
             logger.warn('AI daily token quota exceeded', { userId, currentTokens, maxQuota });
             return res.status(429).json({
@@ -90,8 +101,14 @@ export const checkAIQuota = async (req, res, next) => {
 
         next();
     } catch (err) {
-        logger.error('Error checking AI quota', { error: err.message });
-        next();
+        logger.error('Error checking AI quota - applying safe throttling', { error: err.message });
+        return res.status(429).json({
+            error: {
+                code: 'E1015',
+                message: 'AI service rate limit/quota verification temporarily unavailable. Please retry shortly.',
+            },
+            requestId: req.requestId,
+        });
     }
 };
 
@@ -106,9 +123,16 @@ export const checkSocketAIQuota = async (userId, estimatedTokens = 100) => {
         let currentTokens = 0;
 
         if (redis && redis.status === 'ready') {
-            currentTokens = await redis.incrby(quotaKey, estimatedTokens);
-            if (currentTokens === estimatedTokens) {
-                await redis.expire(quotaKey, 86400);
+            try {
+                currentTokens = await redis.incrby(quotaKey, estimatedTokens);
+                if (currentTokens === estimatedTokens) {
+                    await redis.expire(quotaKey, 86400);
+                }
+            } catch (redisErr) {
+                logger.warn('Redis error in socket AI quota check, falling back to memory quota', { error: redisErr.message });
+                const entry = memoryQuotas.get(quotaKey) || 0;
+                currentTokens = entry + estimatedTokens;
+                memoryQuotas.set(quotaKey, currentTokens);
             }
         } else {
             const entry = memoryQuotas.get(quotaKey) || 0;
@@ -118,16 +142,20 @@ export const checkSocketAIQuota = async (userId, estimatedTokens = 100) => {
 
         if (currentTokens > maxQuota) {
             if (redis && redis.status === 'ready') {
-                await redis.decrby(quotaKey, estimatedTokens);
+                try {
+                    await redis.decrby(quotaKey, estimatedTokens);
+                } catch (_) {
+                    memoryQuotas.set(quotaKey, Math.max(0, currentTokens - estimatedTokens));
+                }
             } else {
-                memoryQuotas.set(quotaKey, currentTokens - estimatedTokens);
+                memoryQuotas.set(quotaKey, Math.max(0, currentTokens - estimatedTokens));
             }
             return false;
         }
         return true;
     } catch (err) {
-        logger.error('Error checking socket AI quota', { error: err.message });
-        return true;
+        logger.error('Error checking socket AI quota - failing closed', { error: err.message });
+        return false;
     }
 };
 
@@ -140,9 +168,14 @@ export const recordTokenSpend = async (userId, tokensUsed = 500) => {
         const redis = getRedisClient();
 
         if (redis && redis.status === 'ready') {
-            const newTotal = await redis.incrby(quotaKey, tokensUsed);
-            if (newTotal === tokensUsed) {
-                await redis.expire(quotaKey, 86400);
+            try {
+                const newTotal = await redis.incrby(quotaKey, tokensUsed);
+                if (newTotal === tokensUsed) {
+                    await redis.expire(quotaKey, 86400);
+                }
+            } catch {
+                const current = memoryQuotas.get(quotaKey) || 0;
+                memoryQuotas.set(quotaKey, current + tokensUsed);
             }
         } else {
             const current = memoryQuotas.get(quotaKey) || 0;
@@ -155,18 +188,23 @@ export const recordTokenSpend = async (userId, tokensUsed = 500) => {
 
 /**
  * Wraps untrusted text (user prompt or external data) in safe delimiters.
- * Ensures the model treats the content as data, not instruction.
+ * Strips boundary marker strings from untrusted text to prevent early block closing,
+ * removes non-printable control characters, and enforces strict boundary markers.
+ * Note: Reduces risk of prompt injection, cannot mathematically eliminate it.
  */
 export const sanitizeForPrompt = (untrustedText) => {
     if (!untrustedText || typeof untrustedText !== 'string') return '';
     // Strip control characters while preserving valid newlines and spaces
     // eslint-disable-next-line no-control-regex
     const clean = untrustedText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-    return `<<<UNTRUSTED_DATA_START>>>\n${clean}\n<<<UNTRUSTED_DATA_END>>>`;
+    // Strip any boundary marker tags to prevent attackers closing delimiter early
+    const stripped = clean.replace(/<<<UNTRUSTED_(?:DATA|DOCUMENT_CONTENT)_(?:START|END)>>>/gi, '');
+    return `<<<UNTRUSTED_DATA_START>>>\n${stripped}\n<<<UNTRUSTED_DATA_END>>>`;
 };
 
 export default {
     checkAIQuota,
+    checkSocketAIQuota,
     recordTokenSpend,
     sanitizeForPrompt,
 };

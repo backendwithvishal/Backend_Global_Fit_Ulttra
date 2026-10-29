@@ -2,7 +2,7 @@
 
 Real-time financial data aggregator with AI-powered analysis. Pulls from 6+ APIs and streams market data via WebSockets. Built for traders, developers, and anyone who needs reliable market data without managing multiple API integrations.
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+_(LTS)-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-4.x-blue.svg)](https://expressjs.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-4.x-black.svg)](https://socket.io/)
 [![Groq AI](https://img.shields.io/badge/Groq-AI-purple.svg)](https://groq.com/)
@@ -96,7 +96,7 @@ Managing multiple financial data APIs is tedious. Global_Fit_Ulttra solves this 
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+ (LTS)
 - MongoDB 5+
 - Redis 6+
 - Docker (optional but recommended)

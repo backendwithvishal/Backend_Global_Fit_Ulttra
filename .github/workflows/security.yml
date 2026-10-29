@@ -44,8 +44,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-      - name: Run npm audit (high severity threshold)
+      - name: Run npm audit across all package directories (high severity threshold)
         run: |
+          echo "Auditing root workspace..."
+          npm audit --omit=dev --audit-level=high
+          echo "Auditing backend workspace..."
           cd backend
           npm audit --omit=dev --audit-level=high
 

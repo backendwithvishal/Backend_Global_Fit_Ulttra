@@ -74,7 +74,7 @@ services:
       - SETGID
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Error: MONGO_INITDB_ROOT_PASSWORD must be set}
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD:?Error: MONGO_INITDB_ROOT_PASSWORD must be set}"
       MONGO_INITDB_DATABASE: global_fit_ulttra
     volumes:
       - mongo-data:/data/db
@@ -108,7 +108,7 @@ services:
         exec redis-server --requirepass "$${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}" --protected-mode yes
       '
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be set}"
     volumes:
       - redis-data:/data
     deploy:
@@ -135,7 +135,7 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Error: QDRANT_API_KEY must be set}
+      QDRANT__SERVICE__API_KEY: "${QDRANT_API_KEY:?Error: QDRANT_API_KEY must be set}"
       QDRANT__TELEMETRY_DISABLED: "true"
     volumes:
       - qdrant-data:/qdrant/storage
@@ -164,7 +164,7 @@ services:
       - no-new-privileges:true
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-globalfit_user}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Error: RABBITMQ_DEFAULT_PASS must be set}
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:?Error: RABBITMQ_DEFAULT_PASS must be set}"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     deploy:

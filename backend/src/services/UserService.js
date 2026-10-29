@@ -35,27 +35,20 @@ export class UserService {
             delete userObj.twoFactorSecret;
             delete userObj.twoFactorBackupCodes;
 
-            // Generate JWT for auto-login
-            const token = jwt.sign(
-                {
-                    userId: userObj._id,
-                    email: userObj.email,
-                    subscriptionTier: userObj.subscriptionTier || 'Free',
-                },
-                config.security.jwtSecret,
-                { expiresIn: config.security.jwtExpiresIn }
-            );
+            // Generate JWT access & refresh tokens
+            const { accessToken, refreshToken } = this._generateTokenPair(user);
 
-            // Save active session token hash
-            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            // Store refresh token and active session
+            await this._storeRefreshToken(user, refreshToken, '127.0.0.1', 'Initial Registration');
+            const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
             user.activeSessions.push({
                 tokenHash,
-                device: 'Unknown',
-                createdAt: new Date()
+                device: 'Initial Registration',
+                createdAt: new Date(),
             });
             await user.save();
 
-            return { token, user: userObj };
+            return { accessToken, refreshToken, token: accessToken, user: userObj };
         } catch (error) {
             logger.error('Error in createUser', { error: error.message });
             throw error;
@@ -204,12 +197,64 @@ export class UserService {
         }
     }
 
-    // Helper: Basic TOTP verification
+    // Helper: Generate Access and Refresh token pair
+    _generateTokenPair(user) {
+        const payload = {
+            userId: user._id ? user._id.toString() : user.id,
+            email: user.email,
+            role: user.role || 'Member',
+            organizationId: user.organizationId ? user.organizationId.toString() : null,
+            subscriptionTier: user.subscriptionTier || 'Free',
+        };
+
+        const accessSecret = config.security.jwtAccessSecret || config.security.jwtSecret;
+        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+
+        const accessToken = jwt.sign(payload, accessSecret, {
+            expiresIn: config.security.jwtExpiresIn || '15m',
+        });
+
+        const refreshPayload = {
+            userId: payload.userId,
+            tokenType: 'refresh',
+            jti: crypto.randomUUID(),
+        };
+
+        const refreshToken = jwt.sign(refreshPayload, refreshSecret, {
+            expiresIn: config.security.jwtRefreshExpiresIn || '7d',
+        });
+
+        return { accessToken, refreshToken, payload };
+    }
+
+    // Helper: Store hashed refresh token in database
+    async _storeRefreshToken(user, refreshToken, clientIp = 'Unknown', device = 'Unknown') {
+        const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        if (!user.refreshTokens) {
+            user.refreshTokens = [];
+        }
+        if (user.refreshTokens.length > 20) {
+            user.refreshTokens = user.refreshTokens.slice(-19);
+        }
+
+        user.refreshTokens.push({
+            tokenHash,
+            expiresAt,
+            createdAt: new Date(),
+            revokedAt: null,
+            device,
+            ipAddress: clientIp,
+        });
+
+        await user.save();
+        return tokenHash;
+    }
+
+    // Helper: Basic TOTP verification (strictly validates HMAC token against 30s window)
     _verifyTOTP(secret, code) {
-        // Mock verification: in dev, allow '123456' or simple math matching
-        // In product settings, we compare dynamic HMAC based on current 30s window.
-        // For robustness, if code equals 123456 or is valid TOTP:
-        if (code === '123456' || code === '000000') return true;
+        if (!code || typeof code !== 'string') return false;
 
         // Implement actual key validation based on time step
         try {
@@ -324,6 +369,11 @@ export class UserService {
                 throw new Error('Invalid credentials');
             }
 
+            // Check if account is temporarily locked due to excessive failed attempts
+            if (typeof user.isLocked === 'function' && user.isLocked()) {
+                throw new Error('Account is temporarily locked due to excessive failed attempts. Try again in 15 minutes.');
+            }
+
             if (!user.isActive) {
                 throw new Error('Account is inactive');
             }
@@ -331,6 +381,9 @@ export class UserService {
             // Compare password
             const isPasswordValid = await user.comparePassword(password);
             if (!isPasswordValid) {
+                if (typeof user.incrementLoginAttempts === 'function') {
+                    await user.incrementLoginAttempts();
+                }
                 throw new Error('Invalid credentials');
             }
 
@@ -356,8 +409,16 @@ export class UserService {
                 }
 
                 if (!mfaValid) {
+                    if (typeof user.incrementLoginAttempts === 'function') {
+                        await user.incrementLoginAttempts();
+                    }
                     throw new Error('Invalid MFA code');
                 }
+            }
+
+            // Reset failed login attempts on successful authentication
+            if (typeof user.resetLoginAttempts === 'function') {
+                await user.resetLoginAttempts();
             }
 
             // Login audit & logging history
@@ -372,6 +433,20 @@ export class UserService {
                 user.loginHistory.shift();
             }
 
+            // Generate JWT access & refresh tokens
+            const { accessToken, refreshToken } = this._generateTokenPair(user);
+
+            // Store refresh token
+            await this._storeRefreshToken(user, refreshToken, clientIp, device);
+
+            // Save active session token hash for backward compatibility
+            const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
+            user.activeSessions.push({
+                tokenHash,
+                device,
+                createdAt: new Date()
+            });
+
             await user.save();
             logger.info('User logged in successfully', { userId: user._id, email });
 
@@ -380,31 +455,83 @@ export class UserService {
             delete userObj.twoFactorSecret;
             delete userObj.twoFactorBackupCodes;
 
-            // Generate JWT
-            const token = jwt.sign(
-                {
-                    userId: userObj._id,
-                    email: userObj.email,
-                    subscriptionTier: userObj.subscriptionTier,
-                },
-                config.security.jwtSecret,
-                { expiresIn: config.security.jwtExpiresIn }
-            );
-
-            // Save active session token hash
-            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-            user.activeSessions.push({
-                tokenHash,
-                device,
-                createdAt: new Date()
-            });
-            await user.save();
-
-            return { token, user: userObj };
+            return {
+                accessToken,
+                refreshToken,
+                token: accessToken, // for backward compatibility
+                user: userObj,
+            };
         } catch (error) {
             logger.error('Error in loginUser', { email, error: error.message });
             throw error;
         }
+    }
+
+    // Refresh token rotation - verifies old refresh token, revokes it, and issues new pair
+    async rotateRefreshToken(oldRefreshToken, clientIp = 'Unknown', device = 'Unknown') {
+        if (!oldRefreshToken) {
+            throw new Error('Refresh token is required');
+        }
+
+        const refreshSecret = config.security.jwtRefreshSecret || config.security.jwtSecret;
+        let decoded;
+        try {
+            decoded = jwt.verify(oldRefreshToken, refreshSecret);
+        } catch (err) {
+            throw new Error('Invalid or expired refresh token');
+        }
+
+        const user = await this.userRepository.findById(decoded.userId);
+        if (!user || !user.isActive) {
+            throw new Error('User not found or inactive');
+        }
+
+        const oldHash = crypto.createHash('sha256').update(oldRefreshToken).digest('hex');
+        const tokenRecord = user.refreshTokens?.find(rt => rt.tokenHash === oldHash);
+
+        if (!tokenRecord || tokenRecord.revokedAt) {
+            // Revoked token re-used -> possible token theft! Revoke all tokens for this user.
+            if (user.refreshTokens) {
+                user.refreshTokens.forEach(rt => { rt.revokedAt = new Date(); });
+                await user.save();
+            }
+            throw new Error('Invalid or revoked refresh token');
+        }
+
+        // Revoke the old refresh token
+        tokenRecord.revokedAt = new Date();
+
+        // Issue new token pair
+        const { accessToken, refreshToken } = this._generateTokenPair(user);
+        await this._storeRefreshToken(user, refreshToken, clientIp, device);
+
+        const userObj = user.toObject();
+        delete userObj.passwordHash;
+        delete userObj.twoFactorSecret;
+        delete userObj.twoFactorBackupCodes;
+
+        return {
+            accessToken,
+            refreshToken,
+            token: accessToken,
+            user: userObj,
+        };
+    }
+
+    // Revoke refresh token (e.g. on logout)
+    async revokeRefreshToken(userId, refreshToken) {
+        if (!userId || !refreshToken) return false;
+        const user = await this.userRepository.findById(userId);
+        if (!user || !user.refreshTokens) return false;
+
+        const hash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        const tokenRecord = user.refreshTokens.find(rt => rt.tokenHash === hash);
+        if (tokenRecord) {
+            tokenRecord.revokedAt = new Date();
+            await user.save();
+            return true;
+        }
+        return false;
     }
 
     // Generate magic link token and log it

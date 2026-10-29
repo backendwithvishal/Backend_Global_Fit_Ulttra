@@ -42,9 +42,19 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
 
-  // JWT Authentication
-  JWT_SECRET: z.string().default('global-fit-ulttra-dev-secret-change-in-production'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  // JWT Authentication & Cryptography
+  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters').default('global-fit-ulttra-dev-access-secret-32-chars-minimum-required!'),
+  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters').default('global-fit-ulttra-dev-refresh-secret-32-chars-minimum-required!'),
+  JWT_SECRET: z.string().optional().default('global-fit-ulttra-dev-secret-change-in-production'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  BCRYPT_ROUNDS: z.string().transform(Number).default('12'),
+
+  // AI Quota & Limits
+  AI_DAILY_TOKEN_QUOTA: z.string().transform(Number).default('50000'),
+  AI_MAX_PROMPT_LENGTH: z.string().transform(Number).default('4000'),
+  AI_MAX_TOKENS: z.string().transform(Number).default('2048'),
+  RAG_MAX_FILE_SIZE_BYTES: z.string().transform(Number).default('10485760'),
 
   // Circuit breaker
   CIRCUIT_BREAKER_THRESHOLD: z.string().transform(Number).default('3'),
@@ -154,13 +164,26 @@ const parseEnv = () => {
     data.HOST = '0.0.0.0';
   }
 
-  // Warn loudly if JWT_SECRET is the development default in production
+  // Enforce strong JWT secrets in production (fail fast)
+  const DEV_JWT_ACCESS_SECRET = 'global-fit-ulttra-dev-access-secret-32-chars-minimum-required!';
+  const DEV_JWT_REFRESH_SECRET = 'global-fit-ulttra-dev-refresh-secret-32-chars-minimum-required!';
   const DEV_JWT_SECRET = 'global-fit-ulttra-dev-secret-change-in-production';
-  if (data.NODE_ENV === 'production' && data.JWT_SECRET === DEV_JWT_SECRET) {
-    console.error('❌ SECURITY ERROR: JWT_SECRET is still set to the development default in production.');
-    console.error('   Set a strong random JWT_SECRET in your production environment variables.');
-    console.error('   Generate one: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
-    process.exit(1);
+
+  if (data.NODE_ENV === 'production') {
+    if (data.JWT_ACCESS_SECRET === DEV_JWT_ACCESS_SECRET || data.JWT_ACCESS_SECRET.length < 32) {
+      console.error('❌ SECURITY ERROR: JWT_ACCESS_SECRET is insecure or default in production.');
+      console.error('   Set a cryptographically strong (min 32 chars) JWT_ACCESS_SECRET in production.');
+      process.exit(1);
+    }
+    if (data.JWT_REFRESH_SECRET === DEV_JWT_REFRESH_SECRET || data.JWT_REFRESH_SECRET.length < 32) {
+      console.error('❌ SECURITY ERROR: JWT_REFRESH_SECRET is insecure or default in production.');
+      console.error('   Set a cryptographically strong (min 32 chars) JWT_REFRESH_SECRET in production.');
+      process.exit(1);
+    }
+    if (data.JWT_SECRET === DEV_JWT_SECRET) {
+      console.error('❌ SECURITY ERROR: Legacy JWT_SECRET is set to development default in production.');
+      process.exit(1);
+    }
   }
 
   return data;
@@ -203,8 +226,21 @@ export const config = {
     corsOrigins: env.CORS_ORIGIN.split(',').map(s => s.trim()),
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
-    jwtSecret: env.JWT_SECRET,
+    jwtAccessSecret: env.JWT_ACCESS_SECRET,
+    jwtRefreshSecret: env.JWT_REFRESH_SECRET,
+    jwtSecret: env.JWT_ACCESS_SECRET || env.JWT_SECRET, // Fallback for backwards compatibility
     jwtExpiresIn: env.JWT_EXPIRES_IN,
+    jwtRefreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+    bcryptRounds: env.BCRYPT_ROUNDS,
+  },
+
+  auth: {
+    jwtAccessSecret: env.JWT_ACCESS_SECRET,
+    jwtRefreshSecret: env.JWT_REFRESH_SECRET,
+    jwtSecret: env.JWT_ACCESS_SECRET || env.JWT_SECRET,
+    jwtExpiresIn: env.JWT_EXPIRES_IN,
+    jwtRefreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+    bcryptRounds: env.BCRYPT_ROUNDS,
   },
 
   circuitBreaker: {
@@ -236,6 +272,9 @@ export const config = {
     groqApiKey: env.GROQ_API_KEY,
     primaryModel: env.GROQ_PRIMARY_MODEL,
     fastModel: env.GROQ_FAST_MODEL,
+    dailyTokenQuota: env.AI_DAILY_TOKEN_QUOTA,
+    maxPromptLength: env.AI_MAX_PROMPT_LENGTH,
+    maxTokens: env.AI_MAX_TOKENS,
   },
 
   qdrant: {
@@ -271,6 +310,7 @@ export const config = {
     rrfK: env.RAG_RRF_K,
     confidenceThreshold: env.RAG_CONFIDENCE_THRESHOLD,
     maxAgentIterations: env.RAG_MAX_AGENT_ITERATIONS,
+    maxFileSizeBytes: env.RAG_MAX_FILE_SIZE_BYTES,
   },
 
   keepAlive: {

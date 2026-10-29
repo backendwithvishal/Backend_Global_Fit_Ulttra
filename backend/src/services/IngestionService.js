@@ -94,6 +94,9 @@ export class IngestionService {
    */
   async extractText(buffer, fileType = 'pdf') {
     if (fileType.toLowerCase() === 'pdf') {
+      if (!buffer || buffer.length < 5 || !buffer.subarray(0, 4).toString('ascii').startsWith('%PDF')) {
+        throw new Error('Invalid PDF document: Missing %PDF- magic bytes header');
+      }
       try {
         const parser = new PDFParse(new Uint8Array(buffer));
         await parser.load();

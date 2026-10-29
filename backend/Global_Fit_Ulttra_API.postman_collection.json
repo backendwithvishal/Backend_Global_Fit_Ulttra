@@ -17,6 +17,16 @@
             "type": "string"
         }
     ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{jwtToken}}",
+                "type": "string"
+            }
+        ]
+    },
     "item": [
         {
             "name": "Health",

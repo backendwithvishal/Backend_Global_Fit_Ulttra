@@ -14,6 +14,9 @@ export const createAuthRoutes = (controller) => {
     // Logout
     router.post('/logout', (req, res, next) => controller.logout(req, res, next));
 
+    // Token Refresh (Rotation)
+    router.post('/refresh', (req, res, next) => controller.refreshToken(req, res, next));
+
     // Email verification
     router.get('/verify-email', (req, res, next) => controller.verifyEmail(req, res, next));
 

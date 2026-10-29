@@ -237,7 +237,7 @@ export class MetricEvaluator {
   /**
    * Root-cause failure diagnosis distinguishing Cases A through E.
    */
-  diagnoseFailureMode({ sample, metrics, result, retrievedChunks }) {
+  diagnoseFailureMode({ sample, metrics, result: _result, retrievedChunks }) {
     const isExpectedRefusal = sample.expected_behavior === 'REFUSE' || sample.expected_behavior === 'SECURITY_ISOLATION';
 
     // Case E: Safe limitation acknowledgement
@@ -259,7 +259,6 @@ export class MetricEvaluator {
 
     // Check Case A: Retrieval Failure
     const retrievalRecall = metrics.context_recall?.score;
-    const retrievalPrecision = metrics.context_precision?.score;
     if (retrievedChunks.length === 0 || (retrievalRecall !== null && retrievalRecall < 0.40)) {
       return {
         classification: 'CASE_A_RETRIEVAL_FAILURE',

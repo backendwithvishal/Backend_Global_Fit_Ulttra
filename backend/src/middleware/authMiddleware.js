@@ -14,7 +14,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/environment.js';
 
 /**
- * Require a valid JWT token.
+ * Require a valid JWT access token.
  * Returns 401 if missing/invalid, 403 if expired.
  */
 export const requireAuth = (req, res, next) => {
@@ -28,24 +28,31 @@ export const requireAuth = (req, res, next) => {
         const cookies = Object.fromEntries(
             req.headers.cookie.split(';').map(c => c.trim().split('='))
         );
-        token = cookies['token'] || cookies['gfu_token'];
+        token = cookies['token'] || cookies['accessToken'] || cookies['gfu_token'];
     }
 
     if (!token) {
         return res.status(401).json({
-            error: { code: 'E1003', message: 'Authentication required. Please provide a Bearer token or cookie session.' },
+            error: { code: 'E1003', message: 'Authentication required. Please provide a Bearer token or session cookie.' },
             requestId: req.requestId,
         });
     }
 
     try {
-        const payload = jwt.verify(token, config.security.jwtSecret);
-        req.user = payload; // { userId, email, role, organizationId, iat, exp }
+        const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
+        const payload = jwt.verify(token, secret);
+        req.user = {
+            ...payload,
+            // Normalize ID: ensure both userId and id are accessible
+            userId: payload.userId || payload.id,
+            id: payload.userId || payload.id,
+            role: payload.role || 'Member',
+        };
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
             return res.status(403).json({
-                error: { code: 'E1006', message: 'Token expired. Please sign in again.' },
+                error: { code: 'E1006', message: 'Token expired. Please refresh your session or sign in again.' },
                 requestId: req.requestId,
             });
         }
@@ -69,12 +76,19 @@ export const optionalAuth = (req, res, next) => {
         const cookies = Object.fromEntries(
             req.headers.cookie.split(';').map(c => c.trim().split('='))
         );
-        token = cookies['token'] || cookies['gfu_token'];
+        token = cookies['token'] || cookies['accessToken'] || cookies['gfu_token'];
     }
 
     if (token) {
         try {
-            req.user = jwt.verify(token, config.security.jwtSecret);
+            const secret = config.security.jwtAccessSecret || config.security.jwtSecret;
+            const payload = jwt.verify(token, secret);
+            req.user = {
+                ...payload,
+                userId: payload.userId || payload.id,
+                id: payload.userId || payload.id,
+                role: payload.role || 'Member',
+            };
         } catch {
             // Invalid token — treat as unauthenticated
         }
@@ -84,9 +98,12 @@ export const optionalAuth = (req, res, next) => {
 };
 
 /**
- * Route middleware to enforce specific user roles.
+ * Route middleware to enforce specific user roles (case-insensitive).
  */
 export const checkRole = (allowedRoles) => {
+    const normalizedAllowed = (Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles])
+        .map(r => String(r).toLowerCase());
+
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({
@@ -95,11 +112,43 @@ export const checkRole = (allowedRoles) => {
             });
         }
 
-        // If user has a role, compare it
-        const userRole = req.user.role || 'Member';
-        if (!allowedRoles.includes(userRole)) {
+        const userRole = (req.user.role || 'Member').toLowerCase();
+        if (!normalizedAllowed.includes(userRole)) {
             return res.status(403).json({
                 error: { code: 'E1009', message: 'Forbidden. Insufficient permissions.' },
+                requestId: req.requestId,
+            });
+        }
+
+        next();
+    };
+};
+
+/**
+ * Shorthand for checkRole (e.g., requireRole('admin') or requireRole(['Admin', 'SuperAdmin']))
+ */
+export const requireRole = (role) => checkRole(role);
+
+/**
+ * IDOR guard: verifies that the authenticated user owns the resource or is an Admin.
+ * Matches `req.user.userId` against `req.params[paramKey]`.
+ */
+export const requireSelfOrAdmin = (paramKey = 'id') => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                error: { code: 'E1003', message: 'Authentication required.' },
+                requestId: req.requestId,
+            });
+        }
+
+        const targetUserId = req.params[paramKey];
+        const isSelf = String(req.user.userId) === String(targetUserId);
+        const isAdmin = (req.user.role || '').toLowerCase() === 'admin';
+
+        if (!isSelf && !isAdmin) {
+            return res.status(403).json({
+                error: { code: 'E1009', message: 'Forbidden. You do not have permission to access or modify this user.' },
                 requestId: req.requestId,
             });
         }

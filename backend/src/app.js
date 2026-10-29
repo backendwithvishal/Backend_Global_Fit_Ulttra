@@ -25,6 +25,7 @@
  */
 
 import express from 'express';
+import mongoSanitize from 'express-mongo-sanitize';
 import { logger } from './config/index.js';
 import {
     requestIdMiddleware,
@@ -60,6 +61,9 @@ import { createAIRoutes } from './routes/aiRoutes.js';
 export const createApp = () => {
     const app = express();
 
+    // Disable x-powered-by header to avoid information disclosure
+    app.disable('x-powered-by');
+
     // Enable trust for the first reverse proxy (Render.com, Nginx, etc.)
     // Required for accurate client IP in rate limiting and logging
     app.set('trust proxy', 1);
@@ -72,6 +76,10 @@ export const createApp = () => {
     // 2MB limit allows financial document ingestion and bulk metadata while preventing unbounded payload attacks
     app.use(express.json({ limit: '2mb' }));
     app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+    // ─── NoSQL Injection Defense ─────────────────────────────────────
+    // Sanitizes user-supplied data to prevent MongoDB Operator Injection ($where, $gt, etc.)
+    app.use(mongoSanitize({ replaceWith: '_' }));
 
     // ─── Tracing & Logging ───────────────────────────────────────────
     app.use(requestIdMiddleware); // Attach unique X-Request-Id for distributed tracing

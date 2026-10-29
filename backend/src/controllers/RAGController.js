@@ -95,23 +95,50 @@ export class RAGController {
       }
 
       const { filePath, title, symbol, filingType, source, isPublic } = req.body || {};
+      const uploadedBy = req.user?.userId || req.user?.id || null;
+      const organizationId = req.user?.organizationId || null;
 
       let result;
-      if (filePath) {
-        result = await this.ingestionService.ingestFile(filePath, {
+      if (req.file) {
+        // Handle uploaded file (authenticated admin upload)
+        result = await this.ingestionService.ingestFile(req.file.path, {
+          title: title || req.file.originalname,
+          symbol,
+          filingType,
+          source: source || 'MANUAL_UPLOAD',
+          isPublic: isPublic !== undefined ? isPublic : true,
+          uploadedBy,
+          organizationId,
+        });
+      } else if (filePath) {
+        // Restrict explicit file paths to the authorized financial documents directory
+        const resolvedTarget = path.resolve(filePath);
+        const resolvedDefault = path.resolve(DEFAULT_DOCS_DIR);
+        if (!resolvedTarget.startsWith(resolvedDefault)) {
+          return res.status(403).json({
+            error: {
+              code: 'E1019',
+              message: 'Forbidden: Ingestion path must reside within the authorized documents repository.',
+            },
+            requestId: req.requestId,
+          });
+        }
+        result = await this.ingestionService.ingestFile(resolvedTarget, {
           title,
           symbol,
           filingType,
-          source,
-          isPublic,
-          uploadedBy: req.user?.id || null,
-          organizationId: req.user?.organizationId || null,
+          source: source || 'SYSTEM',
+          isPublic: isPublic !== undefined ? isPublic : true,
+          uploadedBy,
+          organizationId,
         });
       } else {
         // Ingest the default financial documents directory
         result = await this.ingestionService.ingestDirectory(DEFAULT_DOCS_DIR, {
           source: 'SYSTEM',
           isPublic: true,
+          uploadedBy,
+          organizationId,
         });
       }
 

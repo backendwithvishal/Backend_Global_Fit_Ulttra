@@ -1,0 +1,53 @@
+# Caddyfile - Hardened Reverse Proxy Configuration for Global_Fit_Ulttra
+
+{
+    # Global options
+    admin off
+    auto_https disable_redirects
+}
+
+:80 {
+    # Force HTTPS redirect in production environments
+    redir https://{host}{uri} permanent
+}
+
+:443 {
+    tls internal {
+        protocols tls1.2 tls1.3
+    }
+
+    # Standard security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # Request body size limit (10MB for RAG uploads)
+    request_body {
+        max_size 10MB
+    }
+
+    # WebSocket upgrade and API reverse proxy
+    reverse_proxy app:4000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Health checks
+        health_uri /api/v1/health
+        health_interval 15s
+        health_timeout 5s
+    }
+
+    # Log access in structured format
+    log {
+        output stdout
+        format json
+    }
+}

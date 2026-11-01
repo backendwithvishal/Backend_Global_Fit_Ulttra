@@ -95,23 +95,50 @@ export class RAGController {
       }
 
       const { filePath, title, symbol, filingType, source, isPublic } = req.body || {};
+      const uploadedBy = req.user?.userId || req.user?.id || null;
+      const organizationId = req.user?.organizationId || null;
 
       let result;
-      if (filePath) {
-        result = await this.ingestionService.ingestFile(filePath, {
+      if (req.file) {
+        // Handle uploaded file (authenticated admin upload)
+        result = await this.ingestionService.ingestFile(req.file.path, {
+          title: title || req.file.originalname,
+          symbol,
+          filingType,
+          source: source || 'MANUAL_UPLOAD',
+          isPublic: isPublic !== undefined ? isPublic : true,
+          uploadedBy,
+          organizationId,
+        });
+      } else if (filePath) {
+        // Restrict explicit file paths to the authorized financial documents directory
+        const resolvedTarget = path.resolve(filePath);
+        const resolvedDefault = path.resolve(DEFAULT_DOCS_DIR);
+        if (!resolvedTarget.startsWith(resolvedDefault)) {
+          return res.status(403).json({
+            error: {
+              code: 'E1019',
+              message: 'Forbidden: Ingestion path must reside within the authorized documents repository.',
+            },
+            requestId: req.requestId,
+          });
+        }
+        result = await this.ingestionService.ingestFile(resolvedTarget, {
           title,
           symbol,
           filingType,
-          source,
-          isPublic,
-          uploadedBy: req.user?.id || null,
-          organizationId: req.user?.organizationId || null,
+          source: source || 'SYSTEM',
+          isPublic: isPublic !== undefined ? isPublic : true,
+          uploadedBy,
+          organizationId,
         });
       } else {
         // Ingest the default financial documents directory
         result = await this.ingestionService.ingestDirectory(DEFAULT_DOCS_DIR, {
           source: 'SYSTEM',
           isPublic: true,
+          uploadedBy,
+          organizationId,
         });
       }
 
@@ -140,11 +167,15 @@ export class RAGController {
       if (filingType) query.filingType = filingType.toUpperCase();
       if (status) query.status = status;
 
-      if (req.user?.organizationId) {
-        query.$or = [
-          { organizationId: req.user.organizationId },
-          { isPublic: true },
-        ];
+      if (req.user?.role !== 'Admin') {
+        if (req.user?.organizationId) {
+          query.$or = [
+            { organizationId: req.user.organizationId },
+            { isPublic: true },
+          ];
+        } else {
+          query.isPublic = true;
+        }
       }
 
       const skip = (Number(page) - 1) * Number(limit);
@@ -190,6 +221,19 @@ export class RAGController {
         });
       }
 
+      const isAllowed =
+        req.user?.role === 'Admin' ||
+        document.isPublic === true ||
+        (req.user?.organizationId && document.organizationId && document.organizationId.toString() === req.user.organizationId.toString());
+
+      if (!isAllowed) {
+        return res.status(403).json({
+          success: false,
+          error: { code: 'E1019', message: 'Forbidden: You do not have access to this document' },
+          requestId: req.requestId,
+        });
+      }
+
       const chunks = await DocumentChunk.find({ documentId: document._id })
         .select('chunkIndex content tokenCount metadata')
         .sort({ chunkIndex: 1 })
@@ -221,6 +265,18 @@ export class RAGController {
         return res.status(404).json({
           success: false,
           error: { code: 'E4004', message: 'Document not found' },
+          requestId: req.requestId,
+        });
+      }
+
+      const isAllowed =
+        req.user?.role === 'Admin' ||
+        (req.user?.organizationId && document.organizationId && document.organizationId.toString() === req.user.organizationId.toString());
+
+      if (!isAllowed) {
+        return res.status(403).json({
+          success: false,
+          error: { code: 'E1019', message: 'Forbidden: You do not have permission to delete this document' },
           requestId: req.requestId,
         });
       }

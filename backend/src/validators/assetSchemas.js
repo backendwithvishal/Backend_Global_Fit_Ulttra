@@ -76,7 +76,7 @@ export const deleteAssetSchema = getAssetSchema;
 export const searchAssetsSchema = z.object({
     query: z.object({
         type: z.enum(['stock', 'crypto', 'forex', 'commodity', 'index']).optional(),
-        search: z.string().optional(),
+        search: z.string().max(100, 'Search query too long').optional(),
         isActive: z.enum(['true', 'false']).transform(val => val === 'true').optional(),
         page: z.string().regex(/^\d+$/).transform(Number).optional(),
         limit: z.string().regex(/^\d+$/).transform(Number).optional(),

@@ -1,37 +1,47 @@
-# Stage 1: Production
-FROM node:20-alpine AS production
-
-# Set environment
-ENV NODE_ENV=production
+# Global_Fit_Ulttra - Hardened Production Dockerfile
+# Stage 1: Dependency builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
+COPY backend/package*.json ./
 
-# Create non-root user for security
+# Install production dependencies only
+RUN npm ci --omit=dev --omit=optional && npm cache clean --force
+
+# Stage 2: Final Minimal Runtime Image
+FROM node:22-alpine AS production
+
+# Install tini for reliable PID 1 signal forwarding and zombie reaping
+RUN apk add --no-cache tini
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Create dedicated unprivileged user and group
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package files
-COPY backend/package*.json ./
+# Copy installed production node_modules from builder
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs backend/package*.json ./
 
-# Install only production dependencies (omit dev & optional dependencies like sharp)
-RUN npm ci --omit=dev --omit=optional && npm cache clean --force
+# Copy only production application code (exclude docs, examples, tests, benchmarks)
+COPY --chown=nodejs:nodejs backend/src ./src
+COPY --chown=nodejs:nodejs backend/server.js ./server.js
 
-# Copy backend source code
-COPY backend/src ./src
-COPY backend/server.js ./server.js
+# Create runtime directories for logs and RAG uploads outside web root with correct ownership
+RUN mkdir -p logs uploads/rag data/financial_documents && \
+    chown -R nodejs:nodejs logs uploads data
 
-# Create logs directory
-RUN mkdir -p logs && chown -R nodejs:nodejs logs
-
-# Switch to non-root user
+# Switch to unprivileged runtime user
 USER nodejs
 
-# Expose port (Render overrides this via $PORT env var at runtime)
-EXPOSE 4000
+# Expose standardized application port (10000 for Render / container runtime)
+EXPOSE 10000
 
-# Health check — uses $PORT so it works on Render and locally
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "const port = process.env.PORT || 4000; require('http').get('http://0.0.0.0:' + port + '/api/v1/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+# Container healthcheck querying internal loopback
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD node -e "const port = process.env.PORT || 10000; import('http').then(h => h.get('http://127.0.0.1:' + port + '/api/v1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)))"
 
-# Start application
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server.js"]

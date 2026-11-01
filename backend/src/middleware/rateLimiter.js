@@ -1,17 +1,92 @@
 // Rate limiting - protects API from abuse with tiered limits
-// Auth: 5/15min, Public: 100/15min, Authenticated: 1000/15min, AI: 10/1min
+// Auth: 5/15min, Public: 100/15min, Authenticated: 1000/15min, AI: 10/1min, Admin: 20/15min
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { MemoryStore } from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
 import { config } from '../config/environment.js';
 import { logger } from '../config/logger.js';
+import { getRedisClient } from '../config/redis.js';
 
-const FIFTEEN_MINUTES_MS = config.security.rateLimitWindowMs;
+const FIFTEEN_MINUTES_MS = config.security.rateLimitWindowMs || 15 * 60 * 1000;
 const ONE_MINUTE_MS = 60 * 1000;
+
+/**
+ * Resilient rate-limit store that dynamically delegates to RedisStore
+ * when Redis is connected and healthy, falling back seamlessly to MemoryStore.
+ */
+class ResilientRateLimitStore {
+    constructor(prefix) {
+        this.prefix = prefix;
+        this.memoryStore = new MemoryStore();
+        this.redisStore = null;
+        this.options = null;
+    }
+
+    init(options) {
+        this.options = options;
+        if (typeof this.memoryStore.init === 'function') {
+            this.memoryStore.init(options);
+        }
+    }
+
+    _getActiveStore() {
+        const client = getRedisClient();
+        if (client && client.status === 'ready') {
+            if (!this.redisStore) {
+                try {
+                    this.redisStore = new RedisStore({
+                        sendCommand: (...args) => client.call(...args),
+                        prefix: `rl:${this.prefix}:`,
+                    });
+                    if (this.options && typeof this.redisStore.init === 'function') {
+                        this.redisStore.init(this.options);
+                    }
+                } catch (e) {
+                    logger.warn('Failed to initialize RedisStore for rate limiter, using MemoryStore', { error: e.message });
+                    return this.memoryStore;
+                }
+            }
+            return this.redisStore;
+        }
+        return this.memoryStore;
+    }
+
+    async increment(key) {
+        try {
+            return await this._getActiveStore().increment(key);
+        } catch (err) {
+            logger.warn('Rate limit increment failed on active store, falling back to memory', { error: err.message });
+            return this.memoryStore.increment(key);
+        }
+    }
+
+    async decrement(key) {
+        try {
+            return await this._getActiveStore().decrement(key);
+        } catch (err) {
+            return this.memoryStore.decrement(key);
+        }
+    }
+
+    async resetKey(key) {
+        try {
+            return await this._getActiveStore().resetKey(key);
+        } catch (err) {
+            return this.memoryStore.resetKey(key);
+        }
+    }
+
+    async resetAll() {
+        if (typeof this._getActiveStore().resetAll === 'function') {
+            return this._getActiveStore().resetAll();
+        }
+    }
+}
 
 // Helper: prefer user ID over IP for authenticated requests
 const createHybridKeyGenerator = (prefix) => {
     return (req) => {
-        const identifier = req.user?.id || req.ip;
+        const identifier = req.user?.userId || req.user?.id || req.ip;
         return `${prefix}:${identifier}`;
     };
 };
@@ -24,7 +99,7 @@ const createLimitHandler = (context) => {
             path: req.path,
             method: req.method,
             requestId: req.requestId,
-            userId: req.user?.id || 'anonymous',
+            userId: req.user?.userId || req.user?.id || 'anonymous',
         });
         res.status(429).json(options.message);
     };
@@ -44,13 +119,14 @@ export const authRateLimiter = rateLimit({
     standardHeaders: true,   // Send `RateLimit-*` headers (RFC standard)
     legacyHeaders: false,    // Disable deprecated `X-RateLimit-*` headers
     keyGenerator: (req) => req.ip,  // Always IP-based for auth (user not yet identified)
+    store: new ResilientRateLimitStore('auth'),
     handler: createLimitHandler('Auth'),
 });
 
 // Global API rate limiter - 100 requests per 15 minutes
 export const globalRateLimiter = rateLimit({
     windowMs: FIFTEEN_MINUTES_MS,
-    max: config.security.rateLimitMaxRequests,  // Default: 100
+    max: config.security.rateLimitMaxRequests || 100,
     message: {
         error: {
             code: 'E1002',
@@ -60,6 +136,7 @@ export const globalRateLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    store: new ResilientRateLimitStore('global'),
     handler: createLimitHandler('Global'),
 });
 
@@ -77,6 +154,7 @@ export const authenticatedUserRateLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: createHybridKeyGenerator('user'),
+    store: new ResilientRateLimitStore('user'),
     handler: createLimitHandler('Authenticated User'),
 });
 
@@ -93,6 +171,8 @@ export const adminRateLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: createHybridKeyGenerator('admin'),
+    store: new ResilientRateLimitStore('admin'),
     handler: createLimitHandler('Admin'),
 });
 
@@ -110,6 +190,7 @@ export const aiRateLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: createHybridKeyGenerator('ai'),
+    store: new ResilientRateLimitStore('ai'),
     handler: createLimitHandler('AI'),
 });
 

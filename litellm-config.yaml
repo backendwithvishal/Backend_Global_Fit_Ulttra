@@ -1,7 +1,12 @@
 # litellm-config.yaml
-# Global_Fit_Ulttra - Self-Hosted LiteLLM AI Gateway Configuration
-# Runs locally for $0 via Docker Compose (ghcr.io/berriai/litellm:main-latest)
-# Provides unified OpenAI-compatible endpoint: http://localhost:8000/v1
+# Global_Fit_Ulttra - Hardened Self-Hosted LiteLLM Gateway Configuration
+# All credentials sourced strictly via environment variables (os.environ/...)
+# Unauthenticated and public admin endpoints disabled.
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  disable_admin_ui: true
+  database_connection_pool_limit: 10
 
 model_list:
   # Primary Financial Analysis Model (Groq LLaMA 3.3 70B)

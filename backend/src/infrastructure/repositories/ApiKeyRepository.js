@@ -43,6 +43,15 @@ export class ApiKeyRepository {
         }
     }
 
+    async findById(id) {
+        try {
+            return await ApiKey.findById(id);
+        } catch (error) {
+            logger.error('Error in ApiKeyRepository.findById', { id, error: error.message });
+            throw error;
+        }
+    }
+
     async deactivate(id) {
         try {
             return await ApiKey.findByIdAndUpdate(id, { $set: { isActive: false } }, { new: true });

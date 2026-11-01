@@ -1,3 +1,6 @@
+import jwt from 'jsonwebtoken';
+import { config } from '../config/environment.js';
+
 export class AuthController {
     constructor({ userService }) {
         this.userService = userService;
@@ -36,11 +39,20 @@ export class AuthController {
                 });
             }
 
-            // Set cookie for secure session
-            res.cookie('token', result.token, {
+            const isProd = process.env.NODE_ENV === 'production';
+
+            // Set cookies for secure access and refresh sessions
+            res.cookie('token', result.accessToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: isProd,
                 sameSite: 'strict',
+                maxAge: 15 * 60 * 1000 // 15 minutes
+            });
+            res.cookie('refreshToken', result.refreshToken, {
+                httpOnly: true,
+                secure: isProd,
+                sameSite: 'strict',
+                path: '/api/v1/auth/refresh',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
 
@@ -48,10 +60,15 @@ export class AuthController {
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),
                 message: 'Login successful',
-                token: result.token,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                token: result.accessToken, // Backwards compatibility
                 user: result.user
             });
         } catch (error) {
+            if (error.message && error.message.includes('locked')) {
+                return res.status(423).json({ error: error.message, requestId: req.requestId });
+            }
             if (error.message === 'Invalid credentials' || error.message === 'Invalid MFA code') {
                 return res.status(401).json({ error: error.message, requestId: req.requestId });
             }
@@ -62,9 +79,106 @@ export class AuthController {
         }
     }
 
+    async refreshToken(req, res, _next) {
+        try {
+            let refreshToken = req.body?.refreshToken;
+            if (!refreshToken && req.headers.cookie) {
+                const cookies = Object.fromEntries(
+                    req.headers.cookie.split(';').map(c => c.trim().split('='))
+                );
+                refreshToken = cookies['refreshToken'];
+            }
+
+            if (!refreshToken) {
+                return res.status(400).json({
+                    error: 'Refresh token is required in request body or cookie',
+                    requestId: req.requestId,
+                });
+            }
+
+            const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+            const userAgent = req.headers['user-agent'] || 'Unknown';
+
+            const result = await this.userService.rotateRefreshToken(refreshToken, clientIp, userAgent);
+
+            const isProd = process.env.NODE_ENV === 'production';
+            res.cookie('token', result.accessToken, {
+                httpOnly: true,
+                secure: isProd,
+                sameSite: 'strict',
+                maxAge: 15 * 60 * 1000,
+            });
+            res.cookie('refreshToken', result.refreshToken, {
+                httpOnly: true,
+                secure: isProd,
+                sameSite: 'strict',
+                path: '/api/v1/auth/refresh',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            res.json({
+                requestId: req.requestId,
+                timestamp: new Date().toISOString(),
+                message: 'Token refreshed successfully',
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                token: result.accessToken,
+                user: result.user,
+            });
+        } catch (error) {
+            res.status(401).json({
+                error: error.message || 'Invalid refresh token',
+                requestId: req.requestId,
+            });
+        }
+    }
+
     async logout(req, res, next) {
         try {
+            let refreshToken = req.body?.refreshToken;
+            if (!refreshToken && req.headers?.cookie) {
+                const cookies = Object.fromEntries(
+                    req.headers.cookie.split(';').map(c => {
+                        const [k, v] = c.trim().split('=');
+                        return [k, decodeURIComponent(v || '')];
+                    })
+                );
+                refreshToken = cookies['refreshToken'];
+            }
+
+            let userId = req.user?.userId || req.user?.id;
+            if (!userId && req.headers?.authorization) {
+                try {
+                    const token = req.headers.authorization.replace(/^Bearer\s+/i, '');
+                    const accessSecret = config.security?.jwtAccessSecret;
+                    const decoded = jwt.verify(token, accessSecret, { algorithms: ['HS256'] });
+                    userId = decoded.userId || decoded.id;
+                } catch {
+                    // Invalid access token ignored during logout
+                }
+            }
+
+            if (!userId && refreshToken) {
+                try {
+                    const refreshSecret = config.security?.jwtRefreshSecret;
+                    const decoded = jwt.verify(refreshToken, refreshSecret, { algorithms: ['HS256'] });
+                    userId = decoded.userId || decoded.id;
+                } catch {
+                    // Invalid refresh token ignored during logout
+                }
+            }
+
+            if (userId) {
+                if (refreshToken) {
+                    await this.userService.revokeRefreshToken(userId, refreshToken);
+                } else if (typeof this.userService.revokeAllUserRefreshTokens === 'function') {
+                    await this.userService.revokeAllUserRefreshTokens(userId);
+                }
+            }
+
             res.clearCookie('token');
+            res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
+            res.clearCookie('refreshToken', { path: '/api/v1/auth' });
             res.json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),

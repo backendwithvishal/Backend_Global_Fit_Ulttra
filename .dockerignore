@@ -1,26 +1,59 @@
+# Environment files & secrets
 .env
-.env.*
+.env*
 **/.env
-**/.env.*
-node_modules
-npm-debug.log*
-logs
+**/.env*
+*.pem
+*.key
+*.cert
+*.crt
+
+# Git and IDE
 .git
 .gitignore
+.github
 .dockerignore
+.vscode
+.idea
+
+# Dependencies and caches
+node_modules
+**/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.npm
+
+# Logs and runtime artifacts
+logs
+**/logs
+*.log
+uploads
+scratch
+.system_generated
+
+# Documentation and project notes
 README.md
 brain.md
 docs
 examples
 scripts
-data
+
+# Tests and QA
 __tests__
+**/__tests__
 *.test.js
 jest.config.js
 eslint.config.js
-.eslintcache
 coverage
-*.postman_collection.json
+**/coverage
 test-all-endpoints.ps1
 test-all-endpoints.sh
 test-integration.js
+
+# Postman & vector dumps
+*.postman_collection.json
+data
+dumps
+*.bak

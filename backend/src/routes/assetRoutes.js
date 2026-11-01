@@ -26,6 +26,7 @@
 
 import { Router } from 'express';
 import { authenticatedUserRateLimiter } from '../middleware/index.js';
+import { requireAuth, checkRole } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import {
     createAssetSchema,
@@ -59,14 +60,14 @@ export const createAssetRoutes = (controller) => {
     // also applies, providing double protection on expensive operations
     router.get('/:symbol/live', validateRequest(getLiveAssetSchema), (req, res, next) => controller.getLiveAssetData(req, res, next));
 
-    // POST /assets — Create a new financial asset record in the database
-    router.post('/', validateRequest(createAssetSchema), (req, res, next) => controller.createAsset(req, res, next));
+    // POST /assets — Create a new financial asset record in the database (Admin only)
+    router.post('/', requireAuth, checkRole(['Admin']), validateRequest(createAssetSchema), (req, res, next) => controller.createAsset(req, res, next));
 
-    // PUT /assets/:symbol — Update an existing asset by its ticker symbol
-    router.put('/:symbol', validateRequest(updateAssetSchema), (req, res, next) => controller.updateAsset(req, res, next));
+    // PUT /assets/:symbol — Update an existing asset by its ticker symbol (Admin only)
+    router.put('/:symbol', requireAuth, checkRole(['Admin']), validateRequest(updateAssetSchema), (req, res, next) => controller.updateAsset(req, res, next));
 
-    // DELETE /assets/:symbol — Delete an asset by its ticker symbol
-    router.delete('/:symbol', validateRequest(deleteAssetSchema), (req, res, next) => controller.deleteAsset(req, res, next));
+    // DELETE /assets/:symbol — Delete an asset by its ticker symbol (Admin only)
+    router.delete('/:symbol', requireAuth, checkRole(['Admin']), validateRequest(deleteAssetSchema), (req, res, next) => controller.deleteAsset(req, res, next));
 
     return router;
 };

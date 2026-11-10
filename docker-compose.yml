@@ -33,8 +33,9 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-admin}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-globalfit_user}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
       - LITELLM_URL=http://litellm:4000/v1
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-${LITELLM_MASTER_KEY:-sk-globalfit-master-key-2026}}
     deploy:
       resources:
         limits:
@@ -54,6 +55,8 @@ services:
       redis:
         condition: service_healthy
       qdrant:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - frontend
@@ -185,7 +188,7 @@ services:
 
   # ─── LiteLLM Gateway (Internal AI Gateway) ─────────────────────────────────
   litellm:
-    image: ghcr.io/berriai/litellm:v1.51.0
+    image: ghcr.io/berriai/litellm:main-v1.51.0
     container_name: globalfit-ulttra-litellm
     restart: unless-stopped
     security_opt:

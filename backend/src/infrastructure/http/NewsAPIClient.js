@@ -7,10 +7,11 @@ import { ValidationError } from '../../utils/errors.js';
 export class NewsAPIClient extends BaseApiClient {
     constructor(options = {}) {
         super('newsapi', {
-            baseURL: 'https://newsapi.org/api',
-            timeout: 15000,
+            baseURL: options.baseURL || 'https://newsapi.org',
+            timeout: options.timeout || 15000,
             headers: {
-                'X-Api-Key': config.apiKeys.newsApi,
+                'X-Api-Key': options.apiKey || config.apiKeys.newsApi,
+                'User-Agent': 'GlobalFitUltra/1.0',
             },
             onCircuitStateChange: options.onCircuitStateChange,
         });

@@ -62,6 +62,11 @@ import { createRAGRoutes } from './ragRoutes.js';
 export const createAIRoutes = (aiController, ragController = null) => {
   const router = Router();
 
+  // Mount RAG routes at /rag if ragController is available (handles its own auth and public /health)
+  if (ragController) {
+    router.use('/rag', createRAGRoutes(ragController));
+  }
+
   // Apply authentication and AI rate limiter to all AI routes
   router.use(requireAuth);
   router.use(aiRateLimiter);
@@ -79,11 +84,6 @@ export const createAIRoutes = (aiController, ragController = null) => {
       });
     });
     return router;
-  }
-
-  // Mount RAG routes at /rag if ragController is available
-  if (ragController) {
-    router.use('/rag', createRAGRoutes(ragController));
   }
 
   // ─── AI Service Overview & Discovery ──────────────────────────────────

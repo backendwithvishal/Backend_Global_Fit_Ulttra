@@ -22,6 +22,7 @@ import { LiteLLMGateway } from '../../src/infrastructure/ai/LiteLLMGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
+import { RAGController } from '../../src/controllers/RAGController.js';
 import { Document } from '../../src/models/Document.js';
 import { VectorStore } from '../../src/infrastructure/vector/VectorStore.js';
 import express from 'express';
@@ -1002,6 +1003,43 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       handler.handleDisconnect(socket);
       expect(handler.activeStreams.has('socket-123:session-A')).toBe(false);
       expect(handler.activeStreams.has('socket-123:session-B')).toBe(false);
+    });
+  });
+
+  describe('RAGController Path Traversal Protection', () => {
+    it('should allow valid documents path regardless of drive letter casing on Windows and reject outside paths', async () => {
+      const mockIngestionService = {
+        ingestFile: jest.fn().mockResolvedValue({ status: 'completed', documentId: 'doc-123' }),
+      };
+      const controller = new RAGController({ ingestionService: mockIngestionService });
+
+      const defaultDocsDir = path.resolve('data/financial_documents');
+      const testPath = path.join(defaultDocsDir, 'sample.pdf');
+
+      const reqValid = {
+        body: { filePath: testPath, symbol: 'AAPL' },
+        user: { userId: 'admin-1', role: 'Admin' },
+      };
+      const resValid = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await controller.ingest(reqValid, resValid, jest.fn());
+      expect(mockIngestionService.ingestFile).toHaveBeenCalled();
+      expect(resValid.status).toHaveBeenCalledWith(200);
+
+      const reqInvalid = {
+        body: { filePath: path.resolve('package.json'), symbol: 'AAPL' },
+        user: { userId: 'admin-1', role: 'Admin' },
+      };
+      const resInvalid = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await controller.ingest(reqInvalid, resInvalid, jest.fn());
+      expect(resInvalid.status).toHaveBeenCalledWith(403);
     });
   });
 });

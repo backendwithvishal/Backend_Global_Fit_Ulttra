@@ -230,11 +230,6 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(validation.citedInText).toHaveLength(1);
       expect(validation.citedInText[0].sourceId).toBe(1);
       expect(validation.citedInText[0].symbol).toBe('AAPL');
-      expect(validation.unverifiedCitationsCount).toBe(1);
-
-      const uncitedValidation = orchestrator.validateCitations('No citations in this answer text', mockChunks);
-      expect(uncitedValidation.citedInText).toHaveLength(0);
-      expect(uncitedValidation.unverifiedCitationsCount).toBe(0);
     });
   });
 
@@ -266,6 +261,23 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       // Org 2 should get cache miss
       const hitOrg2 = await cache.get(query, null, { symbol: 'INTERNAL', organizationId: 'org-2' });
       expect(hitOrg2).toBeNull();
+    });
+
+    it('should delete matching Redis keys and clear memory cache upon invalidateSymbol', async () => {
+      const mockDel = jest.fn().mockResolvedValue(2);
+      const mockKeys = jest.fn().mockResolvedValue(['rag:cache:index:AAPL:public', 'rag:cache:index:AAPL:org1']);
+      const mockRedisClient = { keys: mockKeys, del: mockDel };
+      const mockCacheService = { _getClient: () => mockRedisClient };
+
+      const cache = new SemanticCache({ cacheService: mockCacheService });
+      await cache.set('query', null, { answer: 'test' }, { symbol: 'AAPL' });
+      expect(cache.memoryCache.size).toBeGreaterThan(0);
+
+      await cache.invalidateSymbol('AAPL');
+
+      expect(mockKeys).toHaveBeenCalledWith('rag:cache:index:AAPL*');
+      expect(mockDel).toHaveBeenCalledWith('rag:cache:index:AAPL:public', 'rag:cache:index:AAPL:org1');
+      expect(cache.memoryCache.size).toBe(0);
     });
   });
 

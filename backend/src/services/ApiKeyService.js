@@ -41,6 +41,10 @@ export class ApiKeyService {
         return this.apiKeyRepository.findByOrgId(orgId);
     }
 
+    async getKeyById(keyId) {
+        return this.apiKeyRepository.findById(keyId);
+    }
+
     async deactivateKey(keyId) {
         return this.apiKeyRepository.deactivate(keyId);
     }

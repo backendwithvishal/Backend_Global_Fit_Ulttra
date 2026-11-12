@@ -692,7 +692,7 @@ export function noiseSensitivity({
   const cleanTokens = new Set(cleanAns.split(' ').filter(w => w.length > 2));
   const noisyTokens = new Set(noisyAns.split(' ').filter(w => w.length > 2));
 
-  let unionCount = new Set([...cleanTokens, ...noisyTokens]).size;
+  const unionCount = new Set([...cleanTokens, ...noisyTokens]).size;
   let intersectCount = 0;
   for (const t of cleanTokens) {
     if (noisyTokens.has(t)) intersectCount++;

@@ -63,8 +63,8 @@ export class VectorStore {
         { 'metadata.organizationId': organizationId },
         { 'metadata.isPublic': true },
       ];
-    } else if (isPublic !== undefined) {
-      filter['metadata.isPublic'] = isPublic;
+    } else {
+      filter['metadata.isPublic'] = isPublic !== undefined ? isPublic : true;
     }
 
     // Date range filtering

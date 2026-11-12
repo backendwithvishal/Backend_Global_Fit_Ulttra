@@ -25,6 +25,8 @@ import { Document } from '../../src/models/Document.js';
 import { VectorStore } from '../../src/infrastructure/vector/VectorStore.js';
 import express from 'express';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
+import { config } from '../../src/config/environment.js';
 import { createRAGRoutes } from '../../src/routes/ragRoutes.js';
 
 describe('RAG System Unit Tests', () => {
@@ -420,6 +422,11 @@ Supply chain dependencies remain exposed to geopolitical tensions.
   describe('RAG Routes', () => {
     let app;
     let mockRAGController;
+    const testAdminToken = jwt.sign(
+      { userId: 'admin-123', role: 'Admin', organizationId: 'org-test' },
+      config.auth.jwtAccessSecret,
+      { expiresIn: '1h' }
+    );
 
     beforeEach(() => {
       mockRAGController = {
@@ -442,6 +449,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     it('should route query requests to ragController', async () => {
       const res = await request(app)
         .post('/api/v1/rag/query')
+        .set('Authorization', `Bearer ${testAdminToken}`)
         .send({ question: "What is Apple's revenue?" });
 
       expect(res.status).toBe(200);
@@ -450,19 +458,25 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     });
 
     it('should route health check requests to ragController', async () => {
-      const res = await request(app).get('/api/v1/rag/health');
+      const res = await request(app)
+        .get('/api/v1/rag/health')
+        .set('Authorization', `Bearer ${testAdminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('healthy');
     });
 
-    it('should route reindex requests to ragController', async () => {
-      const res = await request(app).post('/api/v1/rag/reindex');
+    it('should route reindex requests to ragController for admin', async () => {
+      const res = await request(app)
+        .post('/api/v1/rag/reindex')
+        .set('Authorization', `Bearer ${testAdminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Re-indexed');
     });
 
     it('should route job status requests to ragController', async () => {
-      const res = await request(app).get('/api/v1/rag/jobs/job-123');
+      const res = await request(app)
+        .get('/api/v1/rag/jobs/job-123')
+        .set('Authorization', `Bearer ${testAdminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.data.jobId).toBe('job-123');
     });
@@ -470,6 +484,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
     it('should validate request body and reject questions under 2 characters', async () => {
       const res = await request(app)
         .post('/api/v1/rag/query')
+        .set('Authorization', `Bearer ${testAdminToken}`)
         .send({ question: 'a' });
 
       expect(res.status).toBe(400);
@@ -483,6 +498,7 @@ Supply chain dependencies remain exposed to geopolitical tensions.
 
       const res = await request(disabledApp)
         .post('/api/v1/rag/query')
+        .set('Authorization', `Bearer ${testAdminToken}`)
         .send({ question: 'Valid question?' });
 
       expect(res.status).toBe(503);

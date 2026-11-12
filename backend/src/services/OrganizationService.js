@@ -86,7 +86,7 @@ export class OrganizationService {
                 expiresAt,
             });
 
-            logger.info(`[MAILER MOCK] Invitation to join ${org.name}: http://localhost:5173/join-team?token=${token}`);
+            logger.info('[MAILER MOCK] Invitation link generated', { orgName: org.name, email });
             return invite;
         } catch (error) {
             logger.error('Error in inviteMember', { orgId, email, error: error.message });

@@ -19,6 +19,7 @@
 import { logger } from '../config/logger.js';
 import { AI_CONFIG } from '../infrastructure/ai/aiConfig.js';
 import { AgenticRAGOrchestrator } from '../infrastructure/ai/AgenticRAGOrchestrator.js';
+import { sanitizeForPrompt } from '../middleware/aiQuotaMiddleware.js';
 
 export class RAGService {
   constructor({
@@ -196,6 +197,7 @@ export class RAGService {
   async streamQuery({
     question,
     symbol = null,
+    organizationId = null,
     onToken,
     onCitations,
     onComplete,
@@ -210,7 +212,10 @@ export class RAGService {
       const topChunks = await this.orchestrator.retrieveEvidence({
         subQueries,
         classification,
-        filterOptions: { symbol: targetSymbol !== 'ALL' ? targetSymbol : undefined },
+        filterOptions: {
+          symbol: targetSymbol !== 'ALL' ? targetSymbol : undefined,
+          organizationId: organizationId || null,
+        },
         topK: 4,
       });
 
@@ -229,13 +234,13 @@ export class RAGService {
         onCitations(citations);
       }
 
-      const contextText = topChunks.map((c, i) => `[Source ${i+1}: ${c.chunk.metadata?.symbol || 'GENERAL'} - ${c.chunk.metadata?.section || 'Section'}]\n${c.chunk.content}`).join('\n\n');
+      const contextText = topChunks.map((c, i) => `[Source ${i+1}: ${c.chunk.metadata?.symbol || 'GENERAL'} - ${c.chunk.metadata?.section || 'Section'}]\n${sanitizeForPrompt(c.chunk.content)}`).join('\n\n');
 
       const streamPrompt = `You are Global_Fit_Ulttra's Senior Financial Research Analyst.
 Context:
 ${contextText}
 
-Question: ${cleanQuestion}
+Question: ${sanitizeForPrompt(cleanQuestion)}
 
 Provide a grounded financial analysis citing [Source X]:`;
 

@@ -412,7 +412,7 @@ export function factualCorrectness({
  */
 export function citationCorrectness({
   generatedAnswer = '',
-  citations = [],
+  citations: _citations = [],
   retrievedChunks = [],
 } = {}) {
   const sourceCount = (retrievedChunks || []).length;

@@ -37,6 +37,31 @@ const userSchema = new Schema({
         maxlength: 50,
     },
 
+    // Role-based access control (RBAC)
+    role: {
+        type: String,
+        enum: ['Member', 'Admin'],
+        default: 'Member',
+        index: true,
+    },
+
+    // Organization tenancy
+    organizationId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Organization',
+        default: null,
+        index: true,
+    },
+
+    // Account lockout & brute-force protection
+    failedLoginAttempts: {
+        type: Number,
+        default: 0,
+    },
+    lockUntil: {
+        type: Date,
+    },
+
     // Soft delete flag
     isActive: {
         type: Boolean,
@@ -118,6 +143,14 @@ const userSchema = new Schema({
             default: Date.now
         }
     }],
+    refreshTokens: [{
+        tokenHash: { type: String, required: true },
+        expiresAt: { type: Date, required: true },
+        createdAt: { type: Date, default: Date.now },
+        revokedAt: { type: Date, default: null },
+        device: String,
+        ipAddress: String,
+    }],
 
     // User preferences for financial data
     preferences: {
@@ -170,6 +203,37 @@ userSchema.virtual('fullName').get(function () {
 userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
 
+// Helper: Check if account is locked due to excessive failed logins
+userSchema.methods.isLocked = function () {
+    return Boolean(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Helper: Increment failed logins and lock account if limit exceeded
+userSchema.methods.incrementLoginAttempts = async function () {
+    // If previous lock has expired, reset counter
+    if (this.lockUntil && this.lockUntil < Date.now()) {
+        return this.updateOne({
+            $set: { failedLoginAttempts: 1 },
+            $unset: { lockUntil: 1 },
+        });
+    }
+
+    const updates = { $inc: { failedLoginAttempts: 1 } };
+    // Lock after 5 failed attempts for 15 minutes
+    if (this.failedLoginAttempts + 1 >= 5 && !this.isLocked()) {
+        updates.$set = { lockUntil: new Date(Date.now() + 15 * 60 * 1000) };
+    }
+    return this.updateOne(updates);
+};
+
+// Helper: Reset login attempts on successful login
+userSchema.methods.resetLoginAttempts = async function () {
+    return this.updateOne({
+        $set: { failedLoginAttempts: 0 },
+        $unset: { lockUntil: 1 },
+    });
+};
+
 // Method to compare password with hash
 userSchema.methods.comparePassword = async function (candidatePassword) {
     if (!this.passwordHash) {
@@ -182,11 +246,11 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return bcrypt.default.compare(candidatePassword, this.passwordHash);
 };
 
-// Static method to hash password
+// Static method to hash password with cost >= 12
 userSchema.statics.hashPassword = async function (password) {
     // import() returns the module namespace { default: bcryptLib }, so use .default
     const bcrypt = await import('bcrypt');
-    return bcrypt.default.hash(password, 10);
+    return bcrypt.default.hash(password, 12);
 };
 
 export const User = mongoose.model('User', userSchema);

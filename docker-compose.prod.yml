@@ -1,0 +1,42 @@
+# docker-compose.prod.yml
+# Production deployment overlay with Caddy TLS reverse proxy
+# Run with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  # Caddy Reverse Proxy (Only service publishing public ports)
+  proxy:
+    image: caddy:2.8.4-alpine
+    container_name: globalfit-ulttra-proxy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - frontend
+
+  # In production overlay, App does NOT publish ports directly to host
+  app:
+    ports: !reset []
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  frontend:
+

@@ -431,7 +431,7 @@ export class Container {
         });
         const authController = new AuthController({ userService });
         const organizationController = new OrganizationController({ organizationService });
-        const apiKeyController = new ApiKeyController({ apiKeyService });
+        const apiKeyController = new ApiKeyController({ apiKeyService, organizationRepository });
         const billingController = new BillingController({ billingService });
 
         // ─── Register All Instances ──────────────────────────────────

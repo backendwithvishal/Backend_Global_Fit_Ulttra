@@ -30,6 +30,7 @@
 
 import { Router } from 'express';
 import { authenticatedUserRateLimiter, authRateLimiter } from '../middleware/index.js';
+import { requireAuth, checkRole, requireSelfOrAdmin } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import {
     createUserSchema,
@@ -53,28 +54,26 @@ export const createUserRoutes = (controller) => {
     // Apply authenticated-user rate limiter to all user routes (1000 req / 15 min)
     router.use(authenticatedUserRateLimiter);
 
-    // GET /users — List all users with optional pagination and filtering
-    router.get('/', validateRequest(listUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
-
-    // GET /users/:id — Get a single user by their MongoDB ObjectID
-    router.get('/:id', validateRequest(getUserSchema), (req, res, next) => controller.getUser(req, res, next));
-
-    // POST /users — Create a new user account
-    // Additional auth rate limiter (5/15min) to prevent mass account creation
+    // POST /users — Create a new user account (Public with strict limiter)
     router.post('/', authRateLimiter, validateRequest(createUserSchema), (req, res, next) => controller.createUser(req, res, next));
 
-    // POST /users/login — Login with email and password
-    // Auth rate limiter (5/15min) to prevent brute force attacks
+    // POST /users/login — Login with email and password (Public with strict limiter)
     router.post('/login', authRateLimiter, validateRequest(loginSchema), (req, res, next) => controller.loginUser(req, res, next));
 
-    // PUT /users/:id — Full update of user (all fields required)
-    router.put('/:id', validateRequest(updateUserSchema), (req, res, next) => controller.updateUser(req, res, next));
+    // GET /users — List all users (Admin only)
+    router.get('/', requireAuth, checkRole(['Admin']), validateRequest(listUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
 
-    // PATCH /users/:id — Partial update of user (only changed fields)
-    router.patch('/:id', validateRequest(patchUserSchema), (req, res, next) => controller.patchUser(req, res, next));
+    // GET /users/:id — Get user profile (Self or Admin)
+    router.get('/:id', requireAuth, requireSelfOrAdmin('id'), validateRequest(getUserSchema), (req, res, next) => controller.getUser(req, res, next));
 
-    // DELETE /users/:id — Soft-delete user (sets isActive = false)
-    router.delete('/:id', validateRequest(deleteUserSchema), (req, res, next) => controller.deleteUser(req, res, next));
+    // PUT /users/:id — Full update of user (Self or Admin)
+    router.put('/:id', requireAuth, requireSelfOrAdmin('id'), validateRequest(updateUserSchema), (req, res, next) => controller.updateUser(req, res, next));
+
+    // PATCH /users/:id — Partial update of user (Self or Admin)
+    router.patch('/:id', requireAuth, requireSelfOrAdmin('id'), validateRequest(patchUserSchema), (req, res, next) => controller.patchUser(req, res, next));
+
+    // DELETE /users/:id — Soft-delete user (Self or Admin)
+    router.delete('/:id', requireAuth, requireSelfOrAdmin('id'), validateRequest(deleteUserSchema), (req, res, next) => controller.deleteUser(req, res, next));
 
     return router;
 };

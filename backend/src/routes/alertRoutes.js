@@ -24,6 +24,7 @@
 
 import { Router } from 'express';
 import { authenticatedUserRateLimiter } from '../middleware/index.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import {
     createAlertSchema,
@@ -45,6 +46,7 @@ export const createAlertRoutes = (controller) => {
 
     // Apply authenticated-user rate limiter to all alert routes (1000 req / 15 min)
     router.use(authenticatedUserRateLimiter);
+    router.use(requireAuth);
 
     // GET /alerts — List all alerts with optional filters (userId, symbol, isActive, etc.)
     router.get('/', validateRequest(listAlertsSchema), (req, res, next) => controller.listAlerts(req, res, next));

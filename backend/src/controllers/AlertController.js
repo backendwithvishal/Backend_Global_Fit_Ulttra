@@ -6,14 +6,37 @@ export class AlertController {
         this.alertService = alertService;
     }
 
+    // Helper: Check if caller is owner or admin
+    async _verifyOwnership(alertId, user) {
+        const alert = await this.alertService.getAlert(alertId);
+        if (!alert) return { error: 'not_found' };
+        const ownerId = alert.userId ? (alert.userId._id || alert.userId).toString() : null;
+        const callerId = user?.userId ? user.userId.toString() : null;
+        const isAdmin = (user?.role || '').toLowerCase() === 'admin';
+        if (ownerId !== callerId && !isAdmin) {
+            return { error: 'forbidden' };
+        }
+        return { alert };
+    }
+
     // List alerts with optional filters - if userId provided, returns just that user's alerts
     async listAlerts(req, res, next) {
         try {
             const { userId, symbol, isActive, isTriggered, page, limit, sort } = req.query;
+            const callerId = req.user?.userId;
+            const isAdmin = (req.user?.role || '').toLowerCase() === 'admin';
+
+            const targetUserId = userId || callerId;
+            if (userId && String(userId) !== String(callerId) && !isAdmin) {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You cannot view alerts belonging to another user' },
+                    requestId: req.requestId,
+                });
+            }
 
             // Fast path for user-specific alerts
-            if (userId) {
-                const alerts = await this.alertService.getUserAlerts(userId, {
+            if (targetUserId) {
+                const alerts = await this.alertService.getUserAlerts(targetUserId, {
                     isActive: isActive !== undefined ? isActive : null,
                     sort: sort || '-createdAt',
                 });
@@ -51,12 +74,24 @@ export class AlertController {
     // Get single alert by ID
     async getAlert(req, res, next) {
         try {
-            const alert = await this.alertService.getAlert(req.params.id);
+            const check = await this._verifyOwnership(req.params.id, req.user);
+            if (check.error === 'not_found') {
+                return res.status(404).json({
+                    error: { code: 'E4001', message: 'Alert not found' },
+                    requestId: req.requestId,
+                });
+            }
+            if (check.error === 'forbidden') {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You do not have permission to view this alert' },
+                    requestId: req.requestId,
+                });
+            }
 
             res.status(200).json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),
-                alert,
+                alert: check.alert,
             });
         } catch (error) {
             if (error.message === 'Alert not found') {
@@ -69,10 +104,16 @@ export class AlertController {
         }
     }
 
-    // Create new price alert
+    // Create new price alert - userId strictly from authenticated token
     async createAlert(req, res, next) {
         try {
-            const alert = await this.alertService.createAlert(req.body);
+            const payload = {
+                ...req.body,
+                userId: req.user.userId,
+                organizationId: req.user.organizationId || null,
+            };
+
+            const alert = await this.alertService.createAlert(payload);
 
             res.status(201).json({
                 requestId: req.requestId,
@@ -85,9 +126,26 @@ export class AlertController {
         }
     }
 
-    // Update existing alert
+    // Update existing alert - verified ownership
     async updateAlert(req, res, next) {
         try {
+            const check = await this._verifyOwnership(req.params.id, req.user);
+            if (check.error === 'not_found') {
+                return res.status(404).json({
+                    error: { code: 'E4001', message: 'Alert not found' },
+                    requestId: req.requestId,
+                });
+            }
+            if (check.error === 'forbidden') {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You do not own this alert' },
+                    requestId: req.requestId,
+                });
+            }
+
+            delete req.body.userId;
+            delete req.body.organizationId;
+
             const alert = await this.alertService.updateAlert(req.params.id, req.body);
 
             res.status(200).json({
@@ -107,9 +165,23 @@ export class AlertController {
         }
     }
 
-    // Delete alert permanently
+    // Delete alert permanently - verified ownership
     async deleteAlert(req, res, next) {
         try {
+            const check = await this._verifyOwnership(req.params.id, req.user);
+            if (check.error === 'not_found') {
+                return res.status(404).json({
+                    error: { code: 'E4001', message: 'Alert not found' },
+                    requestId: req.requestId,
+                });
+            }
+            if (check.error === 'forbidden') {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You do not own this alert' },
+                    requestId: req.requestId,
+                });
+            }
+
             await this.alertService.deleteAlert(req.params.id);
 
             res.status(200).json({
@@ -128,9 +200,23 @@ export class AlertController {
         }
     }
 
-    // Turn alert on - starts monitoring price
+    // Turn alert on - verified ownership
     async activateAlert(req, res, next) {
         try {
+            const check = await this._verifyOwnership(req.params.id, req.user);
+            if (check.error === 'not_found') {
+                return res.status(404).json({
+                    error: { code: 'E4001', message: 'Alert not found' },
+                    requestId: req.requestId,
+                });
+            }
+            if (check.error === 'forbidden') {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You do not own this alert' },
+                    requestId: req.requestId,
+                });
+            }
+
             const alert = await this.alertService.updateAlert(req.params.id, { isActive: true });
 
             res.status(200).json({
@@ -150,9 +236,23 @@ export class AlertController {
         }
     }
 
-    // Turn alert off - stops monitoring but keeps the record
+    // Turn alert off - verified ownership
     async deactivateAlert(req, res, next) {
         try {
+            const check = await this._verifyOwnership(req.params.id, req.user);
+            if (check.error === 'not_found') {
+                return res.status(404).json({
+                    error: { code: 'E4001', message: 'Alert not found' },
+                    requestId: req.requestId,
+                });
+            }
+            if (check.error === 'forbidden') {
+                return res.status(403).json({
+                    error: { code: 'E1009', message: 'Forbidden: You do not own this alert' },
+                    requestId: req.requestId,
+                });
+            }
+
             const alert = await this.alertService.updateAlert(req.params.id, { isActive: false });
 
             res.status(200).json({

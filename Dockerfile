@@ -1,6 +1,6 @@
 # Global_Fit_Ulttra - Hardened Production Dockerfile
 # Stage 1: Dependency builder
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 COPY backend/package*.json ./
@@ -9,7 +9,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev --omit=optional && npm cache clean --force
 
 # Stage 2: Final Minimal Runtime Image
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 
 # Install tini for reliable PID 1 signal forwarding and zombie reaping
 RUN apk add --no-cache tini

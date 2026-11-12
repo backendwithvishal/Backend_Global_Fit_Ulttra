@@ -292,9 +292,40 @@ Retrieve aggregate chunk counts, covered symbols, and vector dimensions.
 
 ---
 
+### 8. Document Details
+**`GET /api/v1/ai/rag/documents/:id`**
+
+Retrieve metadata and chunk breakdown for a specific indexed document.
+
+---
+
+### 9. Delete Document & Vector Chunks
+**`DELETE /api/v1/ai/rag/documents/:id`**
+
+Remove a document and automatically delete all associated vector chunks from both MongoDB and Qdrant.
+
+---
+
+### 10. Trigger Evaluation Benchmark
+**`POST /api/v1/ai/rag/evaluate`**
+
+Execute the 20-metric evaluation benchmark suite via REST (Admin-only).
+
+---
+
 ## 5. Real-Time Socket.IO Streaming Interface
 
-Clients connect over WebSocket to receive streaming tokens and instant citation cards.
+Clients connect over WebSocket to receive streaming tokens and instant citation cards. All active streams are partitioned by `${socket.id}:${sessionId}` to support concurrent queries without cross-session interference.
+
+Supported WebSocket events:
+1. `ai:rag:query` (Client -> Server): Initiate streaming grounded RAG query.
+2. `ai:stream:start` (Server -> Client): Stream initialized with session ID.
+3. `ai:rag:citations` (Server -> Client): Emitted immediately upon retrieval completion with verified citations.
+4. `ai:stream:chunk` (Server -> Client): Incremental token emission.
+5. `ai:stream:complete` (Server -> Client): Final completion payload with all verified citations.
+6. `ai:stream:error` (Server -> Client): Structured streaming error notification.
+7. `ai:stream:stop` (Client -> Server): Request cancellation of stream (supports optional `{ sessionId }`).
+8. `ai:stream:stopped` (Server -> Client): Confirmation of stream cancellation.
 
 ```javascript
 import { io } from 'socket.io-client';
@@ -308,25 +339,28 @@ socket.emit('ai:rag:query', {
   sessionId: 'client-session-101'
 });
 
-// Event 1: Citations received immediately upon retrieval completion
+// Event: Citations received immediately upon retrieval completion
 socket.on('ai:rag:citations', ({ sessionId, citations }) => {
   console.log('Verified Citations:', citations);
 });
 
-// Event 2: Stream tokens incrementally
+// Event: Stream tokens incrementally
 socket.on('ai:stream:chunk', ({ sessionId, chunk }) => {
   process.stdout.write(chunk);
 });
 
-// Event 3: Complete event
+// Event: Complete event
 socket.on('ai:stream:complete', ({ sessionId, citations }) => {
   console.log('\nStream completed.');
 });
 
-// Event 4: Stream error
+// Event: Stream error
 socket.on('ai:stream:error', ({ sessionId, error }) => {
   console.error('Streaming error:', error);
 });
+
+// Event: Stop stream
+socket.emit('ai:stream:stop', { sessionId: 'client-session-101' });
 ```
 
 ---
@@ -420,10 +454,10 @@ When `--baseline <path>` is supplied, the runner automatically computes regressi
 ### Operational Commands
 
 ```bash
-# 1. Run all automated unit and integration tests (139 tests across 7 suites)
+# 1. Run all automated unit and integration tests (193 tests across 9 suites)
 npm test --prefix backend
 
-# 2. Run the Financial RAG Evaluation Benchmark CLI
+# 2. Run the Financial RAG Evaluation Benchmark CLI (8 golden samples, ~175ms)
 npm run rag:eval --prefix backend
 
 # 3. Run evaluation with custom top-K and verbose output
@@ -438,6 +472,8 @@ npm run rag:ingest --prefix backend
 # 6. Interactive CLI queries with citation verification
 npm run rag:test --prefix backend
 ```
+
+> **Evaluation Methodology Note**: The automated benchmark `npm run rag:eval` evaluates a curated 8-sample golden financial dataset in deterministic offline verification mode (`groqClient: null`). Executing in ~175ms on CPU with zero paid API overhead, it rigorously verifies hybrid retrieval (BM25 + 384-dim dense vectors + RRF $k=60$), entity accuracy, numerical parsing, and evidence sufficiency gating against ground truth SEC 10-K/10-Q filings. Live Groq LLM synthesis can be evaluated by passing a live `groqClient` instance in non-offline mode.
 
 ### REST API Evaluation Endpoint (Admin-Only)
 

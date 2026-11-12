@@ -9,6 +9,7 @@
  */
 
 import { jest } from '@jest/globals';
+import path from 'path';
 import { chunkFinancialText, detectSection, isTableBlock } from '../../src/utils/financialChunker.js';
 import { EmbeddingClient } from '../../src/infrastructure/ai/EmbeddingClient.js';
 import { SemanticCache } from '../../src/infrastructure/cache/SemanticCache.js';
@@ -21,6 +22,7 @@ import { LiteLLMGateway } from '../../src/infrastructure/ai/LiteLLMGateway.js';
 import { LangSmithTracer } from '../../src/infrastructure/ai/LangSmithTracer.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { IngestionService } from '../../src/services/IngestionService.js';
+import { RAGController } from '../../src/controllers/RAGController.js';
 import { Document } from '../../src/models/Document.js';
 import { VectorStore } from '../../src/infrastructure/vector/VectorStore.js';
 import express from 'express';
@@ -111,6 +113,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
 
       expect(simRelated).toBeGreaterThan(simUnrelated);
     });
+
+    it('should reset xenovaPipelinePromise on initialization failure so subsequent calls can retry', async () => {
+      const clientWithBadModel = new EmbeddingClient({ provider: 'local', model: 'non-existent-model-xyz' });
+      const pipeline1 = await clientWithBadModel._getTransformerPipeline();
+      expect(pipeline1).toBeNull();
+      // Should allow re-attempting without being permanently stuck
+      const pipeline2 = await clientWithBadModel._getTransformerPipeline();
+      expect(pipeline2).toBeNull();
+    });
   });
 
   describe('BM25Retriever', () => {
@@ -147,6 +158,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(results.length).toBeGreaterThanOrEqual(1);
       expect(results[0].chunk._id).toBe('doc2');
       expect(results[0].score).toBeGreaterThan(0);
+    });
+
+    it('should safely handle candidate documents with empty or punctuation-only content without NaN or division by zero', () => {
+      const emptyDocs = [
+        { _id: 'doc1', content: '   ' },
+        { _id: 'doc2', content: '...' },
+      ];
+      const results = retriever.search('Apple', emptyDocs, { limit: 2 });
+      expect(results).toEqual([]);
     });
   });
 
@@ -260,6 +280,23 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       // Org 2 should get cache miss
       const hitOrg2 = await cache.get(query, null, { symbol: 'INTERNAL', organizationId: 'org-2' });
       expect(hitOrg2).toBeNull();
+    });
+
+    it('should delete matching Redis keys and clear memory cache upon invalidateSymbol', async () => {
+      const mockDel = jest.fn().mockResolvedValue(2);
+      const mockKeys = jest.fn().mockResolvedValue(['rag:cache:index:AAPL:public', 'rag:cache:index:AAPL:org1']);
+      const mockRedisClient = { keys: mockKeys, del: mockDel };
+      const mockCacheService = { _getClient: () => mockRedisClient };
+
+      const cache = new SemanticCache({ cacheService: mockCacheService });
+      await cache.set('query', null, { answer: 'test' }, { symbol: 'AAPL' });
+      expect(cache.memoryCache.size).toBeGreaterThan(0);
+
+      await cache.invalidateSymbol('AAPL');
+
+      expect(mockKeys).toHaveBeenCalledWith('rag:cache:index:AAPL*');
+      expect(mockDel).toHaveBeenCalledWith('rag:cache:index:AAPL:public', 'rag:cache:index:AAPL:org1');
+      expect(cache.memoryCache.size).toBe(0);
     });
   });
 
@@ -465,6 +502,13 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.body.status).toBe('healthy');
     });
 
+    it('should allow unauthenticated health check requests without token', async () => {
+      const res = await request(app)
+        .get('/api/v1/rag/health');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('healthy');
+    });
+
     it('should route reindex requests to ragController for admin', async () => {
       const res = await request(app)
         .post('/api/v1/rag/reindex')
@@ -489,6 +533,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1008');
+    });
+
+    it('should normalize lowercase filingType in query and ingest schemas', async () => {
+      const res = await request(app)
+        .post('/api/v1/rag/query')
+        .set('Authorization', `Bearer ${testAdminToken}`)
+        .send({ question: 'What was revenue?', filingType: '10-k' });
+
+      expect(res.status).toBe(200);
     });
 
     it('should return 503 when ragController is null', async () => {
@@ -570,6 +623,26 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.confidence).toBe(0);
       expect(res.answer).toContain('No matching financial filings found');
     });
+
+    it('should evaluate sufficiency using denseScore when relevanceScore is absent (no reranker)', () => {
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: {},
+        embeddingClient: {},
+        config: { retrieval: { minSimilarityScore: 0.40 } },
+      });
+
+      // topChunk without relevanceScore (raw RRF output with denseScore=0.82, rrfScore=0.016)
+      const topChunks = [{
+        chunk: { _id: 'c1', content: 'Apple Q3 revenue $85B', metadata: { symbol: 'AAPL' } },
+        denseScore: 0.82,
+        sparseScore: 0.60,
+        rrfScore: 0.01639,
+      }];
+
+      const sufficiency = orchestrator.evaluateEvidenceSufficiency(topChunks);
+      expect(sufficiency.isSufficient).toBe(true);
+      expect(sufficiency.confidenceScore).toBe(82);
+    });
   });
 
   describe('IngestionService Path Traversal Protection', () => {
@@ -595,6 +668,51 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(() => {
         ingestion._validateAndResolvePath('data/financial_documents/AAPL\0.pdf');
       }).toThrow(/Null byte detected/);
+    });
+
+    it('should clean up orphan chunks if indexing fails during ingestion', async () => {
+      const mockDoc = {
+        _id: 'doc-fail-1',
+        title: 'Fail Doc',
+        filename: 'fail.txt',
+        status: 'processing',
+        save: jest.fn().mockResolvedValue(true),
+      };
+      const mockDocModel = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue(mockDoc),
+      };
+      const deleteManyMock = jest.fn().mockResolvedValue({ deletedCount: 5 });
+      const insertManyMock = jest.fn().mockResolvedValue([{ _id: 'chunk-1' }]);
+      const mockChunkModel = {
+        deleteMany: deleteManyMock,
+        insertMany: insertManyMock,
+      };
+      const deleteByDocumentIdMock = jest.fn().mockResolvedValue(true);
+      const mockVectorStore = {
+        deleteByDocumentId: deleteByDocumentIdMock,
+        indexChunks: jest.fn().mockRejectedValue(new Error('Qdrant network timeout')),
+      };
+
+      const ingestion = new IngestionService({
+        embeddingClient: { embedBatch: jest.fn().mockResolvedValue([[0.1, 0.2]]) },
+        documentModel: mockDocModel,
+        chunkModel: mockChunkModel,
+        vectorStore: mockVectorStore,
+      });
+
+      // Use an actual existing file path for fs.readFileSync
+      const testFilePath = path.resolve(process.cwd(), 'package.json');
+      ingestion._validateAndResolvePath = jest.fn().mockReturnValue(testFilePath);
+      ingestion.extractText = jest.fn().mockResolvedValue('Some financial disclosure text.');
+
+      await expect(ingestion.ingestFile(testFilePath, {})).rejects.toThrow('Qdrant network timeout');
+
+      // Verified: deleteMany and deleteByDocumentId were called on error to prevent orphan chunks
+      expect(deleteManyMock).toHaveBeenCalledWith({ documentId: 'doc-fail-1' });
+      expect(deleteByDocumentIdMock).toHaveBeenCalledWith('doc-fail-1');
+      expect(mockDoc.status).toBe('failed');
+      expect(mockDoc.errorMessage).toBe('Qdrant network timeout');
     });
   });
 
@@ -878,6 +996,77 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       const res = await cache.get('What is AAPL revenue?', new Array(384).fill(0.1));
       expect(res).not.toBeNull();
       expect(res.answer).toBe('$85.78B');
+    });
+
+    it('should isolate concurrent streams by sessionId on the same socket in AIStreamHandler', async () => {
+      const { AIStreamHandler } = await import('../../src/infrastructure/websocket/AIStreamHandler.js');
+      const handler = new AIStreamHandler({
+        io: { on: jest.fn() },
+        groqClient: {},
+        aiNewsService: {},
+        aiMarketService: {},
+        ragService: {
+          streamQuery: jest.fn(),
+        },
+      });
+
+      const socket = {
+        id: 'socket-123',
+        emit: jest.fn(),
+        handshake: { address: '127.0.0.1' },
+      };
+
+      // Set active streams with two distinct session IDs on the same socket
+      handler.activeStreams.set('socket-123:session-A', true);
+      handler.activeStreams.set('socket-123:session-B', true);
+
+      // Stop only session-A
+      handler.handleStopStream(socket, { sessionId: 'session-A' });
+
+      expect(handler.activeStreams.get('socket-123:session-A')).toBe(false);
+      expect(handler.activeStreams.get('socket-123:session-B')).toBe(true);
+
+      // Disconnect socket should clean up all streams for this socket
+      handler.handleDisconnect(socket);
+      expect(handler.activeStreams.has('socket-123:session-A')).toBe(false);
+      expect(handler.activeStreams.has('socket-123:session-B')).toBe(false);
+    });
+  });
+
+  describe('RAGController Path Traversal Protection', () => {
+    it('should allow valid documents path regardless of drive letter casing on Windows and reject outside paths', async () => {
+      const mockIngestionService = {
+        ingestFile: jest.fn().mockResolvedValue({ status: 'completed', documentId: 'doc-123' }),
+      };
+      const controller = new RAGController({ ingestionService: mockIngestionService });
+
+      const defaultDocsDir = path.resolve('data/financial_documents');
+      const testPath = path.join(defaultDocsDir, 'sample.pdf');
+
+      const reqValid = {
+        body: { filePath: testPath, symbol: 'AAPL' },
+        user: { userId: 'admin-1', role: 'Admin' },
+      };
+      const resValid = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await controller.ingest(reqValid, resValid, jest.fn());
+      expect(mockIngestionService.ingestFile).toHaveBeenCalled();
+      expect(resValid.status).toHaveBeenCalledWith(200);
+
+      const reqInvalid = {
+        body: { filePath: path.resolve('package.json'), symbol: 'AAPL' },
+        user: { userId: 'admin-1', role: 'Admin' },
+      };
+      const resInvalid = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await controller.ingest(reqInvalid, resInvalid, jest.fn());
+      expect(resInvalid.status).toHaveBeenCalledWith(403);
     });
   });
 });

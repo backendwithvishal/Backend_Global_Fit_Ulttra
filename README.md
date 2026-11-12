@@ -235,7 +235,7 @@ Global_Fit_Ulttra features a production-grade **Agentic Hybrid Financial RAG Sub
 - **Dedicated Vector Database**: Qdrant vector store with metadata payload indexing and automatic fallback to MongoDB Atlas vector search.
 - **Hybrid Lexical Search (BM25)**: Full Okapi BM25 sparse keyword ranking with specialized ticker and financial metric boosts.
 - **Reciprocal Rank Fusion (RRF)**: Combines dense vector candidates (65%) and sparse lexical candidates (35%) via rank fusion ($k=60$).
-- **Agentic Orchestration**: Intent classification (`FINANCIAL_FILING_QA`, `LIVE_MARKET_DATA`, `COMPARISON_SYNTHESIS`), query decomposition, evidence sufficiency gating, and strict citation validation.
+- **Agentic Orchestration**: Intent classification (`DOCUMENT_QA`, `LIVE_MARKET`, `COMPARISON`, `RISK_ANALYSIS`), query decomposition, evidence sufficiency gating, and strict citation validation.
 - **Multi-Tenant Semantic Cache**: Redis-backed sub-30ms repeated query retrieval strictly partitioned by `organizationId`.
 - **WebSocket Streaming**: Token streaming (`ai:stream:chunk`) with real-time verified citation cards (`ai:rag:citations`).
 
@@ -331,14 +331,15 @@ POST /api/v1/ai/jobs           # Submit async job
 GET  /api/v1/ai/jobs/stats     # Get queue stats
 ```
 
-### Agentic Financial RAG & Vector Engine (8 endpoints)
+### Agentic Financial RAG & Vector Engine (10 endpoints)
 
 ```bash
 POST   /api/v1/ai/rag/query        # Grounded agentic Q&A with exact filing citations
-GET    /api/v1/ai/rag/health       # Subsystem health, vector store & embedding status
+GET    /api/v1/ai/rag/health       # Subsystem health, vector store & embedding status (Public probe)
 POST   /api/v1/ai/rag/ingest       # Ingest & vectorize financial PDFs (SEC 10-K, 10-Q, FOMC)
 POST   /api/v1/ai/rag/reindex      # Re-embed and reindex all chunks into vector store
 GET    /api/v1/ai/rag/jobs/:jobId  # Background async ingestion job progress
+POST   /api/v1/ai/rag/evaluate     # Trigger 20-metric financial RAG evaluation suite
 GET    /api/v1/ai/rag/documents    # List indexed documents, chunk counts, and status
 GET    /api/v1/ai/rag/documents/:id# Document details & vector chunk preview
 DELETE /api/v1/ai/rag/documents/:id# Delete document and its vector chunks

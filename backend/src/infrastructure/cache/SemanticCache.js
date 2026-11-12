@@ -198,8 +198,23 @@ export class SemanticCache {
   async invalidateSymbol(symbol = 'ALL') {
     if (this.cacheService) {
       try {
-        const pattern = `rag:cache:index:${symbol.toUpperCase()}*`;
+        const pattern = symbol === 'ALL' ? 'rag:cache:*' : `rag:cache:index:${symbol.toUpperCase()}*`;
         this.logger.info(`Invalidating semantic cache for pattern ${pattern}`);
+
+        const client = typeof this.cacheService._getClient === 'function'
+          ? this.cacheService._getClient()
+          : (this.cacheService.redis || this.cacheService.client);
+
+        if (client && typeof client.keys === 'function') {
+          const keys = await client.keys(pattern);
+          if (keys && keys.length > 0 && typeof client.del === 'function') {
+            await client.del(...keys);
+          }
+        } else if (typeof this.cacheService.delete === 'function') {
+          await this.cacheService.delete(pattern);
+        } else if (typeof this.cacheService.del === 'function') {
+          await this.cacheService.del(pattern);
+        }
       } catch (err) {
         this.logger.debug('Cache invalidation note:', { error: err.message });
       }

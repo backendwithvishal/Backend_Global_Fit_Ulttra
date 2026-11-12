@@ -23,7 +23,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 import { logger } from '../../config/logger.js';
 
-let xenovaPipelinePromise = null;
+const xenovaPipelineCache = new Map();
 
 export class EmbeddingClient {
   constructor({
@@ -66,8 +66,9 @@ export class EmbeddingClient {
    * Uses Xenova/all-MiniLM-L6-v2 for genuine 384-dimensional semantic embeddings.
    */
   async _getTransformerPipeline() {
-    if (!xenovaPipelinePromise) {
-      xenovaPipelinePromise = (async () => {
+    const modelKey = this.model;
+    if (!xenovaPipelineCache.has(modelKey)) {
+      const promise = (async () => {
         try {
           const { pipeline } = await import('@xenova/transformers');
           const extractor = await pipeline('feature-extraction', this.model, {
@@ -79,11 +80,13 @@ export class EmbeddingClient {
           this.logger.warn('⚠️ Failed to initialize @xenova/transformers pipeline, using resilient semantic projection fallback', {
             error: err.message,
           });
+          xenovaPipelineCache.delete(modelKey);
           return null;
         }
       })();
+      xenovaPipelineCache.set(modelKey, promise);
     }
-    return xenovaPipelinePromise;
+    return xenovaPipelineCache.get(modelKey);
   }
 
   /**

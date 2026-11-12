@@ -204,7 +204,8 @@ export class AgenticRAGOrchestrator {
       return { isSufficient: false, confidenceScore: 0, reason: 'No matching financial filings found in repository' };
     }
 
-    const bestScore = topChunks[0]?.relevanceScore || topChunks[0]?.rrfScore || 0;
+    const first = topChunks[0];
+    const bestScore = first?.relevanceScore ?? first?.denseScore ?? first?.score ?? (first?.rrfScore ? Math.min(1.0, first.rrfScore * 60) : 0);
     const confidenceScore = Math.min(98, Math.round(bestScore * 100));
 
     if (bestScore < this.minConfidence) {

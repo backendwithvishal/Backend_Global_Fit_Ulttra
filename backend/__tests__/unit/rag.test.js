@@ -570,6 +570,26 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.confidence).toBe(0);
       expect(res.answer).toContain('No matching financial filings found');
     });
+
+    it('should evaluate sufficiency using denseScore when relevanceScore is absent (no reranker)', () => {
+      const orchestrator = new AgenticRAGOrchestrator({
+        vectorStore: {},
+        embeddingClient: {},
+        config: { retrieval: { minSimilarityScore: 0.40 } },
+      });
+
+      // topChunk without relevanceScore (raw RRF output with denseScore=0.82, rrfScore=0.016)
+      const topChunks = [{
+        chunk: { _id: 'c1', content: 'Apple Q3 revenue $85B', metadata: { symbol: 'AAPL' } },
+        denseScore: 0.82,
+        sparseScore: 0.60,
+        rrfScore: 0.01639,
+      }];
+
+      const sufficiency = orchestrator.evaluateEvidenceSufficiency(topChunks);
+      expect(sufficiency.isSufficient).toBe(true);
+      expect(sufficiency.confidenceScore).toBe(82);
+    });
   });
 
   describe('IngestionService Path Traversal Protection', () => {

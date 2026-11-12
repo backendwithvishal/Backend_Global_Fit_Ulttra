@@ -251,10 +251,13 @@ export class AgenticRAGOrchestrator {
     const referencedSourceIds = new Set();
     const citationRegex = /\[Source\s+(\d+)(?::[^\]]*)?\]/gi;
     let match;
+    let unverifiedCitationsCount = 0;
     while ((match = citationRegex.exec(answerText)) !== null) {
       const srcId = parseInt(match[1], 10);
       if (srcId >= 1 && srcId <= sourceCount) {
         referencedSourceIds.add(srcId);
+      } else {
+        unverifiedCitationsCount += 1;
       }
     }
 
@@ -262,8 +265,8 @@ export class AgenticRAGOrchestrator {
 
     return {
       allAvailableCitations: verifiedCitations,
-      citedInText: activeCitations.length > 0 ? activeCitations : verifiedCitations,
-      unverifiedCitationsCount: 0,
+      citedInText: activeCitations,
+      unverifiedCitationsCount,
     };
   }
 

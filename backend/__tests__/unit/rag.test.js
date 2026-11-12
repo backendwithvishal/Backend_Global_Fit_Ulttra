@@ -230,6 +230,11 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(validation.citedInText).toHaveLength(1);
       expect(validation.citedInText[0].sourceId).toBe(1);
       expect(validation.citedInText[0].symbol).toBe('AAPL');
+      expect(validation.unverifiedCitationsCount).toBe(1);
+
+      const uncitedValidation = orchestrator.validateCitations('No citations in this answer text', mockChunks);
+      expect(uncitedValidation.citedInText).toHaveLength(0);
+      expect(uncitedValidation.unverifiedCitationsCount).toBe(0);
     });
   });
 

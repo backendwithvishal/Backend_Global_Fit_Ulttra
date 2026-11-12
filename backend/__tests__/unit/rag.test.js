@@ -150,6 +150,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(results[0].chunk._id).toBe('doc2');
       expect(results[0].score).toBeGreaterThan(0);
     });
+
+    it('should safely handle candidate documents with empty or punctuation-only content without NaN or division by zero', () => {
+      const emptyDocs = [
+        { _id: 'doc1', content: '   ' },
+        { _id: 'doc2', content: '...' },
+      ];
+      const results = retriever.search('Apple', emptyDocs, { limit: 2 });
+      expect(results).toEqual([]);
+    });
   });
 
   describe('QdrantVectorStore', () => {

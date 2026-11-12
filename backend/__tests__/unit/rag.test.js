@@ -9,6 +9,7 @@
  */
 
 import { jest } from '@jest/globals';
+import path from 'path';
 import { chunkFinancialText, detectSection, isTableBlock } from '../../src/utils/financialChunker.js';
 import { EmbeddingClient } from '../../src/infrastructure/ai/EmbeddingClient.js';
 import { SemanticCache } from '../../src/infrastructure/cache/SemanticCache.js';
@@ -615,6 +616,51 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(() => {
         ingestion._validateAndResolvePath('data/financial_documents/AAPL\0.pdf');
       }).toThrow(/Null byte detected/);
+    });
+
+    it('should clean up orphan chunks if indexing fails during ingestion', async () => {
+      const mockDoc = {
+        _id: 'doc-fail-1',
+        title: 'Fail Doc',
+        filename: 'fail.txt',
+        status: 'processing',
+        save: jest.fn().mockResolvedValue(true),
+      };
+      const mockDocModel = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue(mockDoc),
+      };
+      const deleteManyMock = jest.fn().mockResolvedValue({ deletedCount: 5 });
+      const insertManyMock = jest.fn().mockResolvedValue([{ _id: 'chunk-1' }]);
+      const mockChunkModel = {
+        deleteMany: deleteManyMock,
+        insertMany: insertManyMock,
+      };
+      const deleteByDocumentIdMock = jest.fn().mockResolvedValue(true);
+      const mockVectorStore = {
+        deleteByDocumentId: deleteByDocumentIdMock,
+        indexChunks: jest.fn().mockRejectedValue(new Error('Qdrant network timeout')),
+      };
+
+      const ingestion = new IngestionService({
+        embeddingClient: { embedBatch: jest.fn().mockResolvedValue([[0.1, 0.2]]) },
+        documentModel: mockDocModel,
+        chunkModel: mockChunkModel,
+        vectorStore: mockVectorStore,
+      });
+
+      // Use an actual existing file path for fs.readFileSync
+      const testFilePath = path.resolve(process.cwd(), 'package.json');
+      ingestion._validateAndResolvePath = jest.fn().mockReturnValue(testFilePath);
+      ingestion.extractText = jest.fn().mockResolvedValue('Some financial disclosure text.');
+
+      await expect(ingestion.ingestFile(testFilePath, {})).rejects.toThrow('Qdrant network timeout');
+
+      // Verified: deleteMany and deleteByDocumentId were called on error to prevent orphan chunks
+      expect(deleteManyMock).toHaveBeenCalledWith({ documentId: 'doc-fail-1' });
+      expect(deleteByDocumentIdMock).toHaveBeenCalledWith('doc-fail-1');
+      expect(mockDoc.status).toBe('failed');
+      expect(mockDoc.errorMessage).toBe('Qdrant network timeout');
     });
   });
 

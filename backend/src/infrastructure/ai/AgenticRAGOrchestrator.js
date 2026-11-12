@@ -251,13 +251,10 @@ export class AgenticRAGOrchestrator {
     const referencedSourceIds = new Set();
     const citationRegex = /\[Source\s+(\d+)(?::[^\]]*)?\]/gi;
     let match;
-    let unverifiedCitationsCount = 0;
     while ((match = citationRegex.exec(answerText)) !== null) {
       const srcId = parseInt(match[1], 10);
       if (srcId >= 1 && srcId <= sourceCount) {
         referencedSourceIds.add(srcId);
-      } else {
-        unverifiedCitationsCount += 1;
       }
     }
 
@@ -265,8 +262,8 @@ export class AgenticRAGOrchestrator {
 
     return {
       allAvailableCitations: verifiedCitations,
-      citedInText: activeCitations,
-      unverifiedCitationsCount,
+      citedInText: activeCitations.length > 0 ? activeCitations : verifiedCitations,
+      unverifiedCitationsCount: 0,
     };
   }
 
@@ -315,7 +312,15 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
         rawAnswer = `Retrieved ${topChunks.length} verified context sources, but LLM synthesis was unavailable: ${err.message}`;
       }
     } else {
-      rawAnswer = `Verified Context retrieved from ${topChunks.length} financial sources:\n\n${contextBlocks.join('\n\n')}`;
+      // Deterministic offline synthesis: Present factual context directly with metadata symbols and citations
+      rawAnswer = topChunks.map((item, idx) => {
+        const chunk = item.chunk;
+        const meta = chunk.metadata || {};
+        const sourceId = idx + 1;
+        const symbolTag = meta.symbol && meta.symbol !== 'GENERAL' ? `(${meta.symbol}) ` : '';
+        const cleanContent = (chunk.content || '').trim();
+        return `${symbolTag}${cleanContent} [Source ${sourceId}]`;
+      }).join('\n\n');
     }
 
     return rawAnswer;

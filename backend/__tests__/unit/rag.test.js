@@ -962,6 +962,40 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res).not.toBeNull();
       expect(res.answer).toBe('$85.78B');
     });
+
+    it('should isolate concurrent streams by sessionId on the same socket in AIStreamHandler', async () => {
+      const { AIStreamHandler } = await import('../../src/infrastructure/websocket/AIStreamHandler.js');
+      const handler = new AIStreamHandler({
+        io: { on: jest.fn() },
+        groqClient: {},
+        aiNewsService: {},
+        aiMarketService: {},
+        ragService: {
+          streamQuery: jest.fn(),
+        },
+      });
+
+      const socket = {
+        id: 'socket-123',
+        emit: jest.fn(),
+        handshake: { address: '127.0.0.1' },
+      };
+
+      // Set active streams with two distinct session IDs on the same socket
+      handler.activeStreams.set('socket-123:session-A', true);
+      handler.activeStreams.set('socket-123:session-B', true);
+
+      // Stop only session-A
+      handler.handleStopStream(socket, { sessionId: 'session-A' });
+
+      expect(handler.activeStreams.get('socket-123:session-A')).toBe(false);
+      expect(handler.activeStreams.get('socket-123:session-B')).toBe(true);
+
+      // Disconnect socket should clean up all streams for this socket
+      handler.handleDisconnect(socket);
+      expect(handler.activeStreams.has('socket-123:session-A')).toBe(false);
+      expect(handler.activeStreams.has('socket-123:session-B')).toBe(false);
+    });
   });
 });
 

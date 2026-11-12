@@ -35,7 +35,7 @@ export class AIStreamHandler {
       socket.on('ai:sentiment', (data) => this.handleSentiment(socket, data));
       socket.on('ai:recommend', (data) => this.handleRecommend(socket, data));
       socket.on('ai:rag:query', (data) => this.handleRAGQuery(socket, data));
-      socket.on('ai:stream:stop', () => this.handleStopStream(socket));
+      socket.on('ai:stream:stop', (data) => this.handleStopStream(socket, data));
 
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
@@ -90,8 +90,9 @@ export class AIStreamHandler {
     }
 
     const organizationId = socket.user?.organizationId || null;
+    const streamKey = `${socket.id}:${sessionId}`;
 
-    this.activeStreams.set(socket.id, true);
+    this.activeStreams.set(streamKey, true);
     socket.emit('ai:stream:start', { sessionId, type: 'rag' });
 
     try {
@@ -103,23 +104,23 @@ export class AIStreamHandler {
           socket.emit('ai:rag:citations', { sessionId, citations });
         },
         onToken: (token) => {
-          if (!this.activeStreams.get(socket.id)) {
+          if (!this.activeStreams.get(streamKey)) {
             throw new Error('Stream stopped by client');
           }
           socket.emit('ai:stream:chunk', { sessionId, chunk: token });
         },
         onComplete: ({ citations }) => {
           socket.emit('ai:stream:complete', { sessionId, citations });
-          this.activeStreams.delete(socket.id);
+          this.activeStreams.delete(streamKey);
         },
         onError: (err) => {
           socket.emit('ai:stream:error', { sessionId, error: err.message });
-          this.activeStreams.delete(socket.id);
+          this.activeStreams.delete(streamKey);
         }
       });
     } catch (err) {
       socket.emit('ai:stream:error', { sessionId, error: err.message });
-      this.activeStreams.delete(socket.id);
+      this.activeStreams.delete(streamKey);
     }
   }
 
@@ -145,8 +146,10 @@ export class AIStreamHandler {
       messageLength: message.length
     });
 
+    const streamKey = `${socket.id}:${sessionId}`;
+
     try {
-      this.activeStreams.set(socket.id, true);
+      this.activeStreams.set(streamKey, true);
 
       socket.emit('ai:stream:start', { sessionId });
 
@@ -155,7 +158,7 @@ export class AIStreamHandler {
       await this.groqClient.streamContent(
         message,
         (chunk) => {
-          if (!this.activeStreams.get(socket.id)) {
+          if (!this.activeStreams.get(streamKey)) {
             throw new Error('Stream stopped by client');
           }
 
@@ -192,7 +195,7 @@ export class AIStreamHandler {
         error: error.message
       });
     } finally {
-      this.activeStreams.delete(socket.id);
+      this.activeStreams.delete(streamKey);
     }
   }
 
@@ -341,13 +344,23 @@ Return JSON: { "sentiment": "positive|negative|neutral", "confidence": 85 }`;
     }
   }
 
-  handleStopStream(socket) {
+  handleStopStream(socket, data = {}) {
+    const sessionId = data?.sessionId;
     this.logger.info('AI stream stop requested', {
-      socketId: socket.id
+      socketId: socket.id,
+      sessionId
     });
 
-    this.activeStreams.set(socket.id, false);
-    socket.emit('ai:stream:stopped');
+    if (sessionId) {
+      this.activeStreams.set(`${socket.id}:${sessionId}`, false);
+    } else {
+      for (const key of this.activeStreams.keys()) {
+        if (key.startsWith(`${socket.id}:`) || key === socket.id) {
+          this.activeStreams.set(key, false);
+        }
+      }
+    }
+    socket.emit('ai:stream:stopped', sessionId ? { sessionId } : undefined);
   }
 
   handleDisconnect(socket) {
@@ -355,7 +368,11 @@ Return JSON: { "sentiment": "positive|negative|neutral", "confidence": 85 }`;
       socketId: socket.id
     });
 
-    this.activeStreams.delete(socket.id);
+    for (const key of this.activeStreams.keys()) {
+      if (key.startsWith(`${socket.id}:`) || key === socket.id) {
+        this.activeStreams.delete(key);
+      }
+    }
   }
 
   broadcastInsight(insight) {

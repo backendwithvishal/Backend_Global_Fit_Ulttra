@@ -49,7 +49,7 @@
     "express-rate-limit": "^7.1.5",
     "groq-sdk": "^0.37.0",
     "helmet": "^7.1.0",
-    "inquirer": "^13.2.2",
+    "inquirer": "^14.2.5",
     "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.1.1",

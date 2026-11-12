@@ -113,6 +113,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
 
       expect(simRelated).toBeGreaterThan(simUnrelated);
     });
+
+    it('should reset xenovaPipelinePromise on initialization failure so subsequent calls can retry', async () => {
+      const clientWithBadModel = new EmbeddingClient({ provider: 'local', model: 'non-existent-model-xyz' });
+      const pipeline1 = await clientWithBadModel._getTransformerPipeline();
+      expect(pipeline1).toBeNull();
+      // Should allow re-attempting without being permanently stuck
+      const pipeline2 = await clientWithBadModel._getTransformerPipeline();
+      expect(pipeline2).toBeNull();
+    });
   });
 
   describe('BM25Retriever', () => {

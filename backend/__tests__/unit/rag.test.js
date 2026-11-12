@@ -483,6 +483,13 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.body.status).toBe('healthy');
     });
 
+    it('should allow unauthenticated health check requests without token', async () => {
+      const res = await request(app)
+        .get('/api/v1/rag/health');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('healthy');
+    });
+
     it('should route reindex requests to ragController for admin', async () => {
       const res = await request(app)
         .post('/api/v1/rag/reindex')

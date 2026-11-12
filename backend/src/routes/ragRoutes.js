@@ -24,8 +24,20 @@ import {
 export const createRAGRoutes = (ragController) => {
   const router = Router();
 
-  // All RAG routes require authentication
-  router.use(requireAuth);
+  // RAG Subsystem Health Check (Public endpoint for probes and orchestrators)
+  router.get('/health', (req, res, next) => {
+    if (!ragController || typeof ragController.getHealth !== 'function') {
+      return res.status(503).json({
+        success: false,
+        status: 'unavailable',
+        error: {
+          code: 'E5003',
+          message: 'RAG service is currently disabled or initializing.',
+        },
+      });
+    }
+    return ragController.getHealth(req, res, next);
+  });
 
   if (!ragController) {
     router.use((req, res) => {
@@ -41,9 +53,10 @@ export const createRAGRoutes = (ragController) => {
     return router;
   }
 
-  // RAG Subsystem Health Check
-  if (typeof ragController.getHealth === 'function') {
-    router.get('/health', ragController.getHealth);
+  // Enforce authentication for RAG operations (default: true)
+  const ragRequireAuth = process.env.RAG_REQUIRE_AUTH !== 'false';
+  if (ragRequireAuth) {
+    router.use(requireAuth);
   }
 
   // Grounded RAG Query (Authenticated members)

@@ -535,6 +535,15 @@ Supply chain dependencies remain exposed to geopolitical tensions.
       expect(res.body.error.code).toBe('E1008');
     });
 
+    it('should normalize lowercase filingType in query and ingest schemas', async () => {
+      const res = await request(app)
+        .post('/api/v1/rag/query')
+        .set('Authorization', `Bearer ${testAdminToken}`)
+        .send({ question: 'What was revenue?', filingType: '10-k' });
+
+      expect(res.status).toBe(200);
+    });
+
     it('should return 503 when ragController is null', async () => {
       const disabledApp = express();
       disabledApp.use(express.json());

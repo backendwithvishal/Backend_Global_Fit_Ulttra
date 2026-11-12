@@ -71,8 +71,9 @@ docker compose exec app id   # Confirms running as non-root user (uid=1001, gid=
    - `QDRANT_API_KEY`: `<Qdrant API Key>`
 3. **Health Check Path:**
    - Set to `/api/v1/health`
-4. **Auto-Deploy:**
-   - Keep `autoDeploy: false` to require manual promotion or validated CI approvals.
+4. **Auto-Deploy & CI/CD Pipeline:**
+   - `autoDeploy: true` is configured in `render.yaml` so any push to `main` automatically triggers a Docker build and deployment on Render.
+   - For CI-gated deployments, GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) runs tests across Node 20 & 22 and can trigger Render via the `RENDER_DEPLOY_HOOK_URL` repository secret upon passing tests on `main`.
 
 ---
 

@@ -2,9 +2,10 @@ name: Security Hardening & Quality Gate
 
 on:
   push:
-    branches: [main, security-hardening]
+    branches: [main, security-hardening, 'fix/**', 'fix-*']
   pull_request:
     branches: [main]
+  workflow_dispatch:
   schedule:
     # Weekly audit on Sundays at 04:00 UTC
     - cron: '0 4 * * 0'

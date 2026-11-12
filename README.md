@@ -947,6 +947,7 @@ MIT License - use this code however you want.
 All documentation is consolidated in this README. For detailed technical documentation, see the `docs/` folder.
 
 **Core Documentation:**
+- ✅ **BACKEND_REQUIREMENTS_AND_ROADMAP.md** - Headless backend architecture gap analysis, required additions & production engineering roadmap (100% backend/API-only)
 - ✅ **README.md** (this file) - Complete guide with everything you need
 - ✅ **docs/AI_FEATURES.md** - Detailed AI features documentation
 - ✅ **docs/QUICK_START_AI.md** - 5-minute AI quick start

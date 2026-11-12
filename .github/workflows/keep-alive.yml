@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Ping Keep-Alive API Endpoint
         env:
-          TARGET_URL: ${{ secrets.BACKEND_KEEP_ALIVE_URL || 'https://globalfi-ultra.onrender.com/api/v1/health/ping' }}
+          TARGET_URL: ${{ secrets.BACKEND_KEEP_ALIVE_URL || 'https://backend-global-fit-ulttra.onrender.com/api/v1/health/ping' }}
         run: |
           echo "Pinging target server: $TARGET_URL"
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nLATENCY:%{time_total}s" -X GET "$TARGET_URL")

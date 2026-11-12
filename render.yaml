@@ -3,7 +3,7 @@
 # ===========================================
 # Deploy with: Render Dashboard → New → Blueprint → Connect repo
 # All sensitive secrets (sync: false) MUST be set in the Render Dashboard.
-# autoDeploy is intentionally set to false so untested commits do not automatically trigger live deploys.
+# autoDeploy: true enables automatic continuous deployment when commits are pushed to main.
 
 services:
   - type: web
@@ -15,8 +15,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health
-    # autoDeploy: false prevents automatic continuous deployment on git push without CI signoff
-    autoDeploy: false
+    # autoDeploy: true enables automatic continuous deployment on git push to the configured branch
+    autoDeploy: true
     envVars:
       # ── Server ──────────────────────────────────────
       - key: NODE_ENV

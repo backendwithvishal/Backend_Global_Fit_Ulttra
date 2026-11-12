@@ -57,7 +57,7 @@
     "ora": "^9.3.0",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
-    "rate-limit-redis": "^4.3.1",
+    "rate-limit-redis": "^6.0.2",
     "socket.io": "^4.7.4",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",

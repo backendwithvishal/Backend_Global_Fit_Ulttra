@@ -2,6 +2,7 @@
 // Single source of truth for all config values
 
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
@@ -9,9 +10,43 @@ import { z } from 'zod';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Explicitly load backend/.env, then fallback to root .env if present
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Intelligent multi-path environment file loader
+// Merges backend/.env and root .env without allowing empty strings in one file to mask non-empty values in the other.
+const backendEnvPath = path.resolve(__dirname, '../../.env');
+const rootEnvPath = path.resolve(__dirname, '../../../.env');
+
+const parseEnvFile = (filePath) => {
+  if (fs.existsSync(filePath)) {
+    try {
+      return dotenv.parse(fs.readFileSync(filePath, 'utf-8'));
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
+const backendParsed = parseEnvFile(backendEnvPath);
+const rootParsed = parseEnvFile(rootEnvPath);
+
+// Prioritize: process.env (system/docker) > non-empty backend/.env > non-empty root .env
+const merged = { ...rootParsed, ...backendParsed };
+for (const key of Object.keys(merged)) {
+  const rootVal = rootParsed[key];
+  const backendVal = backendParsed[key];
+  // Select the first non-empty value between backend and root
+  const effectiveVal = (backendVal && backendVal.trim() !== '') ? backendVal : rootVal;
+
+  if (process.env[key] === undefined || process.env[key] === '') {
+    if (effectiveVal !== undefined && effectiveVal !== '') {
+      process.env[key] = effectiveVal;
+    }
+  }
+}
+
+// Fallback dotenv config to set any remaining default values
+dotenv.config({ path: backendEnvPath });
+dotenv.config({ path: rootEnvPath });
 
 // Zod schema for all environment variables
 // All numeric values are strings with .transform(Number) because process.env values are always strings
@@ -78,7 +113,7 @@ const envSchema = z.object({
   RABBITMQ_QUEUE_PREFIX: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('global_fit_ulttra'),
 
   // Groq AI
-  GROQ_API_KEY: z.string().default(''),
+  GROQ_API_KEY: z.string().transform(v => v ? v.trim().replace(/^['"]|['"]$/g, '') : '').default(''),
   GROQ_PRIMARY_MODEL: z.string().default('llama-3.3-70b-versatile'),
   GROQ_FAST_MODEL: z.string().default('llama-3.1-8b-instant'),
 

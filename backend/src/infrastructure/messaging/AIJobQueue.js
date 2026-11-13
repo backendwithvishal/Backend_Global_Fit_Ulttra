@@ -25,17 +25,22 @@ export class AIJobQueue {
     };
   }
 
-  async connect() {
+  async connect(existingConnection = null) {
     try {
-      this.logger.info('Connecting to RabbitMQ...', {
-        url: config.rabbitmq.url.replace(/:[^:@]+@/, ':****@')
-      });
+      if (existingConnection) {
+        this.connection = existingConnection;
+        this.logger.info('Reusing established RabbitMQ connection for AI job queue');
+      } else {
+        this.logger.info('Connecting to RabbitMQ...', {
+          url: config.rabbitmq.url.replace(/:[^:@]+@/, ':****@')
+        });
 
-      const url = config.rabbitmq.url;
-      const isAmqps = url.startsWith('amqps://');
-      const socketOptions = isAmqps ? { rejectUnauthorized: false } : {};
+        const url = config.rabbitmq.url;
+        const isAmqps = url.startsWith('amqps://');
+        const socketOptions = isAmqps ? { rejectUnauthorized: false } : {};
 
-      this.connection = await amqplib.connect(url, socketOptions);
+        this.connection = await amqplib.connect(url, socketOptions);
+      }
       this.channel = await this.connection.createChannel();
 
       // Assert queues

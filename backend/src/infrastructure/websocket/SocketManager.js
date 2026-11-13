@@ -118,6 +118,14 @@ export class SocketManager {
         this.io.to(socketId).emit('error', { code, message });
     }
 
+    isReady() {
+        return !!this.io;
+    }
+
+    getTotalClientCount() {
+        return this.io?.engine?.clientsCount || 0;
+    }
+
     async getLiveStreamClientCount() {
         const sockets = await this.io.in(this.LIVE_STREAM_ROOM).fetchSockets();
         return sockets.length;

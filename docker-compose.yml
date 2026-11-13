@@ -36,6 +36,9 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-globalfit_user}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
       - LITELLM_URL=http://litellm:4000/v1
       - LITELLM_API_KEY=${LITELLM_API_KEY:-${LITELLM_MASTER_KEY:-sk-globalfit-master-key-2026}}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_PRIMARY_MODEL=${GROQ_PRIMARY_MODEL:-llama-3.3-70b-versatile}
+      - GROQ_FAST_MODEL=${GROQ_FAST_MODEL:-llama-3.1-8b-instant}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
     deploy:

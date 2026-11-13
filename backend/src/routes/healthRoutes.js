@@ -35,8 +35,10 @@ import { healthRateLimiter } from '../middleware/index.js';
 export const createHealthRoutes = (controller) => {
     const router = Router();
 
-    // GET /api/v1/health (and /api/v1/health/health) — Basic liveness check
+    // Canonical Liveness Probe: GET /health and GET /api/v1/health
     router.get('/', healthRateLimiter, (req, res) => controller.health(req, res));
+
+    // Backward-Compatibility Alias: Supports legacy callers/Postman requesting /api/v1/health/health
     router.get('/health', healthRateLimiter, (req, res) => controller.health(req, res));
 
     // GET /health/readiness — Detailed readiness: checks MongoDB, Redis, and external API connectivity

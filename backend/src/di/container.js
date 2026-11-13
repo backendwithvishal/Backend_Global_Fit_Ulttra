@@ -77,6 +77,7 @@ import {
 } from '../controllers/index.js';
 import { logger } from '../config/logger.js';
 import { config } from '../config/environment.js';
+import { getRabbitMQConnection, isRabbitMQConnected } from '../config/rabbitmq.js';
 
 // AI Infrastructure — conditionally initialized based on GROQ_API_KEY
 import { GroqClient } from '../infrastructure/ai/groqClient.js';
@@ -203,6 +204,7 @@ export class Container {
             'gsk_your_groq_api_key_here',
             'gsk_your_key_here',
             'your_api_key_here',
+            'placeholder',
         ].some((placeholder) => rawApiKey.toLowerCase().includes(placeholder));
 
         const hasValidKeyFormat = rawApiKey.length >= 10 && !isPlaceholder;
@@ -222,17 +224,28 @@ export class Container {
                 aiNewsService = new AINewsService({ groqClient, cacheService: cache });
                 aiMarketService = new AIMarketService({ groqClient, cacheService: cache });
 
-                // AI WebSocket streaming handler
-                this.aiStreamHandler = new AIStreamHandler({
-                    io, groqClient, aiNewsService, aiMarketService
-                });
-                this.aiStreamHandler.initialize();
-                logger.info('✅ AI WebSocket handler initialized');
+                // AI WebSocket streaming handler (requires active Socket.io instance)
+                if (io) {
+                    try {
+                        this.aiStreamHandler = new AIStreamHandler({
+                            io, groqClient, aiNewsService, aiMarketService
+                        });
+                        this.aiStreamHandler.initialize();
+                        logger.info('✅ AI WebSocket handler initialized');
+                    } catch (wsErr) {
+                        logger.warn('⚠️  AI WebSocket handler initialization failed', { error: wsErr.message });
+                        this.aiStreamHandler = null;
+                    }
+                } else {
+                    logger.warn('⚠️  Socket.io server instance not provided — AI WebSocket streaming disabled');
+                    this.aiStreamHandler = null;
+                }
 
                 // AI job queue (depends on RabbitMQ — may not be available)
                 try {
+                    const rmqConn = isRabbitMQConnected() ? getRabbitMQConnection() : null;
                     aiJobQueue = new AIJobQueue({ aiNewsService, aiMarketService });
-                    await aiJobQueue.connect();
+                    await aiJobQueue.connect(rmqConn);
                     await aiJobQueue.startConsumers();
                     logger.info('✅ AI job queue initialized');
                 } catch (queueError) {
@@ -251,10 +264,14 @@ export class Container {
                     await groqClient.validateApiKey();
                     logger.info('✅ Groq API key validated');
                 } catch (valError) {
-                    logger.warn('⚠️  Groq API key startup verification failed (requests will attempt live authentication)', {
-                        error: valError.message,
-                        details: valError.originalError?.message || valError.cause?.message || undefined
-                    });
+                    if (valError.name === 'AIAuthError') {
+                        logger.error('❌ Groq API key rejected by Groq API (401/403). Requests will fail until a valid key is provided.');
+                    } else {
+                        logger.warn('⚠️  Groq API key startup verification failed (requests will attempt live authentication)', {
+                            error: valError.message,
+                            details: valError.originalError?.message || valError.cause?.message || undefined
+                        });
+                    }
                 }
             } catch (error) {
                 // Graceful degradation: AI failure doesn't crash the app
@@ -270,7 +287,13 @@ export class Container {
                 this.aiStreamHandler = null;
             }
         } else {
-            logger.info('ℹ️  AI features disabled: GROQ_API_KEY is not configured');
+            if (!rawApiKey) {
+                logger.info('ℹ️  AI features disabled: GROQ_API_KEY is not configured');
+            } else if (isPlaceholder) {
+                logger.warn('⚠️  AI features disabled: GROQ_API_KEY contains placeholder text. Configure your actual Groq API key.');
+            } else {
+                logger.warn(`⚠️  AI features disabled: GROQ_API_KEY is too short (length: ${rawApiKey.length}). Groq API keys start with "gsk_" and are ~56 characters long.`);
+            }
         }
 
         // ─── Layer 1.6: RAG Infrastructure & Services ───────────────

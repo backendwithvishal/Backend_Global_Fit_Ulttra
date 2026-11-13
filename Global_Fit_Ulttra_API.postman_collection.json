@@ -38,16 +38,15 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/health/health",
+                            "raw": "{{baseUrl}}/health",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "health",
                                 "health"
                             ]
                         },
-                        "description": "Basic liveness probe - returns server status and AI feature flag"
+                        "description": "Basic liveness probe - returns server status, infrastructure dependencies, and feature flags (also accessible via /health/health for backwards compatibility)"
                     }
                 },
                 {

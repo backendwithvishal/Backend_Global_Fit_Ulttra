@@ -114,7 +114,10 @@ export class RAGController {
         // Restrict explicit file paths to the authorized financial documents directory
         const resolvedTarget = path.resolve(filePath);
         const resolvedDefault = path.resolve(DEFAULT_DOCS_DIR);
-        if (!resolvedTarget.startsWith(resolvedDefault)) {
+        const isWindows = process.platform === 'win32';
+        const targetCheck = isWindows ? resolvedTarget.toLowerCase() : resolvedTarget;
+        const defaultCheck = isWindows ? resolvedDefault.toLowerCase() : resolvedDefault;
+        if (!targetCheck.startsWith(defaultCheck)) {
           return res.status(403).json({
             error: {
               code: 'E1019',

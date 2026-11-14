@@ -15,7 +15,10 @@ export const ragQuerySchema = z.object({
       .min(2, 'Question must be at least 2 characters')
       .max(1000, 'Question cannot exceed 1000 characters'),
     symbol: z.string().max(10).optional().transform(v => v ? v.toUpperCase().trim() : undefined),
-    filingType: z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT', 'ALL']).optional(),
+    filingType: z.preprocess(
+      (v) => (typeof v === 'string' ? v.toUpperCase().trim() : v),
+      z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT', 'ALL'])
+    ).optional(),
     topK: z.number().int().min(1).max(10).default(4).optional(),
     bypassCache: z.boolean().default(false).optional(),
   }),
@@ -26,7 +29,10 @@ export const ragIngestSchema = z.object({
     filePath: z.string().optional(),
     title: z.string().max(200).optional(),
     symbol: z.string().max(10).optional().transform(v => v ? v.toUpperCase().trim() : undefined),
-    filingType: z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT']).optional(),
+    filingType: z.preprocess(
+      (v) => (typeof v === 'string' ? v.toUpperCase().trim() : v),
+      z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT'])
+    ).optional(),
     source: z.enum(['SEC_EDGAR', 'IR_PORTAL', 'FEDERAL_RESERVE', 'FINNHUB', 'MANUAL_UPLOAD', 'SYSTEM']).optional(),
     isPublic: z.boolean().default(true).optional(),
   }).optional().default({}),

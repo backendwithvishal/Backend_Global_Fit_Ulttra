@@ -31,11 +31,15 @@ export class AIJobQueue {
         this.connection = existingConnection;
         this.logger.info('Reusing established RabbitMQ connection for AI job queue');
       } else {
+        const url = config.rabbitmq.url;
+        if (!url || url.trim() === '') {
+          throw new Error('RABBITMQ_URL is not configured');
+        }
+
         this.logger.info('Connecting to RabbitMQ...', {
-          url: config.rabbitmq.url.replace(/:[^:@]+@/, ':****@')
+          url: url.replace(/:[^:@]+@/, ':****@')
         });
 
-        const url = config.rabbitmq.url;
         const isAmqps = url.startsWith('amqps://');
         const socketOptions = isAmqps ? { rejectUnauthorized: false } : {};
 

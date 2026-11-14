@@ -33,7 +33,9 @@
 
 ### Verified Backend Quality Metrics
 
-- **Unit Test Pass Rate:** **100%** (**184 passed out of 184 tests** across 9 test suites via `npm test --prefix backend`).
+- **Unit Test Pass Rate:** **100%** across all test suites.
+- **RAG Hardening Baseline:** Completed — zero-division BM25 guards, Redis semantic cache invalidation, session-isolated WebSocket streams, Windows path traversal tolerance, and offline RAG evaluation metrics.
+- **AI & Infrastructure Stability:** Unified multi-path environment configuration, resilient AMQP connection reuse, dual health/readiness probe architecture distinguishing mandatory database health from graceful optional services (Groq AI, Redis, RabbitMQ).
 - **Code Hygiene:** **0 ESLint errors** (`npm run lint --prefix backend`).
 - **Runtime:** Node.js 20+ LTS with native ECMAScript Modules (`"type": "module"`).
 - **Core Technology Stack:** Express 4.x, MongoDB 7.0 (Mongoose 8.x), Redis 7 (ioredis), RabbitMQ 3.12 (amqplib), Qdrant 1.19 (`@qdrant/js-client-rest`), and LiteLLM/Groq AI Gateway.

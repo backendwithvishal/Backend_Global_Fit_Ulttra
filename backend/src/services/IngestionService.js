@@ -249,6 +249,16 @@ export class IngestionService {
         durationMs,
       };
     } catch (err) {
+      // Roll back any partially saved chunks to prevent orphan chunks in vector search
+      try {
+        await this.chunkModel.deleteMany({ documentId: docRecord._id });
+        if (this.vectorStore) {
+          await this.vectorStore.deleteByDocumentId(docRecord._id);
+        }
+      } catch (cleanupErr) {
+        this.logger.warn('Failed to clean up chunks on ingestion error', { error: cleanupErr.message });
+      }
+
       docRecord.status = 'failed';
       docRecord.errorMessage = err.message;
       await docRecord.save();

@@ -61,7 +61,16 @@ const envSchema = z.object({
   MONGODB_POOL_SIZE: z.string().transform(Number).default('10'),
 
   // Redis
-  REDIS_URL: z.string().transform(v => v.trim().replace(/^['"]|['"]$/g, '')).default('redis://localhost:6379'),
+  REDIS_URL: z.string().transform(v => {
+    let clean = v.trim().replace(/^['"]|['"]$/g, '');
+    if (clean.startsWith('redis-cli')) {
+      const match = clean.match(/(rediss?:\/\/[^\s'"]+)/);
+      if (match) {
+        clean = match[1];
+      }
+    }
+    return clean || 'redis://localhost:6379';
+  }).default('redis://localhost:6379'),
   REDIS_PASSWORD: z.string().transform(v => v ? v.trim().replace(/^['"]|['"]$/g, '') : '').optional().default(''),
   REDIS_TTL_DEFAULT: z.string().transform(Number).default('300'),
 

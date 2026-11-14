@@ -204,7 +204,8 @@ export class AgenticRAGOrchestrator {
       return { isSufficient: false, confidenceScore: 0, reason: 'No matching financial filings found in repository' };
     }
 
-    const bestScore = topChunks[0]?.relevanceScore || topChunks[0]?.rrfScore || 0;
+    const first = topChunks[0];
+    const bestScore = first?.relevanceScore ?? first?.denseScore ?? first?.score ?? (first?.rrfScore ? Math.min(1.0, first.rrfScore * 60) : 0);
     const confidenceScore = Math.min(98, Math.round(bestScore * 100));
 
     if (bestScore < this.minConfidence) {
@@ -311,7 +312,15 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
         rawAnswer = `Retrieved ${topChunks.length} verified context sources, but LLM synthesis was unavailable: ${err.message}`;
       }
     } else {
-      rawAnswer = `Verified Context retrieved from ${topChunks.length} financial sources:\n\n${contextBlocks.join('\n\n')}`;
+      // Deterministic offline synthesis: Present factual context directly with metadata symbols and citations
+      rawAnswer = topChunks.map((item, idx) => {
+        const chunk = item.chunk;
+        const meta = chunk.metadata || {};
+        const sourceId = idx + 1;
+        const symbolTag = meta.symbol && meta.symbol !== 'GENERAL' ? `(${meta.symbol}) ` : '';
+        const cleanContent = (chunk.content || '').trim();
+        return `${symbolTag}${cleanContent} [Source ${sourceId}]`;
+      }).join('\n\n');
     }
 
     return rawAnswer;

@@ -127,7 +127,7 @@ export class BM25Retriever {
       docTokenMaps[i] = tokenMap;
     }
 
-    const avgdl = totalDocs > 0 ? (totalLength / totalDocs) : 1;
+    const avgdl = (totalDocs > 0 && totalLength > 0) ? (totalLength / totalDocs) : 1;
 
     // 3. Compute BM25 scores
     const scored = [];

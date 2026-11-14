@@ -12,9 +12,17 @@ export const createRedisClient = () => {
         return redisClient;
     }
 
-    if (!config.redis.url) {
+    if (!config.redis.url || config.redis.url.trim() === '') {
         logger.warn('⚠️ REDIS_URL not configured - Redis features will be disabled');
         return null;
+    }
+
+    let redisUrl = config.redis.url.trim().replace(/^['"]|['"]$/g, '');
+    if (redisUrl.startsWith('redis-cli')) {
+        const match = redisUrl.match(/(rediss?:\/\/[^\s'"]+)/);
+        if (match) {
+            redisUrl = match[1];
+        }
     }
 
     const options = {
@@ -36,11 +44,11 @@ export const createRedisClient = () => {
         options.password = config.redis.password;
     }
 
-    if (config.redis.url.startsWith('rediss://')) {
+    if (redisUrl.startsWith('rediss://') || redisUrl.includes('upstash.io')) {
         options.tls = { rejectUnauthorized: false };
     }
 
-    redisClient = new Redis(config.redis.url, options);
+    redisClient = new Redis(redisUrl, options);
 
     redisClient.on('connect', () => {
         logger.info('✅ Redis client connected');

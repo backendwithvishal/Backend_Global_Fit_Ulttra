@@ -10,7 +10,12 @@ let channel = null;
 export const connectRabbitMQ = async (retries = 5, delay = 3000) => {
     // Skip connection if no real RabbitMQ URL is configured
     const url = config.rabbitmq.url;
-    if (!url || url === 'amqp://localhost:5672' || url === 'amqp://localhost' || url.includes('localhost') || url.includes('127.0.0.1')) {
+    if (!url || url.trim() === '') {
+        logger.info('RabbitMQ URL not configured — running without message queue');
+        return null;
+    }
+
+    if (url === 'amqp://localhost:5672' || url === 'amqp://localhost' || url.includes('localhost') || url.includes('127.0.0.1')) {
         if (config.server.isProd) {
             logger.info('RabbitMQ URL not configured for production environment — skipping connection (async AI jobs disabled)');
             return null;

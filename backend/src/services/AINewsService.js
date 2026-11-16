@@ -51,13 +51,7 @@ Return JSON format:
         error: error.message,
         headline: headline.substring(0, 50)
       });
-
-      // Fallback to neutral
-      return {
-        sentiment: 'neutral',
-        confidence: 0,
-        reasoning: 'Analysis unavailable'
-      };
+      throw error;
     }
   }
 
@@ -98,13 +92,7 @@ Return JSON format:
       this.logger.error('Entity extraction failed', {
         error: error.message
       });
-
-      return {
-        companies: [],
-        people: [],
-        locations: [],
-        metrics: []
-      };
+      throw error;
     }
   }
 
@@ -171,14 +159,7 @@ Return JSON format:
         error: error.message,
         articlesCount: newsArticles.length
       });
-
-      return {
-        overallSentiment: 'neutral',
-        confidence: 0,
-        keyThemes: [],
-        affectedSectors: [],
-        summary: 'Analysis unavailable'
-      };
+      throw error;
     }
   }
 
@@ -221,8 +202,7 @@ Provide a concise, professional summary.`;
       this.logger.error('Summary generation failed', {
         error: error.message
       });
-
-      return 'Summary unavailable';
+      throw error;
     }
   }
 
@@ -268,13 +248,7 @@ Return JSON format:
       this.logger.error('Sentiment trend analysis failed', {
         error: error.message
       });
-
-      return {
-        trend: 'stable',
-        turningPoints: [],
-        confidence: 0,
-        explanation: 'Analysis unavailable'
-      };
+      throw error;
     }
   }
 }

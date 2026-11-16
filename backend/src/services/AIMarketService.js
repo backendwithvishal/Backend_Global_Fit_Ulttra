@@ -73,16 +73,7 @@ Return JSON format:
         error: error.message,
         symbol
       });
-
-      return {
-        trend: 'neutral',
-        confidence: 0,
-        support: 0,
-        resistance: 0,
-        outlook: 'neutral',
-        risk: 'medium',
-        reasoning: 'Analysis unavailable'
-      };
+      throw error;
     }
   }
 
@@ -144,13 +135,7 @@ Return JSON format:
         error: error.message,
         assetsCount: assets.length
       });
-
-      return {
-        recommendation: assets[0]?.symbol || 'N/A',
-        reasoning: 'Analysis unavailable',
-        rankings: assets.map(a => a.symbol),
-        riskComparison: 'Unable to assess risk'
-      };
+      throw error;
     }
   }
 
@@ -208,12 +193,7 @@ Return JSON format:
       this.logger.error('Recommendation generation failed', {
         error: error.message
       });
-
-      return {
-        recommendations: [],
-        strategy: 'Unable to generate recommendation',
-        riskWarnings: ['Analysis service unavailable']
-      };
+      throw error;
     }
   }
 
@@ -268,15 +248,7 @@ Return JSON format:
       this.logger.error('Portfolio analysis failed', {
         error: error.message
       });
-
-      return {
-        health: 'unknown',
-        diversificationScore: 0,
-        riskLevel: 'medium',
-        adjustments: [],
-        strengths: [],
-        weaknesses: ['Analysis unavailable']
-      };
+      throw error;
     }
   }
 
@@ -335,14 +307,7 @@ Return JSON format:
         error: error.message,
         symbol
       });
-
-      return {
-        direction: 'sideways',
-        confidence: 0,
-        priceRange: { low: 0, high: 0 },
-        factors: [],
-        disclaimer: 'Prediction unavailable'
-      };
+      throw error;
     }
   }
 
@@ -376,8 +341,7 @@ Focus on the most likely reasons based on typical market behavior.`;
         error: error.message,
         symbol
       });
-
-      return `${symbol} moved ${changePercent > 0 ? 'up' : 'down'} ${Math.abs(changePercent)}% due to market conditions.`;
+      throw error;
     }
   }
 }

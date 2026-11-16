@@ -34,6 +34,7 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY:-eyJhbGciOiJIUzI1}
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-globalfit_user}:${RABBITMQ_DEFAULT_PASS:-3yCllrydZsYqHsPavB5jEZieo1a1hSt5}@rabbitmq:5672
+      - LITELLM_ENABLED=true
       - LITELLM_URL=http://litellm:4000/v1
       - LITELLM_API_KEY=${LITELLM_API_KEY:-${LITELLM_MASTER_KEY:-sk-globalfit-master-key-2026}}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
@@ -41,6 +42,9 @@ services:
       - GROQ_FAST_MODEL=${GROQ_FAST_MODEL:-llama-3.1-8b-instant}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-6c7fd4bc6a3279f24e0fde9e81084080cce26261b5f6c5b648644b6f8133eefe}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-7e2d060a9210074c48cb4e70285979d658c4aa371fe5e53e2d84553d2feca0d4}
+    volumes:
+      - ./backend/data/financial_documents:/app/data/financial_documents:ro
+      - ./uploads:/app/uploads
     deploy:
       resources:
         limits:
@@ -62,6 +66,8 @@ services:
       qdrant:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      litellm:
         condition: service_healthy
     networks:
       - frontend
@@ -114,10 +120,21 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
     command: >
-      sh -c '
-        exec redis-server --requirepass "$${REDIS_PASSWORD:-mG59wPNfnAaXylvhuFRYBbtS}" --protected-mode yes
-      '
+      redis-server
+        --requirepass "${REDIS_PASSWORD:-mG59wPNfnAaXylvhuFRYBbtS}"
+        --protected-mode yes
+        --save 60 1
+        --save 300 10
+        --appendonly yes
+        --appendfilename "appendonly.aof"
+        --dir /data
+        --loglevel notice
     environment:
       REDIS_PASSWORD: "${REDIS_PASSWORD:-mG59wPNfnAaXylvhuFRYBbtS}"
     volumes:
@@ -224,13 +241,13 @@ services:
 # ─── Storage Volumes ─────────────────────────────────────────────────────────
 volumes:
   mongo-data:
-    name: globalfit-ulttra-mongo-data
+    name: global_fit_ulttra_mongo-data
   redis-data:
-    name: globalfit-ulttra-redis-data
+    name: global_fit_ulttra_redis-data
   qdrant-data:
-    name: globalfit-ulttra-qdrant-data
+    name: global_fit_ulttra_qdrant-data
   rabbitmq-data:
-    name: globalfit-ulttra-rabbitmq-data
+    name: global_fit_ulttra_rabbitmq-data
 
 # ─── Isolated Network Topologies ─────────────────────────────────────────────
 networks:

@@ -69,7 +69,7 @@ export const requireAuth = (req, res, next) => {
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
-            return res.status(403).json({
+            return res.status(401).json({
                 error: { code: 'E1006', message: 'Token expired. Please refresh your session or sign in again.' },
                 requestId: req.requestId,
             });
@@ -131,21 +131,26 @@ export const optionalAuth = (req, res, next) => {
  * Route middleware to enforce specific user roles (case-insensitive).
  */
 export const checkRole = (allowedRoles) => {
-    const normalizedAllowed = (Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles])
-        .map(r => String(r).toLowerCase());
+    const allowedList = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    const normalizedAllowed = allowedList.map(r => String(r).toLowerCase());
 
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({
-                error: { code: 'E1003', message: 'Authentication required.' },
+                error: { code: 'E1003', message: 'Authentication required. Please sign in to access this resource.' },
                 requestId: req.requestId,
             });
         }
 
         const userRole = (req.user.role || 'Member').toLowerCase();
         if (!normalizedAllowed.includes(userRole)) {
+            const requiredStr = allowedList.join(', ');
+            const isDevOrTest = config.server.isDev || process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+            const message = isDevOrTest
+                ? `Forbidden. Insufficient permissions. Required role: ${requiredStr}. Current role: ${req.user.role || 'Member'}.`
+                : 'Forbidden. Insufficient permissions.';
             return res.status(403).json({
-                error: { code: 'E1009', message: 'Forbidden. Insufficient permissions.' },
+                error: { code: 'E1009', message },
                 requestId: req.requestId,
             });
         }

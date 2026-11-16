@@ -107,6 +107,64 @@ export class LiteLLMGateway {
     }
     return fullText;
   }
+
+  /**
+   * Generates validated structured JSON matching the provided schema.
+   *
+   * @param {string} prompt
+   * @param {object} [schema]
+   * @param {object} [options]
+   * @returns {Promise<object>}
+   */
+  async generateJSON(prompt, schema = null, options = {}) {
+    if (!this.enabled && this.defaultClient && typeof this.defaultClient.generateJSON === 'function') {
+      return this.defaultClient.generateJSON(prompt, schema, options);
+    }
+
+    const jsonPrompt = `${prompt}
+
+CRITICAL: Respond with ONLY a valid, raw JSON object. Do NOT include markdown code fences, backticks, or any preamble.
+${schema ? `Required schema structure:\n${JSON.stringify(schema, null, 2)}` : ''}`;
+
+    let attempts = 0;
+    const maxAttempts = 2;
+    let lastError = null;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      let response = '';
+      try {
+        response = await this.generateContent(jsonPrompt, { ...options, temperature: 0.1 });
+        const cleaned = (response || '')
+          .replace(/```json\n?|\n?```/g, '')
+          .trim();
+
+        const parsed = JSON.parse(cleaned);
+
+        if (schema && typeof schema === 'object') {
+          const requiredKeys = Object.keys(schema);
+          const missingKeys = requiredKeys.filter(key => !(key in parsed));
+          if (missingKeys.length > 0) {
+            this.logger.warn('LiteLLM JSON response missing keys', {
+              missingKeys,
+              receivedKeys: Object.keys(parsed),
+            });
+          }
+        }
+
+        return parsed;
+      } catch (error) {
+        lastError = error;
+        this.logger.warn(`LiteLLM generateJSON attempt ${attempts} failed: ${error.message}`);
+      }
+    }
+
+    if (this.defaultClient && typeof this.defaultClient.generateJSON === 'function') {
+      return this.defaultClient.generateJSON(prompt, schema, options);
+    }
+
+    throw new Error(`Failed to generate valid JSON from LiteLLM gateway: ${lastError?.message}`);
+  }
 }
 
 export default LiteLLMGateway;

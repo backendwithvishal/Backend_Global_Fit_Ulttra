@@ -188,8 +188,9 @@ export class Container {
         // WebSocket manager for real-time data broadcasting
         this.socketManager = new SocketManager(io);
 
-        // ─── Layer 1.5: AI Infrastructure (Optional) ────────────────
+        // ─── Layer 1.5: AI Infrastructure ──────────────────────────
         let groqClient = null;
+        let aiGateway = null;
         let aiNewsService = null;
         let aiMarketService = null;
         let aiJobQueue = null;
@@ -209,57 +210,69 @@ export class Container {
 
         const hasValidKeyFormat = rawApiKey.length >= 10 && !isPlaceholder;
 
-        if (hasValidKeyFormat) {
-            try {
-                logger.info('Initializing AI services...');
+        try {
+            logger.info('Initializing AI infrastructure and gateways...');
 
-                // Create the Groq LLM client
+            if (hasValidKeyFormat) {
                 groqClient = new GroqClient({
                     apiKey: rawApiKey,
                     cacheService: cache,
-                    logger
+                    logger,
                 });
+            }
 
-                // AI domain services (depend on GroqClient + Cache)
-                aiNewsService = new AINewsService({ groqClient, cacheService: cache });
-                aiMarketService = new AIMarketService({ groqClient, cacheService: cache });
+            // AI Gateway: LiteLLM self-hosted proxy with fallback to direct Groq
+            const isLiteLLM = !!config.litellm?.enabled;
+            aiGateway = new LiteLLMGateway({
+                apiKey: config.litellm?.apiKey || '',
+                baseUrl: config.litellm?.url,
+                enabled: isLiteLLM,
+                defaultClient: groqClient,
+            });
 
-                // AI WebSocket streaming handler (requires active Socket.io instance)
-                if (io) {
-                    try {
-                        this.aiStreamHandler = new AIStreamHandler({
-                            io, groqClient, aiNewsService, aiMarketService
-                        });
-                        this.aiStreamHandler.initialize();
-                        logger.info('✅ AI WebSocket handler initialized');
-                    } catch (wsErr) {
-                        logger.warn('⚠️  AI WebSocket handler initialization failed', { error: wsErr.message });
-                        this.aiStreamHandler = null;
-                    }
-                } else {
-                    logger.warn('⚠️  Socket.io server instance not provided — AI WebSocket streaming disabled');
+            const activeLLM = (isLiteLLM && aiGateway) ? aiGateway : (groqClient || aiGateway);
+
+            // AI domain services
+            aiNewsService = new AINewsService({ groqClient: activeLLM, cacheService: cache });
+            aiMarketService = new AIMarketService({ groqClient: activeLLM, cacheService: cache });
+
+            // AI WebSocket streaming handler (requires active Socket.io instance)
+            if (io) {
+                try {
+                    this.aiStreamHandler = new AIStreamHandler({
+                        io, groqClient: activeLLM, aiNewsService, aiMarketService
+                    });
+                    this.aiStreamHandler.initialize();
+                    logger.info('✅ AI WebSocket handler initialized');
+                } catch (wsErr) {
+                    logger.warn('⚠️  AI WebSocket handler initialization failed', { error: wsErr.message });
                     this.aiStreamHandler = null;
                 }
+            } else {
+                logger.warn('⚠️  Socket.io server instance not provided — AI WebSocket streaming disabled');
+                this.aiStreamHandler = null;
+            }
 
-                // AI job queue (depends on RabbitMQ — may not be available)
-                try {
-                    const rmqConn = isRabbitMQConnected() ? getRabbitMQConnection() : null;
-                    aiJobQueue = new AIJobQueue({ aiNewsService, aiMarketService });
-                    await aiJobQueue.connect(rmqConn);
-                    await aiJobQueue.startConsumers();
-                    logger.info('✅ AI job queue initialized');
-                } catch (queueError) {
-                    logger.warn('⚠️  AI job queue not available (RabbitMQ not connected)', {
-                        error: queueError.message
-                    });
-                    aiJobQueue = null;
-                }
+            // AI job queue (depends on RabbitMQ — may not be available)
+            try {
+                const rmqConn = isRabbitMQConnected() ? getRabbitMQConnection() : null;
+                aiJobQueue = new AIJobQueue({ aiNewsService, aiMarketService });
+                await aiJobQueue.connect(rmqConn);
+                await aiJobQueue.startConsumers();
+                logger.info('✅ AI job queue initialized');
+            } catch (queueError) {
+                logger.warn('⚠️  AI job queue not available (RabbitMQ not connected)', {
+                    error: queueError.message
+                });
+                aiJobQueue = null;
+            }
 
-                // AI controller (presentation layer for AI endpoints)
-                aiController = new AIController({ aiNewsService, aiMarketService, aiJobQueue });
-                logger.info('✅ AI services initialized successfully');
+            // AI controller (presentation layer for AI endpoints)
+            aiController = new AIController({ aiNewsService, aiMarketService, aiJobQueue });
+            logger.info('✅ AI services initialized successfully');
 
-                // Validate API key at startup (non-fatal warning if network/rate-limited at boot)
+            // Validate Groq API key at startup if configured
+            if (groqClient) {
                 try {
                     await groqClient.validateApiKey();
                     logger.info('✅ Groq API key validated');
@@ -273,27 +286,18 @@ export class Container {
                         });
                     }
                 }
-            } catch (error) {
-                // Graceful degradation: AI failure doesn't crash the app
-                logger.warn('⚠️  Failed to initialize AI services - AI features will be disabled', { 
-                    error: error.message,
-                    details: error.originalError?.message || error.cause?.message || undefined
-                });
-                groqClient = null;
-                aiNewsService = null;
-                aiMarketService = null;
-                aiJobQueue = null;
-                aiController = null;
-                this.aiStreamHandler = null;
             }
-        } else {
-            if (!rawApiKey) {
-                logger.info('ℹ️  AI features disabled: GROQ_API_KEY is not configured');
-            } else if (isPlaceholder) {
-                logger.warn('⚠️  AI features disabled: GROQ_API_KEY contains placeholder text. Configure your actual Groq API key.');
-            } else {
-                logger.warn(`⚠️  AI features disabled: GROQ_API_KEY is too short (length: ${rawApiKey.length}). Groq API keys start with "gsk_" and are ~56 characters long.`);
-            }
+        } catch (error) {
+            logger.warn('⚠️  Failed to initialize AI services - AI features will run in degraded mode', { 
+                error: error.message,
+                details: error.originalError?.message || error.cause?.message || undefined
+            });
+            groqClient = null;
+            aiNewsService = null;
+            aiMarketService = null;
+            aiJobQueue = null;
+            aiController = null;
+            this.aiStreamHandler = null;
         }
 
         // ─── Layer 1.6: RAG Infrastructure & Services ───────────────
@@ -302,7 +306,6 @@ export class Container {
         let vectorStore = null;
         let semanticCache = null;
         let rerankerClient = null;
-        let aiGateway = null;
         let langSmithTracer = null;
         let ingestionService = null;
         let ragService = null;
@@ -345,14 +348,15 @@ export class Container {
             });
 
             // AI Gateway: LiteLLM free self-hosted proxy
-            const isLiteLLM = config.litellm?.enabled;
-
-            aiGateway = new LiteLLMGateway({
-                apiKey: config.litellm?.apiKey || '',
-                baseUrl: config.litellm?.url,
-                enabled: isLiteLLM,
-                defaultClient: groqClient,
-            });
+            if (!aiGateway) {
+                const isLiteLLM = config.litellm?.enabled;
+                aiGateway = new LiteLLMGateway({
+                    apiKey: config.litellm?.apiKey || '',
+                    baseUrl: config.litellm?.url,
+                    enabled: isLiteLLM,
+                    defaultClient: groqClient,
+                });
+            }
 
             langSmithTracer = new LangSmithTracer({
                 apiKey: config.langsmith?.apiKey,

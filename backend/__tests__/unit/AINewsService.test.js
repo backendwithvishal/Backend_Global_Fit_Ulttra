@@ -67,16 +67,12 @@ describe('AINewsService', () => {
       );
     });
 
-    it('should return neutral sentiment on error', async () => {
+    it('should throw error when LLM generation fails instead of returning fake neutral', async () => {
       // Arrange
       mockGroqClient.generateJSON.mockRejectedValue(new Error('API error'));
 
-      // Act
-      const result = await service.analyzeSentiment('Test headline');
-
-      // Assert
-      expect(result.sentiment).toBe('neutral');
-      expect(result.confidence).toBe(0);
+      // Act & Assert
+      await expect(service.analyzeSentiment('Test headline')).rejects.toThrow('API error');
     });
   });
 
@@ -102,18 +98,12 @@ describe('AINewsService', () => {
       expect(result.people).toContain('Tim Cook');
     });
 
-    it('should return empty arrays on error', async () => {
+    it('should throw error when entity extraction fails', async () => {
       // Arrange
       mockGroqClient.generateJSON.mockRejectedValue(new Error('API error'));
 
-      // Act
-      const result = await service.extractEntities('Test text');
-
-      // Assert
-      expect(result.companies).toEqual([]);
-      expect(result.people).toEqual([]);
-      expect(result.locations).toEqual([]);
-      expect(result.metrics).toEqual([]);
+      // Act & Assert
+      await expect(service.extractEntities('Test text')).rejects.toThrow('API error');
     });
   });
 

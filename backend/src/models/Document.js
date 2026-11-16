@@ -42,6 +42,25 @@ const documentSchema = new Schema({
     unique: true,
     index: true,
   },
+  contentHash: {
+    type: String,
+    index: true,
+  },
+  fiscalYear: {
+    type: Number,
+    index: true,
+  },
+  fiscalQuarter: {
+    type: String,
+    uppercase: true,
+    trim: true,
+    index: true,
+  },
+  period: {
+    type: String,
+    trim: true,
+    index: true,
+  },
   source: {
     type: String,
     required: true,
@@ -112,6 +131,7 @@ const documentSchema = new Schema({
 });
 
 documentSchema.index({ symbol: 1, filingType: 1, filingDate: -1 });
+documentSchema.index({ symbol: 1, filingType: 1, fiscalYear: 1, fiscalQuarter: 1 });
 
 export const Document = mongoose.model('Document', documentSchema);
 export default Document;

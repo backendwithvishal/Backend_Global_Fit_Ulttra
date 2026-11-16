@@ -14,9 +14,11 @@
  * @module infrastructure/ai/AgenticRAGOrchestrator
  */
 
+import mongoose from 'mongoose';
 import { logger } from '../../config/logger.js';
 import { AI_CONFIG } from './aiConfig.js';
 import { sanitizeForPrompt } from '../../middleware/aiQuotaMiddleware.js';
+import { Document } from '../../models/Document.js';
 
 // Pre-defined ticker dictionaries for deterministic recognition
 const TICKER_MAP = {
@@ -87,11 +89,73 @@ export class AgenticRAGOrchestrator {
       }
     }
 
-    // 3. Extract Periods (put combined period pattern first)
+    // 3. Extract Periods & Normalize Fiscal Metadata
+    // Handles Apple's fiscal calendar: fiscal year begins Oct 1; Q1 (Dec), Q2 (Mar), Q3 (June - ended late June 2024), Q4 (Sept)
+    let fiscalYear = null;
+    let fiscalQuarter = null;
+    let period = null;
     const periods = [];
-    const yearMatches = qUpper.match(/\b(Q[1-4]\s*202[0-9]|FY2[0-9]|202[0-9]|Q[1-4])\b/g);
-    if (yearMatches) {
-      periods.push(...yearMatches);
+
+    if (/june quarter/i.test(qLower)) {
+      fiscalQuarter = 'Q3';
+      const ym = qUpper.match(/\b202[0-9]\b/);
+      if (ym) fiscalYear = parseInt(ym[0], 10);
+      else if (/\b24\b/.test(qLower)) fiscalYear = 2024;
+    } else if (/march quarter/i.test(qLower)) {
+      fiscalQuarter = 'Q2';
+      const ym = qUpper.match(/\b202[0-9]\b/);
+      if (ym) fiscalYear = parseInt(ym[0], 10);
+    } else if (/september quarter/i.test(qLower)) {
+      fiscalQuarter = 'Q4';
+      const ym = qUpper.match(/\b202[0-9]\b/);
+      if (ym) fiscalYear = parseInt(ym[0], 10);
+    } else if (/december quarter/i.test(qLower)) {
+      fiscalQuarter = 'Q1';
+      const ym = qUpper.match(/\b202[0-9]\b/);
+      if (ym) fiscalYear = parseInt(ym[0], 10);
+    }
+
+    // Match explicit patterns like "Q3 2024", "Q3 FY24", "FY24 Q3", "FY2024 Q3", "3Q24"
+    const q3YearMatch = qUpper.match(/\bQ([1-4])\s*(?:FY)?\s*20?(2[0-9])\b|\bFY\s*20?(2[0-9])\s*Q([1-4])\b|\b([1-4])Q\s*20?(2[0-9])\b/i);
+    if (q3YearMatch) {
+      if (q3YearMatch[1] && q3YearMatch[2]) {
+        fiscalQuarter = `Q${q3YearMatch[1]}`;
+        fiscalYear = parseInt(`20${q3YearMatch[2]}`, 10);
+      } else if (q3YearMatch[3] && q3YearMatch[4]) {
+        fiscalYear = parseInt(`20${q3YearMatch[3]}`, 10);
+        fiscalQuarter = `Q${q3YearMatch[4]}`;
+      } else if (q3YearMatch[5] && q3YearMatch[6]) {
+        fiscalQuarter = `Q${q3YearMatch[5]}`;
+        fiscalYear = parseInt(`20${q3YearMatch[6]}`, 10);
+      }
+    }
+
+    if (!fiscalQuarter) {
+      const qm = qUpper.match(/\bQ([1-4])\b/);
+      if (qm) fiscalQuarter = `Q${qm[1]}`;
+    }
+
+    if (!fiscalYear) {
+      const ym = qUpper.match(/\b202[0-9]\b/);
+      if (ym) {
+        fiscalYear = parseInt(ym[0], 10);
+      } else {
+        const fy = qUpper.match(/\bFY\s*20?(2[0-9])\b/);
+        if (fy) fiscalYear = parseInt(`20${fy[1]}`, 10);
+      }
+    }
+
+    if (fiscalQuarter && fiscalYear) {
+      period = `${fiscalQuarter} ${fiscalYear}`;
+      periods.push(period);
+      periods.push(fiscalQuarter);
+      periods.push(String(fiscalYear));
+    } else if (fiscalQuarter) {
+      period = fiscalQuarter;
+      periods.push(fiscalQuarter);
+    } else if (fiscalYear) {
+      period = `FY${fiscalYear}`;
+      periods.push(String(fiscalYear));
     }
 
     // 4. Extract Filing Types
@@ -108,6 +172,9 @@ export class AgenticRAGOrchestrator {
       symbols: symbolsArray.length > 0 ? symbolsArray : ['ALL'],
       primarySymbol: symbolsArray.length > 0 ? symbolsArray[0] : 'ALL',
       periods,
+      fiscalYear,
+      fiscalQuarter,
+      period,
       filingType,
       requiresLiveMarket: isLiveMarket,
     };
@@ -231,17 +298,23 @@ export class AgenticRAGOrchestrator {
     // Build verified citations list
     topChunks.forEach((item, idx) => {
       const sourceId = idx + 1;
-      const chunk = item.chunk;
+      const chunk = item.chunk || {};
       const meta = chunk.metadata || {};
 
       verifiedCitations.push({
         sourceId,
         documentId: chunk.documentId,
+        document: meta.title || meta.document || `${meta.symbol || 'Financial'} ${meta.filingType || 'Report'}`,
         title: meta.title || 'Official Financial Report',
         symbol: meta.symbol || 'GENERAL',
         filingType: meta.filingType || 'REPORT',
+        fiscalYear: meta.fiscalYear || null,
+        fiscalQuarter: meta.fiscalQuarter || null,
+        period: meta.period || null,
         section: meta.section || 'General',
-        pageNumber: meta.pageNumber || 1,
+        page: meta.pageNumber || meta.page || 1,
+        pageNumber: meta.pageNumber || meta.page || 1,
+        chunkIndex: chunk.chunkIndex !== undefined ? chunk.chunkIndex : idx,
         relevanceScore: Math.round((item.relevanceScore || item.rrfScore || 0.8) * 100) / 100,
         snippet: (chunk.content || '').slice(0, 200) + '...',
       });
@@ -378,6 +451,34 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
       }
     }
 
+    // Step 1b: Verify if any documents exist in repository for the requested ticker
+    if (
+      !classification.requiresLiveMarket &&
+      classification.primarySymbol &&
+      classification.primarySymbol !== 'ALL' &&
+      mongoose?.connection?.readyState === 1
+    ) {
+      try {
+        const docCount = await Document.countDocuments({ symbol: classification.primarySymbol }).maxTimeMS(2000);
+        if (docCount === 0) {
+          const sym = classification.primarySymbol;
+          return {
+            answer: `No documents have been ingested for ${sym}. Please ingest financial filings first using POST /api/v1/ai/rag/ingest (e.g. { "filePath": "./data/financial_documents/${sym}_FY24_Q3_Financial_Filing.pdf", "symbol": "${sym}", "filingType": "10-Q", "isPublic": true }).`,
+            citations: [],
+            symbol: sym,
+            confidence: 0,
+            retrievalCount: 0,
+            retrievedContexts: [],
+            agentTrace: [{ stage: 'DOCUMENT_COUNT_CHECK', symbol: sym, totalDocuments: 0 }],
+            latencyMs: Date.now() - startTime,
+            cached: false,
+          };
+        }
+      } catch (docErr) {
+        this.logger.debug('Document count check note:', { error: docErr.message });
+      }
+    }
+
     // Step 3: Query Planning
     let currentSubQueries = this.createRetrievalPlan(question, classification);
     trace.push({ stage: 'PLANNING', subQueries: currentSubQueries });
@@ -388,6 +489,9 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
     let currentFilter = {
       symbol: classification.primarySymbol !== 'ALL' ? classification.primarySymbol : undefined,
       filingType: filingType || classification.filingType,
+      fiscalYear: classification.fiscalYear,
+      fiscalQuarter: classification.fiscalQuarter,
+      period: classification.period,
       organizationId,
     };
 
@@ -422,16 +526,16 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
 
       // If evidence is insufficient and bounded iterations remain, execute retrieval improvement
       if (iteration < this.maxIterations) {
-        if (iteration === 1 && (currentFilter.filingType || currentFilter.symbol)) {
-          // Improvement Strategy 1: Relax strict filingType constraint and expand subqueries
+        if (iteration === 1 && (currentFilter.filingType || currentFilter.fiscalQuarter || currentFilter.symbol)) {
+          // Improvement Strategy 1: Relax strict filingType and fiscal period constraints, expanding subqueries
           trace.push({
             stage: 'RETRIEVAL_IMPROVEMENT',
             strategy: 'RELAX_FILTERS_AND_EXPAND_QUERIES',
             iteration,
           });
           currentFilter = {
-            ...currentFilter,
-            filingType: undefined,
+            symbol: currentFilter.symbol,
+            organizationId: currentFilter.organizationId,
           };
           currentSubQueries = [
             question,
@@ -463,11 +567,15 @@ Provide a well-structured financial analysis with explicit citations [Source X]:
 
     // Step 5b: Refuse safely without hallucinating if evidence remains insufficient
     if (!sufficiency.isSufficient) {
+      let refusalReason = sufficiency.reason;
+      if (topChunks.length === 0 && classification.primarySymbol !== 'ALL') {
+        refusalReason = `No matching financial filings found in repository for ${classification.primarySymbol} matching query criteria.`;
+      }
       return {
-        answer: sufficiency.reason,
+        answer: refusalReason,
         citations: [],
         symbol: classification.primarySymbol,
-        confidence: sufficiency.confidenceScore,
+        confidence: 0,
         retrievalCount: topChunks.length,
         retrievedContexts: formattedContexts,
         agentTrace: trace,

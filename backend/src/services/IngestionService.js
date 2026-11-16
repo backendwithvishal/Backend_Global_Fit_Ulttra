@@ -15,6 +15,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import crypto from 'crypto';
 import { PDFParse } from 'pdf-parse';
 import { Document } from '../models/Document.js';
@@ -41,6 +42,7 @@ export class IngestionService {
 
   /**
    * Sanitizes and validates file path against directory traversal and null byte injections.
+   * Resolves relative paths across host/container filesystem variations.
    * @param {string} inputPath 
    * @returns {string} Normalized absolute path
    */
@@ -49,25 +51,65 @@ export class IngestionService {
       throw new Error('Invalid file path provided');
     }
 
-    // Guard against null byte injections
     if (inputPath.includes('\0')) {
       throw new Error('Invalid file path: Null byte detected');
     }
 
-    const resolved = path.resolve(inputPath);
-
-    // Guard against directory traversal attacks outside authorized project workspace
-    const cwd = path.resolve(process.cwd());
-    const projectRoot = path.resolve(cwd, '..');
-    const resolvedLower = resolved.toLowerCase();
-    const isInsideProject = resolvedLower.startsWith(cwd.toLowerCase()) || resolvedLower.startsWith(projectRoot.toLowerCase());
-    if (!isInsideProject) {
-      throw new Error(`Access denied: File path outside authorized repository directory: ${resolved}`);
+    if (inputPath.includes('..')) {
+      throw new Error('Access denied: Path traversal outside repository not allowed');
     }
 
-    // Ensure file exists
-    if (!fs.existsSync(resolved)) {
-      throw new Error(`File not found: ${resolved}`);
+    // Candidate locations covering both local dev and container paths
+    const cleanedRelative = inputPath.replace(/^\.?[\\/]/, '');
+    const filename = path.basename(inputPath);
+    const candidatePaths = [
+      path.resolve(inputPath),
+      path.resolve(process.cwd(), inputPath),
+      path.resolve(process.cwd(), cleanedRelative),
+      path.resolve(process.cwd(), 'backend', cleanedRelative),
+      path.resolve(process.cwd(), 'data', 'financial_documents', filename),
+      path.resolve(process.cwd(), 'backend', 'data', 'financial_documents', filename),
+      path.resolve('/app', cleanedRelative),
+      path.resolve('/app', 'data', 'financial_documents', filename),
+    ];
+
+    let resolved = null;
+    for (const cand of candidatePaths) {
+      if (fs.existsSync(cand)) {
+        resolved = cand;
+        break;
+      }
+    }
+
+    if (!resolved) {
+      // If path attempts to access outside paths that don't exist
+      if (path.isAbsolute(inputPath) || inputPath.includes('..')) {
+        throw new Error(`Access denied: Path ${inputPath} resides outside authorized repository directories`);
+      }
+      throw new Error(
+        `File not found: ${inputPath}. Please ensure the financial document PDF is located in ./data/financial_documents/ (e.g. ./data/financial_documents/${filename}).`
+      );
+    }
+
+    // Verify resolved path is strictly within allowed directories
+    const allowedRoots = [
+      path.resolve(process.cwd(), 'data'),
+      path.resolve(process.cwd(), 'backend', 'data'),
+      path.resolve(process.cwd(), 'uploads'),
+      path.resolve(process.cwd(), 'backend', 'uploads'),
+      path.resolve('/app', 'data'),
+      path.resolve('/app', 'uploads'),
+      path.resolve(os.tmpdir()),
+    ];
+
+    const isInsideAllowed = allowedRoots.some(root => {
+      const normResolved = path.normalize(resolved).toLowerCase();
+      const normRoot = path.normalize(root).toLowerCase();
+      return normResolved.startsWith(normRoot);
+    });
+
+    if (!isInsideAllowed) {
+      throw new Error(`Access denied: File ${resolved} resides outside authorized repository directories`);
     }
 
     const stat = fs.statSync(resolved);
@@ -75,7 +117,62 @@ export class IngestionService {
       throw new Error(`Path is not a regular file: ${resolved}`);
     }
 
+    // Enforce 10MB maximum file size limit
+    if (stat.size > 10 * 1024 * 1024) {
+      throw new Error(`File exceeds maximum size limit of 10MB (size: ${(stat.size / 1024 / 1024).toFixed(2)}MB)`);
+    }
+
     return resolved;
+  }
+
+  /**
+   * Extracts fiscal year, fiscal quarter, and period string from filename and filing text.
+   */
+  _inferFiscalMetadata(filename, text = '') {
+    let fiscalYear = null;
+    let fiscalQuarter = null;
+    let period = null;
+
+    // Check filename for FY patterns, e.g. FY24 or FY2024
+    const fyMatch = filename.match(/\bFY(\d{2,4})\b/i);
+    if (fyMatch) {
+      const yr = parseInt(fyMatch[1], 10);
+      fiscalYear = yr < 100 ? 2000 + yr : yr;
+    }
+
+    // Check filename for Quarter, e.g. Q1, Q2, Q3, Q4
+    const qMatch = filename.match(/\bQ([1-4])\b/i);
+    if (qMatch) {
+      fiscalQuarter = `Q${qMatch[1]}`;
+    }
+
+    // Check text for patterns like: "Quarter Ended June 29, 2024 (Q3 FY2024)"
+    if (text) {
+      if (!fiscalQuarter) {
+        const textQ = text.match(/\bQ([1-4])\s*(?:FY|\/|\s)(?:20)?(\d{2,4})\b/i);
+        if (textQ) {
+          fiscalQuarter = `Q${textQ[1]}`;
+          if (!fiscalYear) {
+            const yr = parseInt(textQ[2], 10);
+            fiscalYear = yr < 100 ? 2000 + yr : yr;
+          }
+        }
+      }
+      if (!fiscalYear) {
+        const yearMatch = text.match(/\b20(2[0-9]|1[0-9])\b/);
+        if (yearMatch) {
+          fiscalYear = parseInt(yearMatch[0], 10);
+        }
+      }
+    }
+
+    if (fiscalQuarter && fiscalYear) {
+      period = `${fiscalQuarter} ${fiscalYear}`;
+    } else if (fiscalYear) {
+      period = `FY${fiscalYear}`;
+    }
+
+    return { fiscalYear, fiscalQuarter, period };
   }
 
   /**
@@ -155,6 +252,12 @@ export class IngestionService {
 
     const totalTokens = estimateTokens(fullText);
 
+    // Infer or parse fiscal calendar metadata
+    const fiscalInfo = this._inferFiscalMetadata(filename, fullText);
+    const fiscalYear = metadata.fiscalYear ? Number(metadata.fiscalYear) : fiscalInfo.fiscalYear;
+    const fiscalQuarter = metadata.fiscalQuarter ? String(metadata.fiscalQuarter).toUpperCase() : fiscalInfo.fiscalQuarter;
+    const period = metadata.period || fiscalInfo.period;
+
     // 3. Create or update Document record in processing state
     const docData = {
       title: metadata.title || filename.replace(/\.[^/.]+$/, '').replace(/_/g, ' '),
@@ -163,6 +266,10 @@ export class IngestionService {
       filePath,
       fileSize: buffer.length,
       sha256Hash,
+      contentHash: sha256Hash,
+      fiscalYear,
+      fiscalQuarter,
+      period,
       source: metadata.source || 'MANUAL_UPLOAD',
       symbol: (metadata.symbol || this._inferSymbolFromFilename(filename)).toUpperCase(),
       filingType: (metadata.filingType || this._inferFilingType(filename)).toUpperCase(),
@@ -189,6 +296,9 @@ export class IngestionService {
           symbol: docRecord.symbol,
           source: docRecord.source,
           filingType: docRecord.filingType,
+          fiscalYear: docRecord.fiscalYear,
+          fiscalQuarter: docRecord.fiscalQuarter,
+          period: docRecord.period,
           filingDate: docRecord.filingDate,
           organizationId: docRecord.organizationId,
           isPublic: docRecord.isPublic,

@@ -71,8 +71,8 @@ export const createAIRoutes = (aiController, ragController = null) => {
   router.use(requireAuth);
   router.use(aiRateLimiter);
 
-  // Return 503 Service Unavailable if AI services are disabled
-  if (!aiController && !ragController) {
+  // Return 503 Service Unavailable if core AI controller is unavailable
+  if (!aiController) {
     router.use((req, res) => {
       res.status(503).json({
         success: false,

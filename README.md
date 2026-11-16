@@ -1115,7 +1115,142 @@ MIT License - use this code however you want.
 
 ---
 
-## 🔒 Security & Penetration Testing Verification
+## 🛠️ Infrastructure Operations & Problem Resolution Guide
+
+This section documents the root causes, architecture fixes, administration workflows, and testing procedures for the 9 backend & RAG infrastructure problems resolved in the February 2026 hardening sprint.
+
+### 1. Docker Volume Management & Clean Up (Problem 1)
+
+**Issue**: The compose project name previously alternated between directory-inferred `globalfit-ulttra` and `global_fit_ulttra`, causing volume label mismatch warnings (`global_fit_ulttra_mongo-data carries the compose label "mongo-data" but does not match the compose file`).
+**Fix**: Added top-level `name: global_fit_ulttra` and explicit `name:` on all named volumes in [docker-compose.yml](file:///d:/Projects/Global_Fit_Ulttra/docker-compose.yml):
+- `global_fit_ulttra_mongo-data`
+- `global_fit_ulttra_redis-data`
+- `global_fit_ulttra_qdrant-data`
+- `global_fit_ulttra_rabbitmq-data`
+
+#### Orphaned Volume Cleanup
+If legacy volume copies (`globalfit-ulttra_*` without underscores) remain on your host, execute the following to reclaim disk space:
+```bash
+# Verify volume names on host
+docker volume ls | grep -E "global_fit|globalfit"
+
+# Safe removal of legacy orphaned volumes (if any exist)
+docker volume rm globalfit-ulttra-mongo-data globalfit-ulttra-redis-data globalfit-ulttra-qdrant-data globalfit-ulttra-rabbitmq-data 2>/dev/null || true
+```
+
+#### Safe Data Migration (If transferring between volumes)
+If you ever need to copy data from an old volume to a new volume:
+```bash
+docker run --rm \
+  -v old_volume_name:/from:ro \
+  -v new_volume_name:/to \
+  alpine sh -c "cd /from && cp -av . /to"
+```
+
+---
+
+### 2. Admin Token Generation (Problem 4)
+
+Administrative tasks (`POST /api/v1/ai/rag/ingest`, `DELETE /api/v1/ai/rag/documents/:id`, and `POST /api/v1/ai/rag/reindex`) require the `Admin` role (`E1009 Forbidden` for non-admin users).
+
+Generate or retrieve an Admin access token via the CLI seeder:
+```bash
+# In Docker:
+docker compose exec app npm run seed:admin
+
+# Or locally (with MongoDB running):
+npm run seed:admin --prefix backend
+```
+
+**Default Admin Credentials**:
+- **Email**: `admin@globalfit.com`
+- **Password**: `AdminSecretPass123!`
+- **Role**: `Admin`
+
+The command outputs a 7-day Bearer token ready for use in HTTP requests:
+```bash
+export ADMIN_TOKEN="<token_from_output>"
+```
+
+---
+
+### 3. End-to-End RAG Ingestion & Query Verification (Problems 5, 6, 7, 8)
+
+#### Step 1: Health Check (Honest Status & Vector Store)
+```bash
+curl -i http://localhost:4000/api/v1/health
+```
+Response verifies `database`, `redis`, `websocket`, `messageQueue`, and `vectorStore` are all `connected`.
+
+Liveness & Readiness probes:
+```bash
+curl -i http://localhost:4000/api/v1/health/live
+curl -i http://localhost:4000/api/v1/health/ready
+```
+
+#### Step 2: Ingest Apple FY24 Q3 Financial Filing (Async 202 Accepted)
+```bash
+curl -i -X POST http://localhost:4000/api/v1/ai/rag/ingest \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filePath": "./data/financial_documents/AAPL_FY24_Q3_Financial_Filing.pdf",
+    "symbol": "AAPL",
+    "filingType": "10-Q",
+    "isPublic": true
+  }'
+```
+Returns `202 Accepted` with a real `jobId` (e.g. `ingest-1794829655533-cbeaaf32`).
+
+#### Step 3: Poll Ingestion Job Status
+```bash
+curl -i -X GET http://localhost:4000/api/v1/ai/rag/jobs/ingest-1794829655533-cbeaaf32 \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+Returns `status: "completed"`, `progress: 100`, `chunkCount: 2`, `durationMs: 224`. Unknown job IDs return `404 Not Found`.
+
+#### Step 4: Verify RAG Repository Statistics
+```bash
+curl -i -X GET http://localhost:4000/api/v1/ai/rag/stats \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+Returns `totalDocuments: 1`, `totalChunks: 2`, `symbolsCovered: ["AAPL"]`, `activeStore: "qdrant"`.
+
+#### Step 5: Query Apple Q3 2024 Financial Filing
+```bash
+curl -i -X POST http://localhost:4000/rag/query \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What were Apple'\''s Services revenue and iPhone revenue in Q3 2024?",
+    "symbol": "AAPL"
+  }'
+```
+Retrieves grounded evidence from Qdrant with citations (`page: 1, chunkIndex: 0`, relevance score, exact financial table snippet) and real confidence score.
+
+#### Step 6: Empty Document State Handling
+When no documents exist for a queried symbol, the endpoint immediately returns:
+`"No documents have been ingested for AAPL. Please ingest financial filings first using POST /api/v1/ai/rag/ingest..."` with `confidence: 0`, `retrievalCount: 0`.
+
+---
+
+### 4. Root Cause Analysis Summary (Problems 1–9)
+
+| # | Problem | Root Cause | Permanent Resolution |
+|---|---|---|---|
+| **1** | Docker volume mismatch & warnings | Compose inferred project name as `globalfit-ulttra` from directory name while old volumes were prefixed `global_fit_ulttra`. | Pinned top-level `name: global_fit_ulttra` and explicit `name:` on all volume definitions in `docker-compose.yml`. |
+| **2** | Redis RDB permission denied (`MISCONF`) | `user: "999:999"` with `cap_drop: ALL` bypassed the Redis docker entrypoint's root initialization, preventing `/data` chown and snapshot writes. | Removed `user: "999:999"`, granted `CHOWN`, `SETUID`, `SETGID`, `DAC_OVERRIDE` capabilities, enabled explicit persistence (`--appendonly yes --save 60 1 --save 300 10`), throttled rate-limiter fallback logging (60s window), and made production fallback loud. |
+| **3** | RabbitMQ disconnected in health check | No RabbitMQ service healthcheck in Compose causing race condition; health check only tested Redis `PING` (missing write check), hid outages behind HTTP 200, and lacked timeouts. | Added RabbitMQ healthcheck (`rabbitmq-diagnostics -q ping`) & `depends_on: service_healthy`; rewritten connection manager with exponential backoff & auto-reconnect; Redis health check now performs SET+DEL write test; added 2000ms timeouts; separated `/health/live` and `/health/ready`. |
+| **4** | Authorization blocking ingest/delete/reindex (`E1009`) | Non-admin users blocked; expired JWTs returned 500; no standard admin initialization in dev. | Returned 401 on missing/expired tokens (`E1003`/`E1006`), returned 403 (`E1009`) detailing missing roles in dev mode, created `npm run seed:admin` seeder for admin access. |
+| **5** | Ingestion pipeline failure | Volumes omitted financial documents; missing path traversal checks; unindexed Qdrant collections; non-idempotent duplicate uploads. | Mounted financial documents path; added traversal guard; created Qdrant collection with 384 dims, cosine distance & payload indexes on startup; implemented SHA-256 idempotency; background job returns `202 Accepted`. |
+| **6** | Fake job status stub (`job-sample-12345`) | `GET ai/rag/jobs/:id` returned hardcoded `status: "completed"` stub for all IDs. | Created persistent Mongoose `Job` model tracking `queued`, `processing`, `completed`, `failed` with real progress; unknown IDs return HTTP 404. |
+| **7** | Document endpoints missing features & validation | Missing ObjectId validations; list missing period/year filters; delete failed to prune vector points and semantic cache. | Implemented ObjectId format check (`400 Bad Request`); added pagination & fiscal period filters; delete cascades to Mongo chunks, Qdrant vectors, and invalidates semantic cache. |
+| **8** | Query pipeline period mismatch & empty fallback | Apple fiscal calendar (Q3 ended June 29) unhandled; classifier and storage mismatched; empty repo returned generic failure; empty answers cached. | Normalized period representations ("Q3 2024", "FY24 Q3", "June quarter") to unified metadata; explicit "No documents have been ingested for AAPL" with ingestion guide; grounded citations; guarded semantic cache against empty/failed results. |
+| **9** | Fake neutral AI sentiment & hidden failures | Catch block swallowed LLM exceptions and returned fake `{ sentiment: "neutral", confidence: 0 }`; responses lacked `requestId`. | Implemented `generateJSON` with schema validation and retry; honest HTTP 503 (`E5003`) on LLM failure; added `requestId` to every response across all AI routes. |
+
+---
+
+## Status & Roadmap
 
 Global_Fit_Ulttra has undergone independent penetration testing and security hardening across all REST routes, WebSocket events, and infrastructure definitions:
 

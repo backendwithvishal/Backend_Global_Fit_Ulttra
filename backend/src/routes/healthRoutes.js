@@ -1,7 +1,7 @@
 /**
  * Global_Fit_Ulttra - Health Routes
  * 
- * Express router for health check and readiness probe endpoints.
+ * Express router for health check, liveness, and readiness probe endpoints.
  * Used by load balancers (Render, Kubernetes), monitoring services
  * (UptimeRobot, Datadog), and deployment pipelines to verify the
  * application is running and ready to serve traffic.
@@ -10,15 +10,15 @@
  * ──────────────────────────────────────────────────────────────────
  * | Method | Path       | Handler   | Description                  |
  * |--------|------------|-----------|------------------------------|
- * | GET    | /health    | health    | Basic liveness check         |
- * | GET    | /readiness | readiness | Detailed dependency status   |
+ * | GET    | /          | health    | Full diagnostic report       |
+ * | GET    | /health    | health    | Alias for full report        |
+ * | GET    | /live      | liveness  | Lightweight liveness probe   |
+ * | GET    | /ready     | readiness | Readiness dependency check   |
+ * | GET    | /readiness | readiness | Alias for readiness check    |
+ * | GET    | /ping      | ping      | Ping keep-alive check        |
  * ──────────────────────────────────────────────────────────────────
  * 
- * Rate Limiting: healthRateLimiter (1000 req / 1 min) — very lenient to
- * accommodate frequent automated polling by infrastructure services.
- * 
- * Note: The `/health` endpoint is also configured as the `healthCheckPath`
- * in render.yaml for Render.com deployment health monitoring.
+ * Rate Limiting: healthRateLimiter (1000 req / 1 min).
  * 
  * @module routes/healthRoutes
  */
@@ -35,17 +35,18 @@ import { healthRateLimiter } from '../middleware/index.js';
 export const createHealthRoutes = (controller) => {
     const router = Router();
 
-    // Canonical Liveness Probe: GET /health and GET /api/v1/health
+    // Canonical Full Diagnostic Health Check: GET /health and GET /api/v1/health
     router.get('/', healthRateLimiter, (req, res) => controller.health(req, res));
-
-    // Backward-Compatibility Alias: Supports legacy callers/Postman requesting /api/v1/health/health
     router.get('/health', healthRateLimiter, (req, res) => controller.health(req, res));
 
-    // GET /health/readiness — Detailed readiness: checks MongoDB, Redis, and external API connectivity
-    // Returns service-by-service status; useful for deployment verification
+    // Liveness Probe: GET /health/live and GET /api/v1/health/live
+    router.get('/live', healthRateLimiter, (req, res) => controller.liveness(req, res));
+
+    // Readiness Probes: GET /health/ready, /health/readiness
+    router.get('/ready', healthRateLimiter, (req, res) => controller.readiness(req, res));
     router.get('/readiness', healthRateLimiter, (req, res) => controller.readiness(req, res));
 
-    // GET /health/ping — Lightweight keep-alive endpoint for cron services & uptime monitors
+    // Ping Keep-Alive: GET /health/ping and GET /api/v1/health/ping
     router.get('/ping', healthRateLimiter, (req, res) => controller.ping(req, res));
 
     return router;

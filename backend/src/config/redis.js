@@ -143,10 +143,41 @@ export const isRedisConnected = () => {
     return redisClient?.status === 'ready' && isRedisAvailable;
 };
 
+/**
+ * Validates Redis connection with a real write test (SET + DEL with TTL) under timeout.
+ * Prevents reporting 'connected' while Redis is in MISCONF (RDB persistence error) state.
+ *
+ * @param {number} [timeoutMs=2000]
+ * @returns {Promise<{ status: string, writeable: boolean, error?: string }>}
+ */
+export const checkRedisHealth = async (timeoutMs = 2000) => {
+    if (!redisClient || redisClient.status !== 'ready' || !isRedisAvailable) {
+        return { status: 'disconnected', writeable: false };
+    }
+
+    try {
+        const testKey = `health:test:${Date.now()}`;
+        const writePromise = async () => {
+            await redisClient.set(testKey, '1', 'EX', 5);
+            await redisClient.del(testKey);
+        };
+
+        await Promise.race([
+            writePromise(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Redis health check timed out')), timeoutMs)),
+        ]);
+
+        return { status: 'connected', writeable: true };
+    } catch (err) {
+        return { status: 'error', writeable: false, error: err.message };
+    }
+};
+
 export default {
     createRedisClient,
     connectRedis,
     getRedisClient,
     closeRedisConnection,
     isRedisConnected,
+    checkRedisHealth,
 };

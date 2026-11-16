@@ -166,7 +166,8 @@ export const setupRoutes = (app, container) => {
     app.use('/api/v1/ai', createAIRoutes(aiController, ragController));
     if (ragController) {
         app.use('/api/v1/rag', createRAGRoutes(ragController));
-        logger.info('✅ RAG routes mounted at /api/v1/rag and /api/v1/ai/rag');
+        app.use('/rag', createRAGRoutes(ragController)); // Backward-compatible alias
+        logger.info('✅ RAG routes mounted at /api/v1/rag, /api/v1/ai/rag, and /rag');
     }
     if (aiController) {
         logger.info('✅ AI routes mounted at /api/v1/ai');

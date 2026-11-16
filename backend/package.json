@@ -18,6 +18,7 @@
     "test:endpoints:win": "powershell -ExecutionPolicy Bypass -File test-all-endpoints.ps1",
     "ai:demo": "node examples/test-ai-features.js",
     "ai:integrate": "node examples/integrate-ai.js",
+    "seed:admin": "node src/scripts/seedAdmin.js",
     "rag:ingest": "node scripts/ingestFinancialDocuments.js",
     "rag:download": "node scripts/downloadSampleFilings.js",
     "rag:test": "node scripts/testRAGQuery.js",

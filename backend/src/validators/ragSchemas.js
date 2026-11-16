@@ -31,8 +31,11 @@ export const ragIngestSchema = z.object({
     symbol: z.string().max(10).optional().transform(v => v ? v.toUpperCase().trim() : undefined),
     filingType: z.preprocess(
       (v) => (typeof v === 'string' ? v.toUpperCase().trim() : v),
-      z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT'])
+      z.enum(['10-K', '10-Q', '8-K', 'FOMC', 'REPORT', 'EARNINGS'])
     ).optional(),
+    fiscalYear: z.union([z.number(), z.string()]).optional().transform(v => v !== undefined && v !== '' ? Number(v) : undefined),
+    fiscalQuarter: z.string().max(5).optional().transform(v => v ? v.toUpperCase().trim() : undefined),
+    period: z.string().max(50).optional(),
     source: z.enum(['SEC_EDGAR', 'IR_PORTAL', 'FEDERAL_RESERVE', 'FINNHUB', 'MANUAL_UPLOAD', 'SYSTEM']).optional(),
     isPublic: z.boolean().default(true).optional(),
   }).optional().default({}),
@@ -42,6 +45,9 @@ export const ragDocumentListSchema = z.object({
   query: z.object({
     symbol: z.string().max(10).optional(),
     filingType: z.string().optional(),
+    fiscalYear: z.string().optional(),
+    fiscalQuarter: z.string().optional(),
+    period: z.string().optional(),
     status: z.enum(['pending', 'processing', 'indexed', 'failed']).optional(),
     page: z.string().transform(Number).pipe(z.number().int().min(1)).default('1').optional(),
     limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default('20').optional(),

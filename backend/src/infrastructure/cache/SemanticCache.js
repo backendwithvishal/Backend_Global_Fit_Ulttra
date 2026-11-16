@@ -142,6 +142,14 @@ export class SemanticCache {
   async set(queryText, queryEmbedding, payload, options = {}) {
     if (!queryText || !payload) return;
 
+    // Never cache empty, failed, or zero-confidence answers
+    if (!payload.answer || payload.confidence === 0 || payload.error) {
+      return;
+    }
+    if (payload.answer.includes('No matching financial filings') || payload.answer.includes('No documents have been ingested')) {
+      return;
+    }
+
     const exactKey = this._getExactKey(queryText, options);
     const ttl = this.config.ttl || 86400;
 
@@ -189,6 +197,10 @@ export class SemanticCache {
       }
       this.memoryCache.set(exactKey, dataToStore);
     }
+  }
+
+  async invalidate(symbol = 'ALL') {
+    return this.invalidateSymbol(symbol);
   }
 
   /**

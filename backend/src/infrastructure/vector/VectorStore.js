@@ -46,7 +46,7 @@ export class VectorStore {
   /**
    * Builds Mongoose query filter from user options.
    */
-  _buildFilter({ symbol, filingType, organizationId, isPublic = true, dateRange } = {}) {
+  _buildFilter({ symbol, filingType, fiscalYear, fiscalQuarter, period, organizationId, isPublic = true, dateRange } = {}) {
     const filter = {};
 
     if (symbol && symbol !== 'ALL' && symbol !== 'GENERAL') {
@@ -55,6 +55,18 @@ export class VectorStore {
 
     if (filingType && filingType !== 'ALL') {
       filter['metadata.filingType'] = filingType.toUpperCase().trim();
+    }
+
+    if (fiscalYear) {
+      filter['metadata.fiscalYear'] = Number(fiscalYear);
+    }
+
+    if (fiscalQuarter) {
+      filter['metadata.fiscalQuarter'] = String(fiscalQuarter).toUpperCase().trim();
+    }
+
+    if (period) {
+      filter['metadata.period'] = period.trim();
     }
 
     // Multi-tenant isolation: Tenant chunks or public documents

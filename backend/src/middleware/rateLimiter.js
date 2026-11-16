@@ -10,6 +10,11 @@ import { getRedisClient } from '../config/redis.js';
 const FIFTEEN_MINUTES_MS = config.security.rateLimitWindowMs || 15 * 60 * 1000;
 const ONE_MINUTE_MS = 60 * 1000;
 
+// Track fallback logging across all store instances with throttling
+let lastFallbackLogTimestamp = 0;
+let fallbackSuppressedCount = 0;
+const FALLBACK_LOG_INTERVAL_MS = 60000; // 60 seconds throttling
+
 /**
  * Resilient rate-limit store that dynamically delegates to RedisStore
  * when Redis is connected and healthy, falling back seamlessly to MemoryStore.
@@ -42,7 +47,7 @@ class ResilientRateLimitStore {
                         this.redisStore.init(this.options);
                     }
                 } catch (e) {
-                    logger.warn('Failed to initialize RedisStore for rate limiter, using MemoryStore', { error: e.message });
+                    this._logFallbackOnce(e, 'initialize');
                     return this.memoryStore;
                 }
             }
@@ -51,11 +56,46 @@ class ResilientRateLimitStore {
         return this.memoryStore;
     }
 
+    _logFallbackOnce(err, action = 'increment') {
+        const now = Date.now();
+        if (now - lastFallbackLogTimestamp > FALLBACK_LOG_INTERVAL_MS) {
+            const suppressedNote = fallbackSuppressedCount > 0
+                ? ` (${fallbackSuppressedCount} similar warnings throttled in past 60s)`
+                : '';
+            fallbackSuppressedCount = 0;
+            lastFallbackLogTimestamp = now;
+
+            if (config.server.isProd) {
+                logger.error(`CRITICAL: Rate limit store fallback to in-memory active in PRODUCTION! Action: ${action}, Prefix: ${this.prefix}${suppressedNote}`, {
+                    error: err?.message || String(err),
+                    impact: 'Rate limits are node-local, not distributed across cluster instances.',
+                });
+            } else {
+                logger.warn(`Rate limit ${action} failed on active Redis store, falling back to memory${suppressedNote}`, {
+                    error: err?.message || String(err),
+                    prefix: this.prefix,
+                });
+            }
+        } else {
+            fallbackSuppressedCount++;
+        }
+    }
+
     async increment(key) {
+        const store = this._getActiveStore();
+        if (store === this.memoryStore) {
+            return this.memoryStore.increment(key);
+        }
+
         try {
-            return await this._getActiveStore().increment(key);
+            // Guard against slow/hanging Redis calls (500ms timeout)
+            const result = await Promise.race([
+                store.increment(key),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Redis rate limit timeout (>500ms)')), 500)),
+            ]);
+            return result;
         } catch (err) {
-            logger.warn('Rate limit increment failed on active store, falling back to memory', { error: err.message });
+            this._logFallbackOnce(err, 'increment');
             return this.memoryStore.increment(key);
         }
     }

@@ -276,36 +276,44 @@ export class GroqClient {
 CRITICAL: Respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
 Output format must match the specified schema exactly.`;
 
-    const response = await this.generateContent(jsonPrompt, options);
+    let attempts = 0;
+    const maxAttempts = 2;
+    let lastError = null;
 
-    try {
-      const cleaned = response
-        .replace(/```json\n?|\n?```/g, '')
-        .trim();
+    while (attempts < maxAttempts) {
+      attempts++;
+      let response = '';
+      try {
+        response = await this.generateContent(jsonPrompt, { ...options, temperature: 0.1 });
+        const cleaned = response
+          .replace(/```json\n?|\n?```/g, '')
+          .trim();
 
-      const parsed = JSON.parse(cleaned);
+        const parsed = JSON.parse(cleaned);
 
-      if (schema && typeof schema === 'object') {
-        const requiredKeys = Object.keys(schema);
-        const missingKeys = requiredKeys.filter(key => !(key in parsed));
+        if (schema && typeof schema === 'object') {
+          const requiredKeys = Object.keys(schema);
+          const missingKeys = requiredKeys.filter(key => !(key in parsed));
 
-        if (missingKeys.length > 0) {
-          this.logger.warn('JSON response missing keys', {
-            missingKeys,
-            receivedKeys: Object.keys(parsed)
-          });
+          if (missingKeys.length > 0) {
+            this.logger.warn('JSON response missing keys', {
+              missingKeys,
+              receivedKeys: Object.keys(parsed)
+            });
+          }
         }
+
+        return parsed;
+      } catch (error) {
+        lastError = error;
+        this.logger.warn(`JSON parsing attempt ${attempts} failed`, {
+          error: error.message,
+          response: response ? response.substring(0, 200) : ''
+        });
       }
-
-      return parsed;
-    } catch (error) {
-      this.logger.error('JSON parsing failed', {
-        error: error.message,
-        response: response.substring(0, 200)
-      });
-
-      throw new AIServiceError('Invalid JSON response from AI', error);
     }
+
+    throw new AIServiceError('Invalid JSON response from AI after retry', lastError);
   }
 
   getUsageStats() {

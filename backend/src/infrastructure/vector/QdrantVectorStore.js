@@ -83,6 +83,9 @@ export class QdrantVectorStore {
         const indexesToCreate = [
           { field_name: 'symbol', field_schema: 'keyword' },
           { field_name: 'filingType', field_schema: 'keyword' },
+          { field_name: 'fiscalYear', field_schema: 'integer' },
+          { field_name: 'fiscalQuarter', field_schema: 'keyword' },
+          { field_name: 'period', field_schema: 'keyword' },
           { field_name: 'organizationId', field_schema: 'keyword' },
           { field_name: 'isPublic', field_schema: 'bool' },
           { field_name: 'documentId', field_schema: 'keyword' },
@@ -97,6 +100,24 @@ export class QdrantVectorStore {
         }
         this.logger.info(`✅ Qdrant collection '${this.collectionName}' created with payload indexes`);
       } else {
+        // Ensure payload indexes exist on existing collection
+        const indexesToEnsure = [
+          { field_name: 'symbol', field_schema: 'keyword' },
+          { field_name: 'filingType', field_schema: 'keyword' },
+          { field_name: 'fiscalYear', field_schema: 'integer' },
+          { field_name: 'fiscalQuarter', field_schema: 'keyword' },
+          { field_name: 'period', field_schema: 'keyword' },
+          { field_name: 'organizationId', field_schema: 'keyword' },
+          { field_name: 'isPublic', field_schema: 'bool' },
+          { field_name: 'documentId', field_schema: 'keyword' },
+        ];
+        for (const idx of indexesToEnsure) {
+          try {
+            await this.client.createPayloadIndex(this.collectionName, idx);
+          } catch {
+            // Ignore index already exists
+          }
+        }
         this.logger.info(`✅ Qdrant collection '${this.collectionName}' exists and is ready`);
       }
 
@@ -139,9 +160,13 @@ export class QdrantVectorStore {
           tokenCount: chunk.tokenCount || 0,
           symbol: (meta.symbol || 'GENERAL').toUpperCase(),
           filingType: (meta.filingType || 'REPORT').toUpperCase(),
+          fiscalYear: meta.fiscalYear ? Number(meta.fiscalYear) : null,
+          fiscalQuarter: meta.fiscalQuarter ? String(meta.fiscalQuarter).toUpperCase() : null,
+          period: meta.period || null,
+          page: meta.pageNumber || meta.page || 1,
+          pageNumber: meta.pageNumber || meta.page || 1,
           title: meta.title || '',
           section: meta.section || 'General',
-          pageNumber: meta.pageNumber || 1,
           hasTable: !!meta.hasTable,
           organizationId: meta.organizationId ? meta.organizationId.toString() : null,
           isPublic: meta.isPublic !== undefined ? meta.isPublic : true,
@@ -195,6 +220,27 @@ export class QdrantVectorStore {
       });
     }
 
+    if (filter.fiscalYear) {
+      mustConditions.push({
+        key: 'fiscalYear',
+        match: { value: Number(filter.fiscalYear) },
+      });
+    }
+
+    if (filter.fiscalQuarter) {
+      mustConditions.push({
+        key: 'fiscalQuarter',
+        match: { value: String(filter.fiscalQuarter).toUpperCase() },
+      });
+    }
+
+    if (filter.period) {
+      mustConditions.push({
+        key: 'period',
+        match: { value: filter.period },
+      });
+    }
+
     // Access control: Organization isolation or public
     if (filter.organizationId) {
       shouldConditions.push(
@@ -230,8 +276,12 @@ export class QdrantVectorStore {
             title: item.payload?.title,
             symbol: item.payload?.symbol,
             filingType: item.payload?.filingType,
+            fiscalYear: item.payload?.fiscalYear,
+            fiscalQuarter: item.payload?.fiscalQuarter,
+            period: item.payload?.period,
             section: item.payload?.section,
-            pageNumber: item.payload?.pageNumber,
+            page: item.payload?.page || item.payload?.pageNumber || 1,
+            pageNumber: item.payload?.pageNumber || item.payload?.page || 1,
             hasTable: item.payload?.hasTable,
             organizationId: item.payload?.organizationId,
             isPublic: item.payload?.isPublic,

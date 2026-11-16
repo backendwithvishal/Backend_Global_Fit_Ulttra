@@ -23,6 +23,7 @@
     "test:integration": "npm run test:integration --prefix backend",
     "test:endpoints": "npm run test:endpoints --prefix backend",
     "test:endpoints:win": "npm run test:endpoints:win --prefix backend",
+    "seed:admin": "npm run seed:admin --prefix backend",
     "ai:demo": "npm run ai:demo --prefix backend",
     "ai:integrate": "npm run ai:integrate --prefix backend",
     "rag:eval": "npm run rag:eval --prefix backend",

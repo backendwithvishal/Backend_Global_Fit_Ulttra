@@ -83,6 +83,7 @@ const envSchema = z.object({
 
   // Security
   CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:5173,https://backend-global-fit-ulttra.onrender.com'),
+  RATE_LIMIT_ENABLED: z.string().transform((v) => v.toLowerCase() !== 'false' && v !== '0').default('true'),
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
 
@@ -274,6 +275,7 @@ export const config = {
 
   security: {
     corsOrigins: env.CORS_ORIGIN.split(',').map(s => s.trim()),
+    rateLimitEnabled: env.RATE_LIMIT_ENABLED,
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
     jwtAccessSecret: env.JWT_ACCESS_SECRET,

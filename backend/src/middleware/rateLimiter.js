@@ -145,8 +145,32 @@ const createLimitHandler = (context) => {
     };
 };
 
+/**
+ * Helper to determine if rate limiting is enabled.
+ * Can be toggled via RATE_LIMIT_ENABLED in .env (e.g. set to false during API testing).
+ */
+export const isRateLimitEnabled = () => {
+    if (process.env.RATE_LIMIT_ENABLED === 'false' || process.env.RATE_LIMIT_ENABLED === '0' || process.env.DISABLE_RATE_LIMIT === 'true') {
+        return false;
+    }
+    return config?.security?.rateLimitEnabled !== false;
+};
+
+/**
+ * Wraps express-rate-limit instance with a bypass check.
+ * When rate limiting is disabled, it calls next() immediately without checking stores or setting headers.
+ */
+const withBypass = (limiter) => {
+    return (req, res, next) => {
+        if (!isRateLimitEnabled()) {
+            return next();
+        }
+        return limiter(req, res, next);
+    };
+};
+
 // Auth rate limiter - 5 requests per 15 minutes (prevents brute force)
-export const authRateLimiter = rateLimit({
+export const authRateLimiter = withBypass(rateLimit({
     windowMs: FIFTEEN_MINUTES_MS,
     max: 5,
     message: {
@@ -161,10 +185,10 @@ export const authRateLimiter = rateLimit({
     keyGenerator: (req) => req.ip,  // Always IP-based for auth (user not yet identified)
     store: new ResilientRateLimitStore('auth'),
     handler: createLimitHandler('Auth'),
-});
+}));
 
 // Global API rate limiter - 100 requests per 15 minutes
-export const globalRateLimiter = rateLimit({
+export const globalRateLimiter = withBypass(rateLimit({
     windowMs: FIFTEEN_MINUTES_MS,
     max: config.security.rateLimitMaxRequests || 100,
     message: {
@@ -178,10 +202,10 @@ export const globalRateLimiter = rateLimit({
     legacyHeaders: false,
     store: new ResilientRateLimitStore('global'),
     handler: createLimitHandler('Global'),
-});
+}));
 
 // Authenticated user rate limiter - 1000 requests per 15 minutes
-export const authenticatedUserRateLimiter = rateLimit({
+export const authenticatedUserRateLimiter = withBypass(rateLimit({
     windowMs: FIFTEEN_MINUTES_MS,
     max: 1000,
     message: {
@@ -196,10 +220,10 @@ export const authenticatedUserRateLimiter = rateLimit({
     keyGenerator: createHybridKeyGenerator('user'),
     store: new ResilientRateLimitStore('user'),
     handler: createLimitHandler('Authenticated User'),
-});
+}));
 
 // Admin rate limiter - 20 requests per 15 minutes
-export const adminRateLimiter = rateLimit({
+export const adminRateLimiter = withBypass(rateLimit({
     windowMs: FIFTEEN_MINUTES_MS,
     max: 20,
     message: {
@@ -214,10 +238,10 @@ export const adminRateLimiter = rateLimit({
     keyGenerator: createHybridKeyGenerator('admin'),
     store: new ResilientRateLimitStore('admin'),
     handler: createLimitHandler('Admin'),
-});
+}));
 
 // AI rate limiter - 10 requests per 1 minute (AI calls are expensive)
-export const aiRateLimiter = rateLimit({
+export const aiRateLimiter = withBypass(rateLimit({
     windowMs: ONE_MINUTE_MS,
     max: 10,
     message: {
@@ -232,10 +256,10 @@ export const aiRateLimiter = rateLimit({
     keyGenerator: createHybridKeyGenerator('ai'),
     store: new ResilientRateLimitStore('ai'),
     handler: createLimitHandler('AI'),
-});
+}));
 
 // Health check rate limiter - 1000 requests per 1 minute (very lenient)
-export const healthRateLimiter = rateLimit({
+export const healthRateLimiter = withBypass(rateLimit({
     windowMs: ONE_MINUTE_MS,
     max: 1000,
     message: {
@@ -246,6 +270,6 @@ export const healthRateLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-});
+}));
 
 export default globalRateLimiter;

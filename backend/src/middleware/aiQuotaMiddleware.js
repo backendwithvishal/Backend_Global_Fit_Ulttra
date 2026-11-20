@@ -33,6 +33,18 @@ export const checkAIQuota = async (req, res, next) => {
         const maxQuota = config.ai.dailyTokenQuota || 50000;
         const maxPromptLen = config.ai.maxPromptLength || 4000;
 
+        // Bypass AI quota if rate limiting is disabled during testing
+        if (config?.security?.rateLimitEnabled === false || process.env.RATE_LIMIT_ENABLED === 'false' || process.env.DISABLE_RATE_LIMIT === 'true') {
+            req.aiQuota = {
+                userId,
+                currentTokens: 0,
+                maxQuota,
+                quotaKey: getQuotaKey(userId),
+                reservedTokens: 0,
+            };
+            return next();
+        }
+
         // 1. Cap prompt / text inputs to prevent token exhaustion DoS
         const promptText = req.body?.text || req.body?.message || req.body?.question;
         if (typeof promptText === 'string' && promptText.length > maxPromptLen) {

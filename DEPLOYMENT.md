@@ -21,7 +21,7 @@ export LITELLM_MASTER_KEY=$(openssl rand -base64 48)
 
 Create a production `.env` file from the template:
 ```bash
-cp .env.example backend/.env
+cp .env.example .env
 # Populate with generated secrets and provider API keys
 ```
 

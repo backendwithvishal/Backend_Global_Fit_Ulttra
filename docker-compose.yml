@@ -24,7 +24,7 @@ services:
       # Bound to loopback interface only — not 0.0.0.0 public interface
       - "127.0.0.1:4000:4000"
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=4000

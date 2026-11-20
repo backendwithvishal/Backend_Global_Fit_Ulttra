@@ -10,10 +10,10 @@ import { z } from 'zod';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Intelligent multi-path environment file loader
-// Merges backend/.env and root .env without allowing empty strings in one file to mask non-empty values in the other.
-const backendEnvPath = path.resolve(__dirname, '../../.env');
+// Single source of truth environment loader
+// Loads root .env (with fallback to backend/.env if present)
 const rootEnvPath = path.resolve(__dirname, '../../../.env');
+const backendEnvPath = path.resolve(__dirname, '../../.env');
 
 const parseEnvFile = (filePath) => {
   if (fs.existsSync(filePath)) {
@@ -26,16 +26,15 @@ const parseEnvFile = (filePath) => {
   return {};
 };
 
-const backendParsed = parseEnvFile(backendEnvPath);
 const rootParsed = parseEnvFile(rootEnvPath);
+const backendParsed = parseEnvFile(backendEnvPath);
 
-// Prioritize: process.env (system/docker) > non-empty backend/.env > non-empty root .env
-const merged = { ...rootParsed, ...backendParsed };
+// Prioritize: process.env (system/docker) > non-empty root .env > backend/.env
+const merged = { ...backendParsed, ...rootParsed };
 for (const key of Object.keys(merged)) {
   const rootVal = rootParsed[key];
   const backendVal = backendParsed[key];
-  // Select the first non-empty value between backend and root
-  const effectiveVal = (backendVal && backendVal.trim() !== '') ? backendVal : rootVal;
+  const effectiveVal = (rootVal && rootVal.trim() !== '') ? rootVal : backendVal;
 
   if (process.env[key] === undefined || process.env[key] === '') {
     if (effectiveVal !== undefined && effectiveVal !== '') {
@@ -44,9 +43,13 @@ for (const key of Object.keys(merged)) {
   }
 }
 
-// Fallback dotenv config to set any remaining default values
-dotenv.config({ path: backendEnvPath });
-dotenv.config({ path: rootEnvPath });
+// Fallback dotenv config
+if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+}
+if (fs.existsSync(backendEnvPath)) {
+  dotenv.config({ path: backendEnvPath });
+}
 
 // Zod schema for all environment variables
 // All numeric values are strings with .transform(Number) because process.env values are always strings

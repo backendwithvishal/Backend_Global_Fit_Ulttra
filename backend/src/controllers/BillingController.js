@@ -5,7 +5,9 @@ export class BillingController {
 
     async createSession(req, res, _next) {
         try {
-            const { planId, billingCycle, couponCode } = req.body;
+            const planId = req.body?.planId || req.body?.plan;
+            const billingCycle = req.body?.billingCycle || 'monthly';
+            const couponCode = req.body?.couponCode || req.body?.coupon || '';
             const userId = req.user.userId;
 
             if (!planId) {
@@ -25,10 +27,21 @@ export class BillingController {
 
     async confirmCheckout(req, res, _next) {
         try {
-            const { sessionId, planId, billingCycle } = req.body;
+            const { sessionId } = req.body;
+            let { planId, billingCycle } = req.body;
             const userId = req.user.userId;
 
-            if (!sessionId || !planId) {
+            if (!sessionId) {
+                return res.status(400).json({ error: 'sessionId is required', requestId: req.requestId });
+            }
+
+            if (!planId && this.billingService.pendingSessions?.has(sessionId)) {
+                const session = this.billingService.pendingSessions.get(sessionId);
+                planId = session.planId;
+                billingCycle = billingCycle || session.billingCycle;
+            }
+
+            if (!planId) {
                 return res.status(400).json({ error: 'sessionId and planId are required', requestId: req.requestId });
             }
 

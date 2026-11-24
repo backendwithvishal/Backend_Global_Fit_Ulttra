@@ -165,6 +165,23 @@ const envSchema = z.object({
   KEEP_ALIVE_ENABLED: z.string().transform(v => v === 'true').default('true'),
   KEEP_ALIVE_URL: z.string().default('https://backend-global-fit-ulttra.onrender.com/api/v1/health/ping'),
   KEEP_ALIVE_INTERVAL_MS: z.string().transform(Number).default('600000'),
+
+  // Email & SMTP Notification Delivery
+  SMTP_HOST: z.string().optional().default(''),
+  SMTP_PORT: z.string().transform(Number).default('587'),
+  SMTP_USER: z.string().optional().default(''),
+  SMTP_PASS: z.string().optional().default(''),
+  SMTP_SECURE: z.string().transform(v => v === 'true').default('false'),
+  EMAIL_FROM: z.string().default('noreply@globalfit.com'),
+  FRONTEND_URL: z.string().default('http://localhost:5173'),
+
+  // MFA Authentication
+  MFA_ISSUER: z.string().default('GlobalFitUlttra'),
+
+  // Stripe & Billing Platform
+  STRIPE_SECRET_KEY: z.string().optional().default(''),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
 });
 
 // Parse and validate environment variables
@@ -374,6 +391,26 @@ export const config = {
     enabled: env.KEEP_ALIVE_ENABLED,
     url: env.KEEP_ALIVE_URL,
     intervalMs: env.KEEP_ALIVE_INTERVAL_MS,
+  },
+
+  email: {
+    smtpHost: env.SMTP_HOST,
+    smtpPort: env.SMTP_PORT,
+    smtpUser: env.SMTP_USER,
+    smtpPass: env.SMTP_PASS,
+    smtpSecure: env.SMTP_SECURE,
+    from: env.EMAIL_FROM,
+    frontendUrl: env.FRONTEND_URL,
+  },
+
+  mfa: {
+    issuer: env.MFA_ISSUER,
+  },
+
+  stripe: {
+    secretKey: env.STRIPE_SECRET_KEY,
+    publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    webhookSecret: env.STRIPE_WEBHOOK_SECRET,
   },
 
   // Cache TTL values in seconds

@@ -59,12 +59,17 @@ export const requireAuth = (req, res, next) => {
             });
         }
 
+        const rawRole = payload.role || (Array.isArray(payload.roles) && payload.roles[0]) || payload.userRole;
+        const rawRoles = Array.isArray(payload.roles) ? payload.roles : (rawRole ? [rawRole] : ['Member']);
+
         req.user = {
             ...payload,
             // Normalize ID: ensure both userId and id are accessible
             userId: payload.userId || payload.id,
             id: payload.userId || payload.id,
-            role: payload.role || 'Member',
+            role: rawRole || 'Member',
+            roles: rawRoles,
+            permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
         };
         next();
     } catch (err) {
@@ -112,11 +117,15 @@ export const optionalAuth = (req, res, next) => {
                 }
             }
             if (payload.tokenType !== 'refresh') {
+                const rawRole = payload.role || (Array.isArray(payload.roles) && payload.roles[0]) || payload.userRole;
+                const rawRoles = Array.isArray(payload.roles) ? payload.roles : (rawRole ? [rawRole] : ['Member']);
                 req.user = {
                     ...payload,
                     userId: payload.userId || payload.id,
                     id: payload.userId || payload.id,
-                    role: payload.role || 'Member',
+                    role: rawRole || 'Member',
+                    roles: rawRoles,
+                    permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
                 };
             }
         } catch {
@@ -128,11 +137,12 @@ export const optionalAuth = (req, res, next) => {
 };
 
 /**
- * Route middleware to enforce specific user roles (case-insensitive).
+ * Route middleware to enforce specific user roles (case-insensitive, supports super-admin and arrays).
  */
 export const checkRole = (allowedRoles) => {
     const allowedList = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
-    const normalizedAllowed = allowedList.map(r => String(r).toLowerCase());
+    const normalize = (str) => String(str || '').toLowerCase().replace(/[-_\s]/g, '');
+    const normalizedAllowed = allowedList.map(normalize);
 
     return (req, res, next) => {
         if (!req.user) {
@@ -142,8 +152,25 @@ export const checkRole = (allowedRoles) => {
             });
         }
 
-        const userRole = (req.user.role || 'Member').toLowerCase();
-        if (!normalizedAllowed.includes(userRole)) {
+        const userRoles = [
+            req.user.role,
+            ...(Array.isArray(req.user.roles) ? req.user.roles : [])
+        ].filter(Boolean).map(normalize);
+
+        const isAdminAllowed = normalizedAllowed.some(r => r === 'admin' || r === 'superadmin');
+        const hasMatchingRole = userRoles.some(r => 
+            normalizedAllowed.includes(r) ||
+            (isAdminAllowed && (r === 'admin' || r === 'superadmin'))
+        );
+
+        const hasAdminPermission = Array.isArray(req.user.permissions) && (
+            req.user.permissions.includes('*') ||
+            req.user.permissions.includes('admin') ||
+            req.user.permissions.includes('users:read') ||
+            req.user.permissions.includes('users:*')
+        );
+
+        if (!hasMatchingRole && !hasAdminPermission) {
             const requiredStr = allowedList.join(', ');
             const isDevOrTest = config.server.isDev || process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
             const message = isDevOrTest

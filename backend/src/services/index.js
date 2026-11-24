@@ -15,3 +15,4 @@ export { BillingService } from './BillingService.js';
 export { KeepAliveService } from './KeepAliveService.js';
 export { IngestionService } from './IngestionService.js';
 export { RAGService } from './RAGService.js';
+export { EmailService, emailService } from './EmailService.js';

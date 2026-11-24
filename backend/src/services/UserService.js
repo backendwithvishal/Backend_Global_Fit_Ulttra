@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { logger } from '../config/logger.js';
 import { config } from '../config/environment.js';
+import { User } from '../models/index.js';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -31,8 +32,9 @@ export const base32ToBuffer = (base32Str) => {
 };
 
 export class UserService {
-    constructor({ userRepository }) {
+    constructor({ userRepository, emailService = null } = {}) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     generateBase32Secret(length = 16) {
@@ -51,8 +53,10 @@ export class UserService {
                 throw new Error('Email already in use');
             }
 
-            // Generate email verification token
+            // Generate email verification token with 24h expiration
             const verificationToken = crypto.randomBytes(32).toString('hex');
+            const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
             // Strict mass-assignment prevention: allowlist safe registration attributes only
             const dataToSave = {
                 email: userData.email,
@@ -64,13 +68,20 @@ export class UserService {
                 subscriptionTier: 'Free',
                 isEmailVerified: false,
                 emailVerificationToken: verificationToken,
+                emailVerificationExpires: verificationExpires,
             };
 
             const user = await this.userRepository.create(dataToSave);
             logger.info('User created successfully', { userId: user._id });
             
-            // Safe logging without exposing secret tokens in plaintext logs
-            logger.info('[MAILER MOCK] Verification link generated', { email: user.email });
+            // Dispatch verification email
+            if (this.emailService) {
+                await this.emailService.sendVerificationEmail(user.email, verificationToken).catch(err => {
+                    logger.warn('Failed to send verification email', { error: err.message });
+                });
+            } else {
+                logger.info('[EMAIL VERIFICATION LINK]', { email: user.email, verificationToken });
+            }
 
             const userObj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
             delete userObj.passwordHash;
@@ -105,13 +116,29 @@ export class UserService {
     // Verify user's email
     async verifyEmail(token) {
         try {
-            const user = await this.userRepository.findByVerificationToken(token);
+            if (!token || typeof token !== 'string') {
+                throw new Error('Invalid or expired verification token');
+            }
+
+            const cleanToken = decodeURIComponent(token).trim();
+            const user = await this.userRepository.findByVerificationToken(cleanToken);
             if (!user) {
+                throw new Error('Invalid or expired verification token');
+            }
+
+            // If token expired, reject
+            if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
+                throw new Error('Invalid or expired verification token');
+            }
+
+            // Single use: if already verified or token missing, reject
+            if (user.isEmailVerified && !user.emailVerificationToken) {
                 throw new Error('Invalid or expired verification token');
             }
 
             user.isEmailVerified = true;
             user.emailVerificationToken = undefined;
+            user.emailVerificationExpires = undefined;
             await user.save();
 
             logger.info('Email verified successfully', { userId: user._id });
@@ -125,30 +152,45 @@ export class UserService {
     // Generate password reset token
     async requestPasswordReset(email) {
         try {
-            const user = await this.userRepository.findByEmail(email);
+            if (!email) return true;
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const user = await this.userRepository.findByEmail(normalizedEmail);
             if (!user) {
-                throw new Error('User not found');
+                // Generic response to prevent account enumeration
+                return true;
             }
 
             const resetToken = crypto.randomBytes(32).toString('hex');
             user.passwordResetToken = resetToken;
-            user.passwordResetExpires = Date.now() + 3600000; // 1 hour expiration
+            user.passwordResetExpires = new Date(Date.now() + 3600000); // 1 hour expiration
             await user.save();
 
-            // Safe logging without leaking plaintext token into log monitors
-            logger.info('[MAILER MOCK] Password reset link generated', { email });
+            // Dispatch password reset email
+            if (this.emailService) {
+                await this.emailService.sendPasswordReset(user.email, resetToken).catch(err => {
+                    logger.error('Failed to send password reset email', { error: err.message });
+                });
+            } else {
+                logger.info('[PASSWORD RESET LINK GENERATED]', { email: user.email, resetToken });
+            }
+
             return true;
         } catch (error) {
             logger.error('Error in requestPasswordReset', { email, error: error.message });
-            throw error;
+            return true; // Keep generic message
         }
     }
 
     // Reset password using token
     async resetPassword(token, newPassword) {
         try {
-            const user = await this.userRepository.findByResetToken(token);
-            if (!user || user.passwordResetExpires < Date.now()) {
+            if (!token || typeof token !== 'string') {
+                throw new Error('Invalid or expired reset token');
+            }
+
+            const cleanToken = decodeURIComponent(token).trim();
+            const user = await this.userRepository.findByResetToken(cleanToken);
+            if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
                 throw new Error('Invalid or expired reset token');
             }
 
@@ -192,9 +234,13 @@ export class UserService {
     // Enable/Confirm MFA with a verification code
     async enableMfa(userId, code) {
         try {
+            if (code === undefined || code === null || String(code).trim() === '') {
+                throw new Error('Verification code is required');
+            }
+
             const user = await this.userRepository.findByIdWithFields(userId, ['+twoFactorSecret']);
             if (!user || !user.twoFactorSecret) {
-                throw new Error('MFA secret not initialized');
+                throw new Error('MFA secret not initialized. Please run setup first.');
             }
 
             // Validate TOTP
@@ -301,14 +347,16 @@ export class UserService {
         return tokenHash;
     }
 
-    // Helper: Basic TOTP verification (strictly validates HMAC token against 30s window using Base32 key)
-    _verifyTOTP(secret, code) {
-        if (!code || typeof code !== 'string') return false;
+    // Helper: Basic TOTP verification (strictly validates HMAC token against 30s window using Base32 key, ±1 step tolerance)
+    _verifyTOTP(secret, rawCode) {
+        if (rawCode === undefined || rawCode === null) return false;
+        const code = String(rawCode).trim().padStart(6, '0');
+        if (!/^\d{6}$/.test(code)) return false;
 
         try {
             const keyBuffer = base32ToBuffer(secret);
             const key = keyBuffer.length > 0 ? keyBuffer : Buffer.from(secret, 'utf-8');
-            const timeStep = Math.floor(Date.now() / 30000);
+            const timeStep = Math.floor(Date.now() / 1000 / 30);
             for (let i = -1; i <= 1; i++) {
                 const msg = Buffer.alloc(8);
                 msg.writeBigInt64BE(BigInt(timeStep + i));
@@ -317,13 +365,9 @@ export class UserService {
                 hmac.update(msg);
                 const digest = hmac.digest();
                 
-                const offset = digest[digest.length - 1] & 0xf;
-                const binary = ((digest[offset] & 0x7f) << 24) |
-                               ((digest[offset + 1] & 0xff) << 16) |
-                               ((digest[offset + 2] & 0xff) << 8) |
-                               (digest[offset + 3] & 0xff);
-                
-                const otp = (binary % 1000000).toString().padStart(6, '0');
+                const offset = digest[digest.length - 1] & 0x0f;
+                const binary = (digest.readUInt32BE(offset) & 0x7fffffff) % 1000000;
+                const otp = binary.toString().padStart(6, '0');
                 if (otp === code) {
                     return true;
                 }
@@ -609,78 +653,113 @@ export class UserService {
         return true;
     }
 
-    // Generate magic link token and log it
+    // Generate magic link token, dispatch email, and log link
     async requestMagicLink(email) {
         try {
-            const user = await this.userRepository.findByEmail(email);
+            if (!email) return true;
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const user = await this.userRepository.findByEmail(normalizedEmail);
             if (!user) {
-                throw new Error('User not found');
+                // Return generic success to prevent account enumeration
+                return true;
             }
 
             const magicToken = crypto.randomBytes(32).toString('hex');
-            // Store token in user metadata temporarily
+            const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiration
+
+            user.magicLoginToken = magicToken;
+            user.magicLoginExpires = expires;
             user.metadata = {
                 ...user.metadata,
                 magicToken,
-                magicTokenExpires: Date.now() + 900000 // 15 mins expiration
+                magicTokenExpires: expires.getTime(),
             };
+            user.markModified('metadata');
             await user.save();
 
-            // Safe logging without leaking plaintext magic token
-            logger.info('[MAILER MOCK] Magic Login Link generated', { email });
+            // Dispatch magic link email
+            if (this.emailService) {
+                await this.emailService.sendMagicLink(user.email, magicToken).catch(err => {
+                    logger.error('Failed to send magic link email', { error: err.message });
+                });
+            } else {
+                logger.info('[MAGIC LOGIN LINK GENERATED]', { email: user.email, magicToken });
+            }
+
             return true;
         } catch (error) {
             logger.error('Error in requestMagicLink', { email, error: error.message });
-            throw error;
+            return true; // Keep generic message
         }
     }
 
     // Login using magic link token
     async loginWithMagicLink(token, clientIp = '127.0.0.1', device = 'Unknown') {
         try {
-            const user = await this.userRepository.findByMagicToken(token);
-            if (!user || !user.metadata?.magicTokenExpires || user.metadata.magicTokenExpires < Date.now()) {
+            if (!token || typeof token !== 'string') {
                 throw new Error('Invalid or expired magic link token');
             }
 
-            // Clear magic token
-            const meta = { ...user.metadata };
-            delete meta.magicToken;
-            delete meta.magicTokenExpires;
-            user.metadata = meta;
+            const cleanToken = decodeURIComponent(token).trim();
+            const user = await this.userRepository.findByMagicToken(cleanToken);
+            if (!user) {
+                throw new Error('Invalid or expired magic link token');
+            }
+
+            const expires = user.magicLoginExpires || (user.metadata?.magicTokenExpires ? new Date(user.metadata.magicTokenExpires) : null);
+            if (!expires || expires < new Date()) {
+                throw new Error('Invalid or expired magic link token');
+            }
+
+            // Clear magic token for single-use enforcement
+            user.magicLoginToken = undefined;
+            user.magicLoginExpires = undefined;
+            if (user.metadata) {
+                const meta = { ...user.metadata };
+                delete meta.magicToken;
+                delete meta.magicTokenExpires;
+                user.metadata = meta;
+                user.markModified('metadata');
+            }
 
             // Log history
+            if (!user.loginHistory) user.loginHistory = [];
             user.loginHistory.push({
                 ipAddress: clientIp,
                 device,
                 timestamp: new Date()
             });
-            await user.save();
 
-            const userObj = user.toObject();
-            delete userObj.passwordHash;
+            // Generate full access & refresh token pair with correct role
+            const { accessToken, refreshToken } = this._generateTokenPair(user);
 
-            // Generate JWT
-            const jwtToken = jwt.sign(
-                {
-                    userId: userObj._id,
-                    email: userObj.email,
-                    subscriptionTier: userObj.subscriptionTier,
-                },
-                config.security.jwtAccessSecret,
-                { expiresIn: config.security.jwtExpiresIn }
-            );
+            // Store refresh token
+            await this._storeRefreshToken(user, refreshToken, clientIp, device);
 
             // Save active session token hash
-            const tokenHash = crypto.createHash('sha256').update(jwtToken).digest('hex');
+            const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex');
+            if (!user.activeSessions) user.activeSessions = [];
             user.activeSessions.push({
                 tokenHash,
                 device,
                 createdAt: new Date()
             });
+
             await user.save();
 
-            return { token: jwtToken, user: userObj };
+            const userObj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
+            delete userObj.passwordHash;
+            delete userObj.twoFactorSecret;
+            delete userObj.twoFactorBackupCodes;
+            delete userObj.magicLoginToken;
+            delete userObj.magicLoginExpires;
+
+            return {
+                accessToken,
+                refreshToken,
+                token: accessToken,
+                user: userObj
+            };
         } catch (error) {
             logger.error('Error in loginWithMagicLink', { error: error.message });
             throw error;

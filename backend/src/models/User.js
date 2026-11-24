@@ -40,7 +40,7 @@ const userSchema = new Schema({
     // Role-based access control (RBAC)
     role: {
         type: String,
-        enum: ['Member', 'Admin'],
+        enum: ['Member', 'Admin', 'super-admin', 'SuperAdmin'],
         default: 'Member',
         index: true,
     },
@@ -78,6 +78,10 @@ const userSchema = new Schema({
         type: String,
         select: false,
     },
+    emailVerificationExpires: {
+        type: Date,
+        select: false,
+    },
 
     // Password reset
     passwordResetToken: {
@@ -85,6 +89,16 @@ const userSchema = new Schema({
         select: false,
     },
     passwordResetExpires: {
+        type: Date,
+        select: false,
+    },
+
+    // Magic link login
+    magicLoginToken: {
+        type: String,
+        select: false,
+    },
+    magicLoginExpires: {
         type: Date,
         select: false,
     },

@@ -86,7 +86,9 @@ export class BillingService {
             if (session.userId !== userId.toString()) {
                 throw new Error('Session does not belong to this user');
             }
-            if (session.planId !== planId) {
+            const targetPlanId = planId || session.planId;
+            const targetCycle = billingCycle || session.billingCycle || 'monthly';
+            if (session.planId !== targetPlanId) {
                 throw new Error('Session plan mismatch');
             }
             if (Date.now() - session.createdAt > 3600 * 1000) {
@@ -98,21 +100,21 @@ export class BillingService {
             this.pendingSessions.delete(sessionId);
 
             const endPeriod = new Date();
-            if (billingCycle === 'yearly') {
+            if (targetCycle === 'yearly') {
                 endPeriod.setFullYear(endPeriod.getFullYear() + 1);
             } else {
                 endPeriod.setMonth(endPeriod.getMonth() + 1);
             }
 
             const updatedUser = await this.userRepository.update(userId, {
-                subscriptionTier: planId,
+                subscriptionTier: targetPlanId,
                 subscriptionStatus: 'active',
                 stripeSubscriptionId: `sub_mock_${sessionId}`,
                 subscriptionPeriodEnd: endPeriod,
                 stripeCustomerId: user.stripeCustomerId || `cus_mock_${Math.random().toString(36).substring(7)}`
             });
 
-            logger.info('Subscription successfully upgraded', { userId, newTier: planId, periodEnd: endPeriod });
+            logger.info('Subscription successfully upgraded', { userId, newTier: targetPlanId, periodEnd: endPeriod });
             return updatedUser;
         } catch (error) {
             logger.error('Error in confirmPayment', { userId, planId, error: error.message });

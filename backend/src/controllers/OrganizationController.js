@@ -130,15 +130,17 @@ export class OrganizationController {
 
     async updateMemberRole(req, res, _next) {
         try {
-            const { orgId, userId } = req.params;
+            const { orgId } = req.params;
+            const targetMemberId = req.params.memberId || req.params.userId;
             const { role } = req.body;
             const actorId = req.user.userId;
+            const actorRole = req.user.role;
 
             if (!role) {
                 return res.status(400).json({ error: 'Role is required', requestId: req.requestId });
             }
 
-            const org = await this.organizationService.updateMemberRole(orgId, userId, role, actorId);
+            const org = await this.organizationService.updateMemberRole(orgId, targetMemberId, role, actorId, actorRole);
             res.json({
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),
@@ -146,7 +148,8 @@ export class OrganizationController {
                 org
             });
         } catch (error) {
-            res.status(400).json({ error: error.message, requestId: req.requestId });
+            const status = error.status || (error.message.includes('not found') ? 404 : (error.message.includes('Unauthorized') ? 403 : 400));
+            res.status(status).json({ error: error.message, requestId: req.requestId });
         }
     }
 

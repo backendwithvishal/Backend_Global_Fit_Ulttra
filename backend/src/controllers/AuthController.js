@@ -260,7 +260,7 @@ export class AuthController {
     async enableMfa(req, res, _next) {
         try {
             const userId = req.user.userId;
-            const { code } = req.body;
+            const code = req.body?.code ?? req.body?.mfaCode ?? req.body?.token;
             const result = await this.userService.enableMfa(userId, code);
             res.json({
                 requestId: req.requestId,
@@ -276,7 +276,7 @@ export class AuthController {
     async disableMfa(req, res, _next) {
         try {
             const userId = req.user.userId;
-            const { code } = req.body;
+            const code = req.body?.code ?? req.body?.mfaCode ?? req.body?.token;
             await this.userService.disableMfa(userId, code);
             res.json({
                 requestId: req.requestId,
@@ -308,7 +308,7 @@ export class AuthController {
 
     async loginWithMagicLink(req, res, _next) {
         try {
-            const { token } = req.query;
+            const token = req.query?.token || req.body?.token;
             if (!token) {
                 return res.status(400).json({ error: 'Token parameter is required', requestId: req.requestId });
             }
@@ -318,10 +318,18 @@ export class AuthController {
 
             const result = await this.userService.loginWithMagicLink(token, clientIp, userAgent);
 
-            res.cookie('token', result.token, {
+            const isProd = process.env.NODE_ENV === 'production';
+            res.cookie('token', result.accessToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: isProd,
                 sameSite: 'strict',
+                maxAge: 15 * 60 * 1000 // 15 minutes
+            });
+            res.cookie('refreshToken', result.refreshToken, {
+                httpOnly: true,
+                secure: isProd,
+                sameSite: 'strict',
+                path: '/api/v1/auth/refresh',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
 
@@ -329,7 +337,9 @@ export class AuthController {
                 requestId: req.requestId,
                 timestamp: new Date().toISOString(),
                 message: 'Magic login successful',
-                token: result.token,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                token: result.accessToken,
                 user: result.user
             });
         } catch (error) {

@@ -18,7 +18,13 @@ export const createOrganizationRoutes = (controller) => {
 
     // Members
     router.delete('/:orgId/members/:userId', (req, res, next) => controller.removeMember(req, res, next));
-    router.patch('/:orgId/members/:userId/role', (req, res, next) => controller.updateMemberRole(req, res, next));
+    router.delete('/:orgId/members/:memberId', (req, res, next) => controller.removeMember(req, res, next));
+    router.route('/:orgId/members/:memberId/role')
+        .patch((req, res, next) => controller.updateMemberRole(req, res, next))
+        .put((req, res, next) => controller.updateMemberRole(req, res, next));
+    router.route('/:orgId/members/:userId/role')
+        .patch((req, res, next) => controller.updateMemberRole(req, res, next))
+        .put((req, res, next) => controller.updateMemberRole(req, res, next));
 
     return router;
 };

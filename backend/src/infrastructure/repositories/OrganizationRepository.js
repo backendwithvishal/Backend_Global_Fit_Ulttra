@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Organization } from '../../models/index.js';
 import { logger } from '../../config/logger.js';
 
@@ -16,7 +17,11 @@ export class OrganizationRepository {
 
     async findById(id) {
         try {
-            return await Organization.findById(id).populate('members.userId', 'email firstName lastName');
+            if (!id) return null;
+            if (mongoose.isValidObjectId(id)) {
+                return await Organization.findById(id).populate('members.userId', 'email firstName lastName');
+            }
+            return await Organization.findOne({ slug: id }).populate('members.userId', 'email firstName lastName');
         } catch (error) {
             logger.error('Error in OrganizationRepository.findById', { id, error: error.message });
             throw error;

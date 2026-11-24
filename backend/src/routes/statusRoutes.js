@@ -30,6 +30,9 @@ import { Router } from 'express';
 export const createStatusRoutes = (controller) => {
     const router = Router();
 
+    // GET /status — Public health and system status overview
+    router.get('/', (req, res) => controller.getStatus(req, res));
+
     // GET /status/circuit-breakers — Shows open/closed/half-open state of each external API circuit
     router.get('/circuit-breakers', (req, res) => controller.getCircuitBreakers(req, res));
 

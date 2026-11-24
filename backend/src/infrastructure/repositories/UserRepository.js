@@ -1,5 +1,6 @@
 // User repository - database operations for User model
 
+import crypto from 'crypto';
 import { User } from '../../models/index.js';
 import { logger } from '../../config/logger.js';
 import { config } from '../../config/environment.js';
@@ -159,30 +160,60 @@ export class UserRepository {
         }
     }
 
-    // Find user by verification token
+    // Find user by verification token (supports raw token or SHA-256 hash, URL-decoding)
     async findByVerificationToken(token) {
         try {
-            return await User.findOne({ emailVerificationToken: token }).select('+emailVerificationToken');
+            if (!token || typeof token !== 'string') return null;
+            const cleanToken = decodeURIComponent(token).trim();
+            const tokenHash = crypto.createHash('sha256').update(cleanToken).digest('hex');
+            return await User.findOne({
+                $or: [
+                    { emailVerificationToken: cleanToken },
+                    { emailVerificationToken: tokenHash },
+                    { emailVerificationToken: token }
+                ]
+            }).select('+emailVerificationToken +emailVerificationExpires');
         } catch (error) {
             logger.error('Error finding user by verification token', { error: error.message });
             throw error;
         }
     }
 
-    // Find user by reset token
+    // Find user by reset token (supports raw token or SHA-256 hash, URL-decoding)
     async findByResetToken(token) {
         try {
-            return await User.findOne({ passwordResetToken: token }).select('+passwordResetToken +passwordResetExpires');
+            if (!token || typeof token !== 'string') return null;
+            const cleanToken = decodeURIComponent(token).trim();
+            const tokenHash = crypto.createHash('sha256').update(cleanToken).digest('hex');
+            return await User.findOne({
+                $or: [
+                    { passwordResetToken: cleanToken },
+                    { passwordResetToken: tokenHash },
+                    { passwordResetToken: token }
+                ]
+            }).select('+passwordResetToken +passwordResetExpires');
         } catch (error) {
             logger.error('Error finding user by reset token', { error: error.message });
             throw error;
         }
     }
 
-    // Find user by magic link token
+    // Find user by magic link token (supports dedicated field, metadata, and hash)
     async findByMagicToken(token) {
         try {
-            return await User.findOne({ 'metadata.magicToken': token });
+            if (!token || typeof token !== 'string') return null;
+            const cleanToken = decodeURIComponent(token).trim();
+            const tokenHash = crypto.createHash('sha256').update(cleanToken).digest('hex');
+            return await User.findOne({
+                $or: [
+                    { magicLoginToken: cleanToken },
+                    { magicLoginToken: tokenHash },
+                    { magicLoginToken: token },
+                    { 'metadata.magicToken': cleanToken },
+                    { 'metadata.magicToken': tokenHash },
+                    { 'metadata.magicToken': token }
+                ]
+            }).select('+magicLoginToken +magicLoginExpires');
         } catch (error) {
             logger.error('Error finding user by magic token', { error: error.message });
             throw error;

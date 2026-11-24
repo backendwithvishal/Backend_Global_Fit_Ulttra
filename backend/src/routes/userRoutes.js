@@ -60,8 +60,8 @@ export const createUserRoutes = (controller) => {
     // POST /users/login — Login with email and password (Public with strict limiter)
     router.post('/login', authRateLimiter, validateRequest(loginSchema), (req, res, next) => controller.loginUser(req, res, next));
 
-    // GET /users — List all users (Admin only)
-    router.get('/', requireAuth, checkRole(['Admin']), validateRequest(listUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
+    // GET /users — List all users (Admin and SuperAdmin)
+    router.get('/', requireAuth, checkRole(['Admin', 'SuperAdmin', 'super-admin']), validateRequest(listUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
 
     // GET /users/:id — Get user profile (Self or Admin)
     router.get('/:id', requireAuth, requireSelfOrAdmin('id'), validateRequest(getUserSchema), (req, res, next) => controller.getUser(req, res, next));

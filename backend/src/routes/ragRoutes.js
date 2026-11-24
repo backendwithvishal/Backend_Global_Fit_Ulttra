@@ -63,19 +63,37 @@ export const createRAGRoutes = (ragController) => {
   // Grounded RAG Query (Authenticated members)
   router.post('/query', validateRequest(ragQuerySchema), ragController.query);
 
-  // Trigger ingestion of documents (Admin only, file upload or default directory)
+  const handleUploadOrJson = (req, res, next) => {
+    if (req.is('multipart/form-data')) {
+      return uploadPdf.single('file')(req, res, (err) => {
+        if (err) {
+          return res.status(400).json({
+            error: {
+              code: 'E1017',
+              message: err.message || 'File upload failed',
+            },
+            requestId: req.requestId,
+          });
+        }
+        next();
+      });
+    }
+    next();
+  };
+
+  // Trigger ingestion of documents (Admin/SuperAdmin only, file upload or file path/directory)
   router.post(
     '/ingest',
-    checkRole(['Admin']),
-    uploadPdf.single('file'),
+    checkRole(['Admin', 'SuperAdmin', 'super-admin']),
+    handleUploadOrJson,
     validatePdfMagicBytes,
     validateRequest(ragIngestSchema),
     ragController.ingest
   );
 
-  // Re-index all documents in the repository (Admin only)
+  // Re-index all documents in the repository (Admin/SuperAdmin only)
   if (typeof ragController.reindex === 'function') {
-    router.post('/reindex', checkRole(['Admin']), ragController.reindex);
+    router.post('/reindex', checkRole(['Admin', 'SuperAdmin', 'super-admin']), ragController.reindex);
   }
 
   // Ingestion job status
@@ -83,9 +101,9 @@ export const createRAGRoutes = (ragController) => {
     router.get('/jobs/:jobId', ragController.getJob);
   }
 
-  // Trigger RAG evaluation benchmark (Admin only)
+  // Trigger RAG evaluation benchmark (Admin/SuperAdmin only)
   if (typeof ragController.evaluate === 'function') {
-    router.post('/evaluate', checkRole(['Admin']), ragController.evaluate);
+    router.post('/evaluate', checkRole(['Admin', 'SuperAdmin', 'super-admin']), ragController.evaluate);
   }
 
   // List indexed documents
@@ -94,8 +112,8 @@ export const createRAGRoutes = (ragController) => {
   // Get specific document by ID
   router.get('/documents/:id', ragController.getDocument);
 
-  // Delete document (Admin only)
-  router.delete('/documents/:id', checkRole(['Admin']), ragController.deleteDocument);
+  // Delete document (Admin/SuperAdmin only)
+  router.delete('/documents/:id', checkRole(['Admin', 'SuperAdmin', 'super-admin']), ragController.deleteDocument);
 
   // Vector index statistics
   router.get('/stats', ragController.getStats);

@@ -1,9 +1,25 @@
 // System status monitoring - circuit breakers and rate limits
 // Useful for ops dashboards and debugging API issues
 
+import mongoose from 'mongoose';
+
 export class StatusController {
-    constructor(dependencies) {
+    constructor(dependencies = {}) {
         this.apiClients = dependencies.apiClients || [];
+    }
+
+    // Health and service overview for GET /api/v1/status
+    getStatus(req, res) {
+        const isDbConn = mongoose.connection && mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+
+        res.status(200).json({
+            status: 'healthy',
+            service: 'global-fit-ulttra',
+            uptime: Math.floor(process.uptime()),
+            timestamp: new Date().toISOString(),
+            database: isDbConn,
+            requestId: req.requestId,
+        });
     }
 
     // Check circuit breaker states - closed (healthy), open (down), half-open (testing)

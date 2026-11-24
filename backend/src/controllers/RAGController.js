@@ -120,7 +120,7 @@ export class RAGController {
         fiscalYear,
         fiscalQuarter,
         period,
-        source: req.file ? 'MANUAL_UPLOAD' : (source || (filePath ? 'FILE_SYSTEM' : 'SYSTEM')),
+        source: req.file ? 'MANUAL_UPLOAD' : (source || 'SYSTEM'),
         isPublic: isPublic !== undefined ? isPublic : true,
         uploadedBy,
         organizationId,
@@ -321,8 +321,14 @@ export class RAGController {
         });
       }
 
+      const userRoles = [
+        req.user?.role,
+        ...(Array.isArray(req.user?.roles) ? req.user.roles : [])
+      ].filter(Boolean).map(r => String(r).toLowerCase().replace(/[-_\s]/g, ''));
+      const isAdmin = userRoles.some(r => r === 'admin' || r === 'superadmin');
+
       const isAllowed =
-        req.user?.role === 'Admin' ||
+        isAdmin ||
         (req.user?.organizationId && document.organizationId && document.organizationId.toString() === req.user.organizationId.toString());
 
       if (!isAllowed) {

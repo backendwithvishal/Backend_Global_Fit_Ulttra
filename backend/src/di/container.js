@@ -59,7 +59,8 @@ import {
     OrganizationService,
     ApiKeyService,
     BillingService,
-    KeepAliveService
+    KeepAliveService,
+    EmailService
 } from '../services/index.js';
 import {
     HealthController,
@@ -137,8 +138,8 @@ export class Container {
      * @param {import('socket.io').Server} options.io - Socket.io server instance
      * @returns {Promise<void>}
      */
-    async initialize(options) {
-        const { io } = options;
+    async initialize(options = {}) {
+        const { io = null } = options || {};
 
         // Callback for circuit breaker state changes — broadcasts to WebSocket clients
         const onCircuitStateChange = (change) => {
@@ -427,11 +428,12 @@ export class Container {
             auditLogRepository,
         });
 
-        const userService = new UserService({ userRepository });
+        const emailService = new EmailService(config.email);
+        const userService = new UserService({ userRepository, emailService });
         const watchlistService = new WatchlistService({ watchlistRepository });
         const alertService = new AlertService({ alertRepository });
         const assetService = new AssetService({ financialAssetRepository });
-        const organizationService = new OrganizationService({ organizationRepository, invitationRepository, userRepository });
+        const organizationService = new OrganizationService({ organizationRepository, invitationRepository, userRepository, emailService });
         const apiKeyService = new ApiKeyService({ apiKeyRepository });
         const billingService = new BillingService({ userRepository });
         const keepAliveService = new KeepAliveService();
@@ -485,6 +487,7 @@ export class Container {
         this.instances.set('apiKeyService', apiKeyService);
         this.instances.set('billingService', billingService);
         this.instances.set('keepAliveService', keepAliveService);
+        this.instances.set('emailService', emailService);
 
         // Controllers
         this.instances.set('healthController', healthController);

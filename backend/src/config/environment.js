@@ -166,13 +166,9 @@ const envSchema = z.object({
   KEEP_ALIVE_URL: z.string().default('https://backend-global-fit-ulttra.onrender.com/api/v1/health/ping'),
   KEEP_ALIVE_INTERVAL_MS: z.string().transform(Number).default('600000'),
 
-  // Email & SMTP Notification Delivery
-  SMTP_HOST: z.string().optional().default(''),
-  SMTP_PORT: z.string().transform(Number).default('587'),
-  SMTP_USER: z.string().optional().default(''),
-  SMTP_PASS: z.string().optional().default(''),
-  SMTP_SECURE: z.string().transform(v => v === 'true').default('false'),
-  EMAIL_FROM: z.string().default('noreply@globalfit.com'),
+  // Email & Resend Notification Delivery
+  RESEND_API_KEY: z.string().optional().default(''),
+  EMAIL_FROM: z.string().default('Global_Fit_Ulttra <noreply@globalfit.com>'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 
   // MFA Authentication
@@ -394,11 +390,7 @@ export const config = {
   },
 
   email: {
-    smtpHost: env.SMTP_HOST,
-    smtpPort: env.SMTP_PORT,
-    smtpUser: env.SMTP_USER,
-    smtpPass: env.SMTP_PASS,
-    smtpSecure: env.SMTP_SECURE,
+    apiKey: env.RESEND_API_KEY,
     from: env.EMAIL_FROM,
     frontendUrl: env.FRONTEND_URL,
   },

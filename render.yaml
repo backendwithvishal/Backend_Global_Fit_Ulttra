@@ -150,6 +150,14 @@ services:
       - key: KEEP_ALIVE_INTERVAL_MS
         value: "600000"
 
+      # ── Email Service (Resend) ───────────────────────
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "Global_Fit_Ulttra <noreply@yourdomain.com>"
+      - key: FRONTEND_URL
+        value: "http://localhost:5173"
+
       # ── Logging ──────────────────────────────────────
       - key: LOG_LEVEL
         value: info

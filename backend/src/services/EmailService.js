@@ -1,71 +1,81 @@
-/**
- * Global_Fit_Ulttra - Email Service
- * 
- * Centralized email notification service supporting:
- * - Direct SMTP transport using native Node.js net/tls sockets
- * - Console mail logger for development & test environments
- * - Template generation for email verification, magic link, password reset, and invites
- * 
- * @module services/EmailService
- */
-
-import net from 'net';
-import tls from 'tls';
+import { Resend } from 'resend';
 import { logger } from '../config/logger.js';
 import { config } from '../config/environment.js';
 
 export class EmailService {
     constructor(emailConfig = {}) {
-        this.host = emailConfig.smtpHost || process.env.SMTP_HOST || '';
-        this.port = Number(emailConfig.smtpPort || process.env.SMTP_PORT || 587);
-        this.user = emailConfig.smtpUser || process.env.SMTP_USER || '';
-        this.pass = emailConfig.smtpPass || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
-        this.secure = Boolean(emailConfig.smtpSecure ?? (process.env.SMTP_SECURE === 'true' || this.port === 465));
-        this.from = emailConfig.from || process.env.EMAIL_FROM || 'noreply@globalfit.com';
+        this.apiKey = emailConfig.apiKey || process.env.RESEND_API_KEY || '';
+        this.from = emailConfig.from || process.env.EMAIL_FROM || 'Global_Fit_Ulttra <noreply@globalfit.com>';
         this.frontendUrl = (emailConfig.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
         this.apiBaseUrl = (process.env.KEEP_ALIVE_URL ? new URL(process.env.KEEP_ALIVE_URL).origin : 'http://localhost:4000') + '/api/v1';
+
+        this.resend = this.apiKey ? new Resend(this.apiKey) : null;
     }
 
-    /**
-     * Send email via configured SMTP server or log to console in development.
-     */
-    async sendMail({ to, subject, text, html }) {
-        const isDev = config.server.isDev || config.server.isTest || process.env.NODE_ENV !== 'production';
+    async sendMail({ to, subject, text, html, cc, bcc, replyTo, reply_to, attachments, headers, tags }) {
+        const isDev = config.server?.isDev || config.server?.isTest || process.env.NODE_ENV !== 'production';
 
-        // In dev or when no SMTP host configured, log prominently to console/logger
-        if (isDev || !this.host) {
-            console.log('\n' + '='.repeat(60));
-            console.log('📧 [EMAIL DISPATCHED]');
-            console.log(`   To:      ${to}`);
-            console.log(`   From:    ${this.from}`);
-            console.log(`   Subject: ${subject}`);
-            console.log('-'.repeat(60));
-            console.log('Content:\n' + (text || html));
-            console.log('='.repeat(60) + '\n');
-            logger.info('Email sent (dev console)', { to, subject });
-            
-            if (!this.host) {
-                return { success: true, mode: 'console' };
-            }
+        if (!this.resend && this.apiKey) {
+            this.resend = new Resend(this.apiKey);
         }
 
-        // If SMTP host is configured, attempt real SMTP transmission
+        if (!this.resend) {
+            if (isDev) {
+                logger.info('Email dispatch (dev console fallback)', { to, subject });
+                return { success: true, mode: 'console' };
+            }
+            throw new Error('Resend API key is not configured (RESEND_API_KEY is required in production)');
+        }
+
+        const payload = {
+            from: this.from,
+            to: Array.isArray(to) ? to : [to],
+            subject,
+        };
+
+        if (html) payload.html = html;
+        if (text) payload.text = text;
+        if (cc) payload.cc = Array.isArray(cc) ? cc : [cc];
+        if (bcc) payload.bcc = Array.isArray(bcc) ? bcc : [bcc];
+        if (replyTo || reply_to) payload.replyTo = replyTo || reply_to;
+        if (headers) payload.headers = headers;
+        if (tags) payload.tags = tags;
+
+        if (attachments && Array.isArray(attachments)) {
+            payload.attachments = attachments.map((att) => {
+                const item = { filename: att.filename || att.name };
+                if (att.content) item.content = att.content;
+                if (att.path) item.path = att.path;
+                return item;
+            });
+        }
+
         try {
-            await this._sendSmtp({ to, subject, text, html });
-            logger.info('Email sent successfully via SMTP', { to, subject });
-            return { success: true, mode: 'smtp' };
+            const { data, error } = await this.resend.emails.send(payload);
+
+            if (error) {
+                logger.error('Failed to send email via Resend', { to, subject, error: error.message || error });
+                if (!isDev) {
+                    throw new Error(`Resend error: ${error.message || JSON.stringify(error)}`);
+                }
+                return { success: false, mode: 'resend-failed', error: error.message || error };
+            }
+
+            logger.info('Email sent successfully via Resend', { to, subject, id: data?.id });
+            return { success: true, mode: 'resend', id: data?.id };
         } catch (error) {
-            logger.error('Failed to send email via SMTP', { to, subject, error: error.message });
+            logger.error('Resend email dispatch error', { to, subject, error: error.message });
             if (!isDev) {
                 throw error;
             }
-            return { success: false, mode: 'smtp-failed', error: error.message };
+            return { success: false, mode: 'resend-error', error: error.message };
         }
     }
 
-    /**
-     * Send email verification link
-     */
+    async sendEmail(options) {
+        return this.sendMail(options);
+    }
+
     async sendVerificationEmail(email, token) {
         const verificationUrl = `${this.apiBaseUrl}/auth/verify-email?token=${encodeURIComponent(token)}`;
         const subject = 'Verify your Global_Fit_Ulttra email address';
@@ -75,9 +85,6 @@ export class EmailService {
         return this.sendMail({ to: email, subject, text, html });
     }
 
-    /**
-     * Send magic login link
-     */
     async sendMagicLink(email, token) {
         const magicLinkUrl = `${this.apiBaseUrl}/auth/magic-link/callback?token=${encodeURIComponent(token)}`;
         const subject = 'Your Global_Fit_Ulttra Magic Login Link';
@@ -87,9 +94,6 @@ export class EmailService {
         return this.sendMail({ to: email, subject, text, html });
     }
 
-    /**
-     * Send password reset email
-     */
     async sendPasswordReset(email, token) {
         const resetUrl = `${this.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
         const subject = 'Reset your Global_Fit_Ulttra password';
@@ -99,9 +103,6 @@ export class EmailService {
         return this.sendMail({ to: email, subject, text, html });
     }
 
-    /**
-     * Send organization invitation email
-     */
     async sendInvitationEmail(email, orgName, token) {
         const inviteUrl = `${this.frontendUrl}/invite/accept?token=${encodeURIComponent(token)}`;
         const subject = `You've been invited to join ${orgName} on Global_Fit_Ulttra`;
@@ -110,92 +111,7 @@ export class EmailService {
 
         return this.sendMail({ to: email, subject, text, html });
     }
-
-    /**
-     * Native RFC 5321 SMTP transport
-     */
-    _sendSmtp({ to, subject, text, html }) {
-        return new Promise((resolve, reject) => {
-            const socket = this.secure
-                ? tls.connect({ host: this.host, port: this.port, rejectUnauthorized: false })
-                : net.createConnection({ host: this.host, port: this.port });
-
-            let stage = 0;
-            const timeout = setTimeout(() => {
-                socket.destroy();
-                reject(new Error('SMTP connection timed out'));
-            }, 10000);
-
-            const send = (cmd) => {
-                socket.write(cmd + '\r\n');
-            };
-
-            socket.on('data', (chunk) => {
-                const response = chunk.toString();
-                const code = parseInt(response.slice(0, 3), 10);
-
-                if (code >= 400) {
-                    clearTimeout(timeout);
-                    socket.end();
-                    return reject(new Error(`SMTP error ${code}: ${response.trim()}`));
-                }
-
-                if (stage === 0 && code === 220) {
-                    stage = 1;
-                    send(`EHLO localhost`);
-                } else if (stage === 1 && code === 250) {
-                    if (this.user && this.pass) {
-                        stage = 2;
-                        send('AUTH LOGIN');
-                    } else {
-                        stage = 4;
-                        send(`MAIL FROM:<${this.from}>`);
-                    }
-                } else if (stage === 2 && code === 334) {
-                    stage = 3;
-                    send(Buffer.from(this.user).toString('base64'));
-                } else if (stage === 3 && code === 334) {
-                    stage = 4;
-                    send(Buffer.from(this.pass).toString('base64'));
-                } else if (stage === 4 && (code === 235 || code === 250)) {
-                    stage = 5;
-                    send(`MAIL FROM:<${this.from}>`);
-                } else if (stage === 5 && code === 250) {
-                    stage = 6;
-                    send(`RCPT TO:<${to}>`);
-                } else if (stage === 6 && code === 250) {
-                    stage = 7;
-                    send('DATA');
-                } else if (stage === 7 && code === 354) {
-                    stage = 8;
-                    const mime = [
-                        `From: ${this.from}`,
-                        `To: ${to}`,
-                        `Subject: ${subject}`,
-                        'MIME-Version: 1.0',
-                        'Content-Type: text/html; charset=UTF-8',
-                        '',
-                        html || text,
-                        '.',
-                    ].join('\r\n');
-                    send(mime);
-                } else if (stage === 8 && code === 250) {
-                    stage = 9;
-                    send('QUIT');
-                    clearTimeout(timeout);
-                    socket.end();
-                    resolve(true);
-                }
-            });
-
-            socket.on('error', (err) => {
-                clearTimeout(timeout);
-                reject(err);
-            });
-        });
-    }
 }
 
 export const emailService = new EmailService();
 export default EmailService;
-

@@ -1,28 +1,24 @@
-/**
- * Global_Fit_Ulttra - Admin Seed Script
- *
- * Seeds a default administrator account into MongoDB and prints
- * credentials and a valid Bearer JWT access token for testing & development.
- *
- * Usage:
- *   node backend/src/scripts/seedAdmin.js
- *   npm run seed:admin
- */
-
-import mongoose from 'mongoose';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { config, connectDatabase, closeDatabaseConnection } from '../config/index.js';
 import { User } from '../models/User.js';
 
+if (process.env.NODE_ENV === 'production') {
+    // eslint-disable-next-line no-console
+    console.error('seed:admin is disabled in production environments.');
+    process.exit(1);
+}
+
 const ADMIN_EMAIL = process.env.ADMIN_SEED_EMAIL || 'admin@globalfit.com';
-const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD || 'AdminSecretPass123!';
+const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD || crypto.randomBytes(16).toString('hex');
 const ADMIN_FIRST_NAME = 'Platform';
 const ADMIN_LAST_NAME = 'Administrator';
 
 async function seedAdmin() {
+    /* eslint-disable no-console */
     console.log('='.repeat(60));
-    console.log('🌱 Global_Fit_Ulttra - Admin User Seeder');
+    console.log('Global_Fit_Ulttra - Admin User Seeder');
     console.log('='.repeat(60));
 
     try {
@@ -48,7 +44,7 @@ async function seedAdmin() {
                 },
             });
             await user.save();
-            console.log('✅ Admin user created successfully.');
+            console.log('Admin user created successfully.');
         } else {
             console.log(`Updating existing user ${ADMIN_EMAIL} to Admin role...`);
             user.role = 'Admin';
@@ -56,10 +52,9 @@ async function seedAdmin() {
             user.isActive = true;
             user.isEmailVerified = true;
             await user.save();
-            console.log('✅ Existing user promoted to Admin.');
+            console.log('Existing user updated to Admin.');
         }
 
-        // Generate ready-to-use access token
         const payload = {
             userId: user._id.toString(),
             id: user._id.toString(),
@@ -71,17 +66,17 @@ async function seedAdmin() {
 
         const accessSecret = config.security.jwtAccessSecret;
         const accessToken = jwt.sign(payload, accessSecret, {
-            expiresIn: '7d', // 7 days for dev convenience
+            expiresIn: '15m',
         });
 
         console.log('='.repeat(60));
-        console.log('🔑 ADMIN CREDENTIALS & TOKEN:');
+        console.log('ADMIN CREDENTIALS & TOKEN:');
         console.log(`   Email:        ${ADMIN_EMAIL}`);
         console.log(`   Password:     ${ADMIN_PASSWORD}`);
-        console.log(`   Role:         Admin`);
+        console.log('   Role:         Admin');
         console.log(`   User ID:      ${user._id}`);
         console.log('-'.repeat(60));
-        console.log('🎫 JWT BEARER TOKEN (valid for 7 days):');
+        console.log('JWT BEARER TOKEN (valid for 15 minutes):');
         console.log(accessToken);
         console.log('-'.repeat(60));
         console.log('Use this header for Admin-protected endpoints (ingest, delete, reindex):');
@@ -91,13 +86,15 @@ async function seedAdmin() {
         await closeDatabaseConnection();
         process.exit(0);
     } catch (error) {
-        console.error('❌ Failed to seed admin user:', error);
+        console.error('Failed to seed admin user:', error);
         try {
             await closeDatabaseConnection();
-        } catch {}
+        } catch (closeErr) {
+            console.error('Failed to close database connection cleanly:', closeErr);
+        }
         process.exit(1);
     }
+    /* eslint-enable no-console */
 }
 
 seedAdmin();
-

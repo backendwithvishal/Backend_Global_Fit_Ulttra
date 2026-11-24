@@ -42,6 +42,8 @@ services:
       - GROQ_FAST_MODEL=${GROQ_FAST_MODEL:-llama-3.1-8b-instant}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-6c7fd4bc6a3279f24e0fde9e81084080cce26261b5f6c5b648644b6f8133eefe}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-7e2d060a9210074c48cb4e70285979d658c4aa371fe5e53e2d84553d2feca0d4}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-Global_Fit_Ulttra <noreply@yourdomain.com>}
     volumes:
       - ./backend/data/financial_documents:/app/data/financial_documents:ro
       - ./uploads:/app/uploads
